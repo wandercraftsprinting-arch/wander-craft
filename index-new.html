@@ -94,13 +94,17 @@
     button { padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 10px; }
     button:hover { background: #388e3c; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0d5c5; font-size: 13px; }
-    th { background: #dbeafe; color: #1d4ed8; font-weight: 600; text-transform: uppercase; }
+    th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e0d5c5; font-size: 13px; }
+    th { background: #dbeafe; color: #1d4ed8; font-weight: 600; text-transform: uppercase; text-align: center; }
+    .price-col { color: #2e7d32; font-weight: 700; text-align: right; padding-right: 16px; }
+    .num-col { text-align: right; padding-right: 16px; }
+    th.right, td.right { text-align: right; padding-right: 16px; }
+    .center-col { text-align: center; }
+    .sell-col { color: #7c3aed; font-weight: 700; text-align: right; padding-right: 16px; }
     .btn-delete { background: #fdecea; border: 1px solid #f5c6c2; color: #c0392b; padding: 5px 10px; font-size: 12px; }
     .btn-delete:hover { background: #fad4d0; }
-    .price-col { color: #2e7d32; font-weight: 700; text-align: right; }
-    .num-col { text-align: right; }
-    th.right, td.right { text-align: right; }
+    .btn-delete { background: #fdecea; border: 1px solid #f5c6c2; color: #c0392b; padding: 5px 10px; font-size: 12px; }
+    .btn-delete:hover { background: #fad4d0; }
   </style>
 </head>
 <body>
@@ -117,14 +121,14 @@
     </div>
     <div class="tabs">
       <p style="font-size:15px; font-weight:700; color:#4a90d9; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Inventory</p>
-      <button class="tab active" onclick="showTab('products')" style="padding-left:28px;">🛍️ Products</button>
-      <button class="tab" onclick="showTab('calculator')" style="padding-left:28px;">🧮 Calculator</button>
-      <button class="tab" onclick="showTab('materials')" style="padding-left:28px;">📦 Supplies</button>
+      <button class="tab active" onclick="showTab('products')" style="padding-left:28px;">🛍️ Product</button>
+      <button class="tab" onclick="showTab('calculator')" style="padding-left:28px;">🧮 Pricing Calculator</button>
+      <button class="tab" onclick="showTab('materials')" style="padding-left:28px;">📦 Material</button>
       <button class="tab" onclick="showTab('equipment')" style="padding-left:28px;">🔧 Equipment</button>
       <button class="tab" onclick="showTab('overhead')" style="padding-left:28px;">💡 Overhead</button>
       <button class="tab" onclick="showTab('expenseview')" style="padding-left:28px;">📊 Expense Overview</button>
       <p style="font-size:15px; font-weight:700; color:#4a90d9; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Sales</p>
-      <button class="tab" onclick="showTab('orders')" style="padding-left:28px;">📋 Orders</button>
+      <button class="tab" onclick="showTab('orders')" style="padding-left:28px;">📋 Order</button>
       <button class="tab" onclick="showTab('salesoverview')" style="padding-left:28px;">📈 Sales Overview</button>
     </div>
     <button class="gsheets-btn-sidebar" id="gsheetsBtn" onclick="connectSupabase()">🗄️ Sync Supabase</button>
@@ -132,9 +136,9 @@
   
   <div class="main-content">
 
-    <!-- SUPPLIES TAB -->
+    <!-- MATERIAL TAB -->
     <div id="materials" class="tab-content">
-      <h2>Supplies</h2>
+      <h2>Material</h2>
       <div class="form-grid">
         <div class="form-group">
           <label>Order Date</label>
@@ -166,24 +170,24 @@
         </div>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
-        <button id="matAddBtn" onclick="addMaterial()">+ Add Supply</button>
+        <button id="matAddBtn" onclick="addMaterial()">+ Add Material</button>
         <button id="matUpdateBtn" onclick="updateMaterial()" style="display:none; background:#ff9800;">✔ Update</button>
         <button id="matCancelBtn" onclick="cancelEditMaterial()" style="display:none; background:#757575;">Cancel</button>
-        <span id="matEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing supply</span>
+        <span id="matEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing material</span>
       </div>
       
       <table>
         <thead>
           <tr>
-            <th>No.</th>
-            <th>Order Date</th>
+            <th style="text-align:center;">No.</th>
+            <th style="text-align:center;">Order Date</th>
             <th>Shop</th>
             <th>Product</th>
             <th>Variation</th>
-            <th>Qty</th>
-            <th>Total Price</th>
-            <th>Price/QTY</th>
-            <th>Actions</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right; padding-right:16px;">Total Price</th>
+            <th style="text-align:right; padding-right:16px;">Price/QTY</th>
+            <th style="text-align:center;">Action</th>
           </tr>
         </thead>
         <tbody id="materialsBody">
@@ -192,25 +196,25 @@
       </table>
     </div>
 
-    <!-- PRODUCTS TAB -->
+    <!-- PRODUCT TAB -->
     <div id="products" class="tab-content active">
-      <h2>Products</h2>
-      <p style="font-size:13px; color:#7a6248; margin-bottom:15px;">Products are saved here from the 🧮 Calculator tab.</p>
+      <h2>Product</h2>
+      <p style="font-size:13px; color:#7a6248; margin-bottom:15px;">Products are saved here from the 🧮 Pricing Calculator tab.</p>
       <table>
         <thead>
           <tr>
-            <th>No.</th>
+            <th style="text-align:center;">No.</th>
             <th>Product</th>
-            <th>Cost Price</th>
-            <th>Markup</th>
-            <th>Discount</th>
-            <th>Tax</th>
-            <th>Price Before Tax</th>
-            <th>Tax Amt</th>
-            <th>Selling Price</th>
-            <th>Profit</th>
-            <th>Margin</th>
-            <th>Actions</th>
+            <th style="text-align:right; padding-right:16px;">Cost Price</th>
+            <th style="text-align:center;">Markup</th>
+            <th style="text-align:center;">Discount</th>
+            <th style="text-align:center;">Tax</th>
+            <th style="text-align:right; padding-right:16px;">Price Before Tax</th>
+            <th style="text-align:right; padding-right:16px;">Tax Amt</th>
+            <th style="text-align:right; padding-right:16px;">Selling Price</th>
+            <th style="text-align:right; padding-right:16px;">Profit</th>
+            <th style="text-align:center;">Margin</th>
+            <th style="text-align:center;">Action</th>
           </tr>
         </thead>
         <tbody id="productsBody">
@@ -258,14 +262,14 @@
       <table>
         <thead>
           <tr>
-            <th>No.</th>
-            <th>Order Date</th>
+            <th style="text-align:center;">No.</th>
+            <th style="text-align:center;">Order Date</th>
             <th>Shop</th>
             <th>Product</th>
             <th>Variation</th>
-            <th>Qty</th>
-            <th>Total Price</th>
-            <th>Actions</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right; padding-right:16px;">Total Price</th>
+            <th style="text-align:center;">Action</th>
           </tr>
         </thead>
         <tbody id="equipmentBody">
@@ -276,7 +280,7 @@
 
     <!-- OVERHEAD TAB -->
     <div id="overhead" class="tab-content">
-      <h2>Overhead Costs</h2>
+      <h2>Overhead Cost</h2>
       <div class="form-grid">
         <div class="form-group">
           <label>Date</label>
@@ -309,13 +313,13 @@
       <table>
         <thead>
           <tr>
-            <th>No.</th>
-            <th>Date</th>
+            <th style="text-align:center;">No.</th>
+            <th style="text-align:center;">Date</th>
             <th>Description</th>
-            <th>HR/QTY</th>
-            <th>Total Amount</th>
-            <th>Amount/HR/QTY</th>
-            <th>Actions</th>
+            <th style="text-align:center;">HR/QTY</th>
+            <th style="text-align:right; padding-right:16px;">Total Amount</th>
+            <th style="text-align:right; padding-right:16px;">Amount/HR/QTY</th>
+            <th style="text-align:center;">Action</th>
           </tr>
         </thead>
         <tbody id="overheadBody">
@@ -325,9 +329,9 @@
       <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Overhead: <span id="totalOverhead" style="color:#2e7d32;">₱0.00</span></p>
     </div>
 
-    <!-- ORDERS TAB -->
+    <!-- ORDER TAB -->
     <div id="orders" class="tab-content">
-      <h2>Orders</h2>
+      <h2>Order</h2>
       <div class="form-grid">
         <div class="form-group">
           <label>Order Date</label>
@@ -388,23 +392,25 @@
           <input type="text" id="ordNotes" placeholder="Optional notes">
         </div>
       </div>
-      <button onclick="addOrder()">+ Add Order</button>
+      <button id="ordAddBtn" onclick="addOrder()">+ Add Order</button>
+      <button id="ordUpdateBtn" onclick="updateOrder()" style="display:none; background:#ff9800; margin-left:8px;">✔ Update</button>
+      <button id="ordCancelBtn" onclick="cancelEditOrder()" style="display:none; background:#757575; margin-left:8px;">Cancel</button>
 
       <table style="margin-top:20px;">
         <thead>
           <tr>
-            <th>No.</th>
-            <th>Order Date</th>
+            <th style="text-align:center;">No.</th>
+            <th style="text-align:center;">Order Date</th>
             <th>Customer</th>
             <th>Contact</th>
             <th>Email</th>
             <th>Product</th>
             <th>Variation</th>
-            <th>Qty</th>
-            <th>Unit Price</th>
-            <th>Total</th>
-            <th>Payment</th>
-            <th>Status</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right; padding-right:16px;">Unit Price</th>
+            <th style="text-align:right; padding-right:16px;">Total</th>
+            <th style="text-align:center;">Payment</th>
+            <th style="text-align:center;">Status</th>
             <th>Notes</th>
             <th></th>
           </tr>
@@ -481,8 +487,13 @@
       <table style="margin-bottom:24px;">
         <thead>
           <tr>
-            <th>Month</th><th>No. of Orders</th><th>Total Revenue</th>
-            <th>Paid</th><th>Pending / Partial</th><th>Delivered</th><th>Cancelled</th>
+            <th>Month</th>
+            <th style="text-align:center;">No. of Orders</th>
+            <th style="text-align:right; padding-right:16px;">Total Revenue</th>
+            <th style="text-align:right; padding-right:16px;">Paid</th>
+            <th style="text-align:center;">Pending / Partial</th>
+            <th style="text-align:center;">Delivered</th>
+            <th style="text-align:center;">Cancelled</th>
           </tr>
         </thead>
         <tbody id="soMonthlyBody"></tbody>
@@ -492,7 +503,12 @@
       <h3 style="color:#2e7d32;margin-bottom:10px;font-size:15px;">Top Products</h3>
       <table>
         <thead>
-          <tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty Sold</th><th>Revenue</th></tr>
+          <tr>
+            <th>Product</th><th>Variation</th>
+            <th style="text-align:center;">Orders</th>
+            <th style="text-align:center;">Qty Sold</th>
+            <th style="text-align:right; padding-right:16px;">Revenue</th>
+          </tr>
         </thead>
         <tbody id="soProductsBody"></tbody>
       </table>
@@ -560,14 +576,14 @@
       <table>
         <thead>
           <tr>
-            <th>No.</th>
-            <th>Type</th>
-            <th>Date</th>
+            <th style="text-align:center;">No.</th>
+            <th style="text-align:center;">Type</th>
+            <th style="text-align:center;">Date</th>
             <th>Shop</th>
             <th>Product</th>
             <th>Variation</th>
-            <th>Qty</th>
-            <th>Total Price</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right; padding-right:16px;">Total Price</th>
           </tr>
         </thead>
         <tbody id="evBody">
@@ -591,7 +607,7 @@
 
           <!-- Supplies Cost -->
           <div class="form-group">
-            <label>Cost Price — Supplies</label>
+            <label>Cost Price — Material</label>
             <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
               <table style="margin:0; box-shadow:none; background:transparent;" id="calcSuppliesTable">
                 <thead>
@@ -605,16 +621,16 @@
                 <tbody id="calcSuppliesBody"></tbody>
               </table>
               <button onclick="addCalcSupplyRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
-              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Supplies Cost: <span id="calcSuppliesTotal" style="color:#2e7d32;">₱0.00</span></p>
+              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Material Cost: <span id="calcSuppliesTotal" style="color:#2e7d32;">₱0.00</span></p>
             </div>
           </div>
 
           <div class="form-group">
-            <label>Overhead Costs</label>
+            <label>Overhead Cost</label>
             <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;" id="calcOverheadList">
               <p style="color:#999; font-size:13px;">No overhead costs added yet</p>
             </div>
-            <p style="margin-top:8px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Overhead Selected: <span id="calcOverheadTotal" style="color:#2e7d32;">₱0.00</span></p>
+            <p style="margin-top:8px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Overhead Cost: <span id="calcOverheadTotal" style="color:#2e7d32;">₱0.00</span></p>
           </div>
           <div class="form-group">
             <label>Markup (%)</label>
@@ -647,12 +663,12 @@
                 <tr style="border-top:1px solid #e0d5c5;"><td style="color:#7a6248;">Total Cost Price</td><td id="rCalcCost" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Markup Amount</td><td id="rCalcMarkupAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Price Before Discount</td><td id="rCalcBeforeDiscount" class="price-col">₱0.00</td></tr>
-                <tr><td style="color:#7a6248;">Discount Amount</td><td id="rCalcDiscountAmt" style="color:#c0392b; font-weight:700;">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Discount Amount</td><td id="rCalcDiscountAmt" style="color:#c0392b; font-weight:700; text-align:right; padding-right:16px;">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Price Before Tax</td><td id="rCalcBeforeTax" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Tax Amount</td><td id="rCalcTaxAmt" class="price-col">₱0.00</td></tr>
                 <tr style="border-top:2px solid #e0d5c5;">
-                  <td style="color:#2e7d32; font-weight:700; font-size:15px;">Selling Price (per unit)</td>
-                  <td id="rCalcSelling" style="color:#2e7d32; font-weight:700; font-size:15px;">₱0.00</td>
+                  <td style="color:#7c3aed; font-weight:700; font-size:15px;">Selling Price (per unit)</td>
+                  <td id="rCalcSelling" class="sell-col" style="font-size:15px; text-align:right; padding-right:16px;">₱0.00</td>
                 </tr>
                 <tr><td style="color:#7a6248;">Profit (per unit)</td><td id="rCalcProfit" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Profit Margin</td><td id="rCalcMargin" class="price-col">0.00%</td></tr>
@@ -817,28 +833,28 @@
     function renderMaterials() {
       const tbody = document.getElementById('materialsBody');
       if (materials.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999;">No supplies added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999;">No material added yet</td></tr>';
         return;
       }
-      tbody.innerHTML = materials.map((m, i) => {
-        // Always parse as numbers (Sheets returns strings)
+      const sorted = [...materials].map((m, i) => ({ ...m, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      tbody.innerHTML = sorted.map((m, idx) => {
         const qty = parseFloat(m.qty) || 0;
         const price = parseFloat(m.price) || 0;
         const pricePerQty = qty > 0 ? price / qty : (parseFloat(m.pricePerQty) || 0);
         return `
         <tr>
-          <td>${i + 1}</td>
-          <td>${m.date || '—'}</td>
+          <td style="text-align:center;">${idx + 1}</td>
+          <td style="text-align:center;">${m.date || '—'}</td>
           <td>${m.shop || '—'}</td>
           <td>${m.name}</td>
           <td>${m.variation || '—'}</td>
-          <td style="text-align:right;">${qty}</td>
+          <td style="text-align:center;">${qty}</td>
           <td class="price-col">${fmt(price)}</td>
           <td class="price-col">${fmt(pricePerQty)}</td>
-          <td>
-            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editMaterial(${i})">✏️ Edit</button>
-            <button class="btn-delete" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; margin-right:5px;" onclick="duplicateMaterial(${i})">⧉ Copy</button>
-            <button class="btn-delete" onclick="deleteMaterial(${i})">Delete</button>
+          <td style="text-align:center;">
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editMaterial(${m._i})">✏️ Edit</button>
+            <button class="btn-delete" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; margin-right:5px;" onclick="duplicateMaterial(${m._i})">⧉ Copy</button>
+            <button class="btn-delete" onclick="deleteMaterial(${m._i})">✕ Delete</button>
           </td>
         </tr>
         `;
@@ -955,18 +971,19 @@
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No equipment added yet</td></tr>';
         return;
       }
-      tbody.innerHTML = equipment.map((e, i) => `
+      const sorted = [...equipment].map((e, i) => ({ ...e, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      tbody.innerHTML = sorted.map((e, idx) => `
         <tr>
-          <td>${i + 1}</td>
-          <td>${e.date || '—'}</td>
+          <td style="text-align:center;">${idx + 1}</td>
+          <td style="text-align:center;">${e.date || '—'}</td>
           <td>${e.shop || '—'}</td>
           <td>${e.name}</td>
           <td>${e.variation || '—'}</td>
-          <td style="text-align:right;">${parseFloat(e.qty) || 0}</td>
+          <td style="text-align:center;">${parseFloat(e.qty) || 0}</td>
           <td class="price-col">${fmt(parseFloat(e.price) || 0)}</td>
-          <td>
-            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editEquipment(${i})">✏️ Edit</button>
-            <button class="btn-delete" onclick="deleteEquipment(${i})">Delete</button>
+          <td style="text-align:center;">
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editEquipment(${e._i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteEquipment(${e._i})">✕ Delete</button>
           </td>
         </tr>
       `).join('');
@@ -1129,22 +1146,22 @@
         document.getElementById('totalOverhead').textContent = '₱0.00';
         return;
       }
-      tbody.innerHTML = overhead.map((o, i) => {
-        // Always parse as numbers (Sheets returns strings)
+      const sorted = [...overhead].map((o, i) => ({ ...o, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      tbody.innerHTML = sorted.map((o, idx) => {
         const qty = parseFloat(o.qty) || 0;
         const amount = parseFloat(o.amount) || 0;
         const amountPerQty = qty > 0 ? amount / qty : (parseFloat(o.amountPerQty) || 0);
         return `
         <tr>
-          <td>${i + 1}</td>
-          <td>${o.date || '—'}</td>
+          <td style="text-align:center;">${idx + 1}</td>
+          <td style="text-align:center;">${o.date || '—'}</td>
           <td>${o.desc}</td>
-          <td style="text-align:right;">${qty}</td>
+          <td style="text-align:center;">${qty}</td>
           <td class="price-col">${fmt(amount)}</td>
           <td class="price-col">${fmt(amountPerQty)}</td>
-          <td>
-            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editOverhead(${i})">✏️ Edit</button>
-            <button class="btn-delete" onclick="deleteOverhead(${i})">Delete</button>
+          <td style="text-align:center;">
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editOverhead(${o._i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteOverhead(${o._i})">✕ Delete</button>
           </td>
         </tr>
         `;
@@ -1333,8 +1350,8 @@
         tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:#999;">No products saved yet</td></tr>';
         return;
       }
-      tbody.innerHTML = products.map((p, i) => {
-        // Always parse as numbers and recalculate
+      const sorted = [...products].map((p, i) => ({ ...p, _i: i })).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      tbody.innerHTML = sorted.map((p, idx) => {
         const cost     = parseFloat(p.cost) || 0;
         const markup   = parseFloat(p.markup) || 0;
         const discount = parseFloat(p.discount) || 0;
@@ -1349,20 +1366,20 @@
         const margin              = selling > 0 ? (profit / selling * 100) : 0;
         return `
         <tr>
-          <td>${i + 1}</td>
+          <td style="text-align:center;">${idx + 1}</td>
           <td>${p.name}</td>
           <td class="price-col">${fmt(cost)}</td>
-          <td>${markup.toFixed(1)}%</td>
-          <td>${discount.toFixed(1)}%</td>
-          <td>${tax.toFixed(1)}%</td>
+          <td style="text-align:center;">${markup.toFixed(2)}%</td>
+          <td style="text-align:center;">${discount.toFixed(2)}%</td>
+          <td style="text-align:center;">${tax.toFixed(2)}%</td>
           <td class="price-col">${fmt(priceBeforeTax)}</td>
           <td class="price-col">${fmt(taxAmt)}</td>
-          <td class="price-col">${fmt(selling)}</td>
+          <td class="sell-col">${fmt(selling)}</td>
           <td class="price-col">${fmt(profit)}</td>
-          <td style="text-align:right;">${margin.toFixed(1)}%</td>
-          <td>
-            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${i})">✏️ Edit</button>
-            <button class="btn-delete" onclick="deleteProduct(${i})">Delete</button>
+          <td style="text-align:center;">${margin.toFixed(2)}%</td>
+          <td style="text-align:center;">
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${p._i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteProduct(${p._i})">✕ Delete</button>
           </td>
         </tr>
         `;
@@ -1417,6 +1434,7 @@
 
     function editOrder(i) {
       const o = orders[i];
+      editingOrderIndex = i;
       document.getElementById('ordDate').value      = o.date || '';
       document.getElementById('ordCustomer').value  = o.customer || '';
       document.getElementById('ordContact').value   = o.contact || '';
@@ -1429,10 +1447,54 @@
       document.getElementById('ordPayment').value   = o.payment || 'Pending';
       document.getElementById('ordStatus').value    = o.status || 'New';
       document.getElementById('ordNotes').value     = o.notes || '';
-      orders.splice(i, 1);
-      localStorage.setItem('orders', JSON.stringify(orders));
-      renderOrders();
+      document.getElementById('ordAddBtn').style.display = 'none';
+      document.getElementById('ordUpdateBtn').style.display = 'inline-block';
+      document.getElementById('ordCancelBtn').style.display = 'inline-block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function updateOrder() {
+      if (editingOrderIndex < 0) return;
+      const date     = document.getElementById('ordDate').value;
+      const customer = document.getElementById('ordCustomer').value.trim();
+      const contact  = document.getElementById('ordContact').value.trim();
+      const email    = document.getElementById('ordEmail').value.trim();
+      const product  = document.getElementById('ordProduct').value.trim();
+      const variation= document.getElementById('ordVariation').value.trim();
+      const qty      = parseFloat(document.getElementById('ordQty').value) || 0;
+      const price    = parseFloat(document.getElementById('ordPrice').value) || 0;
+      const total    = qty * price;
+      const payment  = document.getElementById('ordPayment').value;
+      const status   = document.getElementById('ordStatus').value;
+      const notes    = document.getElementById('ordNotes').value.trim();
+      if (!customer || !product || qty <= 0 || price <= 0) { alert('Please fill required fields'); return; }
+      orders[editingOrderIndex] = { date, customer, contact, email, product, variation, qty, price, total, payment, status, notes };
+      localStorage.setItem('orders', JSON.stringify(orders));
+      await syncToSheets();
+      cancelEditOrder();
+      renderOrders();
+      buildSalesYearOptions();
+      renderSalesOverview();
+    }
+
+    function cancelEditOrder() {
+      editingOrderIndex = -1;
+      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordNotes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('ordPayment').value = 'Pending';
+      document.getElementById('ordStatus').value = 'New';
+      document.getElementById('ordAddBtn').style.display = 'inline-block';
+      document.getElementById('ordUpdateBtn').style.display = 'none';
+      document.getElementById('ordCancelBtn').style.display = 'none';
+    }
+
+    async function copyOrder(i) {
+      const o = { ...orders[i] };
+      orders.push(o);
+      localStorage.setItem('orders', JSON.stringify(orders));
+      await syncToSheets();
+      renderOrders();
+      buildSalesYearOptions();
+      renderSalesOverview();
     }
 
     function getPaymentBadge(p) {
@@ -1447,6 +1509,8 @@
       return `<span style="background:${bg};color:${color};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${s||'—'}</span>`;
     }
 
+    let editingOrderIndex = -1;
+
     function renderOrders() {
       const tbody = document.getElementById('ordersBody');
       if (orders.length === 0) {
@@ -1454,24 +1518,26 @@
         document.getElementById('totalRevenue').textContent = '₱0.00';
         return;
       }
-      tbody.innerHTML = orders.map((o, i) => `
+      const sorted = [...orders].map((o, i) => ({ ...o, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      tbody.innerHTML = sorted.map((o, idx) => `
         <tr>
-          <td>${i + 1}</td>
-          <td>${o.date || '—'}</td>
+          <td style="text-align:center;">${idx + 1}</td>
+          <td style="text-align:center;">${o.date || '—'}</td>
           <td>${o.customer}</td>
           <td>${o.contact || '—'}</td>
           <td>${o.email || '—'}</td>
           <td>${o.product}</td>
           <td>${o.variation || '—'}</td>
-          <td style="text-align:right;">${o.qty}</td>
-          <td style="text-align:right;">${fmt(parseFloat(o.price))}</td>
-          <td style="color:#2e7d32; font-weight:600; text-align:right;">${fmt(parseFloat(o.total))}</td>
-          <td>${getPaymentBadge(o.payment)}</td>
-          <td>${getStatusBadge(o.status)}</td>
+          <td style="text-align:center;">${o.qty}</td>
+          <td style="text-align:right; padding-right:16px;">${fmt(parseFloat(o.price))}</td>
+          <td style="color:#2e7d32; font-weight:600; text-align:right; padding-right:16px;">${fmt(parseFloat(o.total))}</td>
+          <td style="text-align:center;">${getPaymentBadge(o.payment)}</td>
+          <td style="text-align:center;">${getStatusBadge(o.status)}</td>
           <td>${o.notes || '—'}</td>
-          <td style="white-space:nowrap;">
-            <button class="btn-delete" style="background:#fff8e1;color:#ff9800;border:1px solid #ffe082;margin-right:4px;" onclick="editOrder(${i})">✏️</button>
-            <button class="btn-delete" onclick="deleteOrder(${i})">✕</button>
+          <td style="white-space:nowrap; text-align:center;">
+            <button class="btn-delete" style="background:#fff8e1;color:#ff9800;border:1px solid #ffe082;margin-right:4px;" onclick="editOrder(${o._i})">✏️</button>
+            <button class="btn-delete" style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;margin-right:4px;" onclick="copyOrder(${o._i})">⧉</button>
+            <button class="btn-delete" onclick="deleteOrder(${o._i})">✕</button>
           </td>
         </tr>
       `).join('');
@@ -1732,8 +1798,12 @@
         return true;
       });
 
-      // Sort by date desc
-      rows.sort((a, b) => b.date.localeCompare(a.date));
+      // Sort by date desc, then type
+      rows.sort((a, b) => {
+        const dateCmp = b.date.localeCompare(a.date);
+        if (dateCmp !== 0) return dateCmp;
+        return a.type.localeCompare(b.type);
+      });
 
       const totalAll   = rows.reduce((s, r) => s + r.price, 0);
       const totalSup   = rows.filter(r => r.type === 'Supplies').reduce((s, r) => s + r.price, 0);
@@ -1751,13 +1821,13 @@
       }
       tbody.innerHTML = rows.map((r, i) => `
         <tr>
-          <td>${i + 1}</td>
-          <td><span style="background:${r.type==='Supplies'?'#dbeafe':'#ede9fe'};color:${r.type==='Supplies'?'#1d4ed8':'#7c3aed'};padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">${r.type}</span></td>
-          <td>${r.date || '—'}</td>
+          <td style="text-align:center;">${i + 1}</td>
+          <td style="text-align:center;"><span style="background:${r.type==='Supplies'?'#dbeafe':'#ede9fe'};color:${r.type==='Supplies'?'#1d4ed8':'#7c3aed'};padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">${r.type}</span></td>
+          <td style="text-align:center;">${r.date || '—'}</td>
           <td>${r.shop}</td>
           <td>${r.name}</td>
           <td>${r.variation}</td>
-          <td style="text-align:right;">${r.qty}</td>
+          <td style="text-align:center;">${r.qty}</td>
           <td class="price-col">${fmt(r.price)}</td>
         </tr>
       `).join('');
@@ -1830,12 +1900,12 @@
         const empty = mOrders.length === 0;
         return `<tr>
           <td>${mName}</td>
-          <td style="text-align:right;">${empty ? '—' : mOrders.length}</td>
+          <td style="text-align:center;">${empty ? '—' : mOrders.length}</td>
           <td class="price-col">${empty ? '—' : fmt(mRev)}</td>
           <td class="price-col">${empty ? '—' : fmt(mPaid)}</td>
-          <td class="price-col">${empty ? '—' : fmt(mPending)}</td>
-          <td style="text-align:right;">${empty ? '—' : mDelivered}</td>
-          <td style="text-align:right;">${empty ? '—' : mCancelled}</td>
+          <td style="text-align:center;">${empty ? '—' : mOrders.filter(o => o.payment !== 'Paid').length}</td>
+          <td style="text-align:center;">${empty ? '—' : mDelivered}</td>
+          <td style="text-align:center;">${empty ? '—' : mCancelled}</td>
         </tr>`;
       }).join('');
 
@@ -1848,15 +1918,15 @@
         prodMap[key].qty += parseFloat(o.qty) || 0;
         prodMap[key].revenue += parseFloat(o.total) || 0;
       });
-      const topProds = Object.values(prodMap).sort((a, b) => b.revenue - a.revenue);
+      const topProds = Object.values(prodMap).sort((a, b) => (a.product || '').localeCompare(b.product || ''));
       const prodBody = document.getElementById('soProductsBody');
       prodBody.innerHTML = topProds.length === 0
         ? '<tr><td colspan="5" style="text-align:center;color:#999;">No data</td></tr>'
         : topProds.map(p => `<tr>
             <td>${p.product}</td>
             <td>${p.variation}</td>
-            <td style="text-align:right;">${p.orders}</td>
-            <td style="text-align:right;">${p.qty}</td>
+            <td style="text-align:center;">${p.orders}</td>
+            <td style="text-align:center;">${p.qty}</td>
             <td class="price-col">${fmt(p.revenue)}</td>
           </tr>`).join('');
     }
