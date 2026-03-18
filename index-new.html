@@ -21,6 +21,30 @@
       overflow-y: auto;
     }
     .sidebar h1 { font-size: 20px; color: #2e7d32; margin-bottom: 30px; }
+    .sidebar-header {
+      margin-bottom: 20px;
+    }
+    .logo-area {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+    }
+    .logo-img {
+      width: 44px; height: 44px; border-radius: 8px; object-fit: cover;
+      border: 2px solid #d9cfc0; cursor: pointer;
+    }
+    .logo-placeholder {
+      width: 44px; height: 44px; border-radius: 8px;
+      border: 2px dashed #b0a090; background: #f0ebe0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 18px; color: #a08060; flex-shrink: 0;
+    }
+    .logo-placeholder:hover { background: #e8e0d0; }
+    .brand-name {
+      font-size: 16px; font-weight: 700; color: #4a90d9;
+      border: none; background: transparent; outline: none;
+      width: 100%; cursor: text; padding: 2px 4px; border-radius: 4px;
+    }
+    .brand-name:hover { background: #f0ebe0; }
+    .brand-name:focus { background: #fff; border: 1px solid #4caf50; }
     .tabs { display: flex; flex-direction: column; gap: 5px; }
     .tab { 
       padding: 8px 15px; 
@@ -74,23 +98,34 @@
     th { background: #dbeafe; color: #1d4ed8; font-weight: 600; text-transform: uppercase; }
     .btn-delete { background: #fdecea; border: 1px solid #f5c6c2; color: #c0392b; padding: 5px 10px; font-size: 12px; }
     .btn-delete:hover { background: #fad4d0; }
-    .price-col { color: #2e7d32; font-weight: 700; }
+    .price-col { color: #2e7d32; font-weight: 700; text-align: right; }
+    .num-col { text-align: right; }
+    th.right, td.right { text-align: right; }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <h1>🏷️ WanderCrafts PH</h1>
+    <div class="sidebar-header">
+      <div class="logo-area">
+        <div class="logo-placeholder" id="logoPlaceholder" onclick="document.getElementById('logoUpload').click()" title="Click to upload logo">
+          <span id="logoEmoji">🖼️</span>
+        </div>
+        <img id="logoImg" class="logo-img" style="display:none;" onclick="document.getElementById('logoUpload').click()" title="Click to change logo">
+        <input type="file" id="logoUpload" accept="image/*" style="display:none;" onchange="uploadLogo(event)">
+        <input type="text" class="brand-name" id="brandName" value="WanderCrafts PH" onchange="saveBrandName()">
+      </div>
+    </div>
     <div class="tabs">
-      <p style="font-size:10px; font-weight:700; color:#a08060; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Inventory</p>
-      <button class="tab active" onclick="showTab('products')">🛍️ Products</button>
-      <button class="tab" onclick="showTab('calculator')">🧮 Calculator</button>
-      <button class="tab" onclick="showTab('materials')">📦 Supplies</button>
-      <button class="tab" onclick="showTab('equipment')">🔧 Equipment</button>
-      <button class="tab" onclick="showTab('overhead')">💡 Overhead</button>
-      <button class="tab" onclick="showTab('expenseview')">📊 Expense View</button>
-      <p style="font-size:10px; font-weight:700; color:#a08060; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Sales</p>
-      <button class="tab" onclick="showTab('orders')">📋 Orders</button>
-      <button class="tab" onclick="showTab('salesoverview')">📈 Sales Overview</button>
+      <p style="font-size:15px; font-weight:700; color:#4a90d9; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Inventory</p>
+      <button class="tab active" onclick="showTab('products')" style="padding-left:28px;">🛍️ Products</button>
+      <button class="tab" onclick="showTab('calculator')" style="padding-left:28px;">🧮 Calculator</button>
+      <button class="tab" onclick="showTab('materials')" style="padding-left:28px;">📦 Supplies</button>
+      <button class="tab" onclick="showTab('equipment')" style="padding-left:28px;">🔧 Equipment</button>
+      <button class="tab" onclick="showTab('overhead')" style="padding-left:28px;">💡 Overhead</button>
+      <button class="tab" onclick="showTab('expenseview')" style="padding-left:28px;">📊 Expense Overview</button>
+      <p style="font-size:15px; font-weight:700; color:#4a90d9; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Sales</p>
+      <button class="tab" onclick="showTab('orders')" style="padding-left:28px;">📋 Orders</button>
+      <button class="tab" onclick="showTab('salesoverview')" style="padding-left:28px;">📈 Sales Overview</button>
     </div>
     <button class="gsheets-btn-sidebar" id="gsheetsBtn" onclick="connectSupabase()">🗄️ Sync Supabase</button>
   </div>
@@ -385,7 +420,7 @@
       <h2>Sales Overview</h2>
 
       <!-- Filters -->
-      <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:20px;">
+      <div style="background:white; border-radius:10px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-bottom:20px; display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; width:100%;">
         <div class="form-group" style="margin:0;">
           <label>Year</label>
           <select id="soYear" onchange="renderSalesOverview()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"></select>
@@ -415,27 +450,27 @@
             <option value="Ready">Ready</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option>
           </select>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button onclick="exportSalesExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px;">📥 Export Excel</button>
-          <button onclick="exportSalesPDF()" style="background:#c0392b; font-size:13px; padding:8px 14px;">🖨️ Export PDF</button>
+        <div style="display:flex; gap:8px; align-self:flex-end; margin-left:auto;">
+          <button onclick="exportSalesExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin:0;">📥 Export Excel</button>
+          <button onclick="exportSalesPDF()" style="background:#c0392b; font-size:13px; padding:8px 14px; margin:0;">🖨️ Export PDF</button>
         </div>
       </div>
 
       <!-- Summary Cards -->
-      <div style="display:flex; gap:15px; margin-bottom:24px; flex-wrap:wrap;">
-        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:24px;">
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
           <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Total Revenue</p>
           <p id="soTotalRev" style="font-size:22px;font-weight:700;color:#2e7d32;">₱0.00</p>
         </div>
-        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
           <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Total Orders</p>
           <p id="soTotalOrders" style="font-size:22px;font-weight:700;color:#1d4ed8;">0</p>
         </div>
-        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
           <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Paid Revenue</p>
           <p id="soPaidRev" style="font-size:22px;font-weight:700;color:#16a34a;">₱0.00</p>
         </div>
-        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
           <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Pending / Partial</p>
           <p id="soPendingRev" style="font-size:22px;font-weight:700;color:#dc2626;">₱0.00</p>
         </div>
@@ -463,16 +498,15 @@
       </table>
     </div>
 
-    <!-- EXPENSE VIEW TAB -->
+    <!-- EXPENSE OVERVIEW TAB -->
     <div id="expenseview" class="tab-content">
-      <h2>Expense View</h2>
+      <h2>Expense Overview</h2>
 
       <!-- Filters -->
-      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
+      <div style="background:white; border-radius:10px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-bottom:20px; display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; width:100%;">
         <div class="form-group" style="margin:0;">
           <label>Year</label>
-          <select id="evYear" onchange="renderExpenseView()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
-          </select>
+          <select id="evYear" onchange="renderExpenseView()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"></select>
         </div>
         <div class="form-group" style="margin:0;">
           <label>Month</label>
@@ -500,23 +534,23 @@
             <option value="Equipment">Equipment</option>
           </select>
         </div>
-        <div style="margin-top:18px; display:flex; gap:8px;">
-          <button onclick="exportExpenseExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px;">📥 Export Excel</button>
-          <button onclick="exportExpensePDF()" style="background:#c0392b; font-size:13px; padding:8px 14px;">🖨️ Export PDF</button>
+        <div style="display:flex; gap:8px; align-self:flex-end; margin-left:auto;">
+          <button onclick="exportExpenseExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin:0;">📥 Export Excel</button>
+          <button onclick="exportExpensePDF()" style="background:#c0392b; font-size:13px; padding:8px 14px; margin:0;">🖨️ Export PDF</button>
         </div>
       </div>
 
       <!-- Summary Cards -->
-      <div style="display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap;">
-        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08); min-width:160px;">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:20px;">
+        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
           <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Total Expenses</p>
           <p id="evTotal" style="font-size:22px; font-weight:700; color:#2e7d32;">₱0.00</p>
         </div>
-        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08); min-width:160px;">
+        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
           <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Supplies Cost</p>
           <p id="evSuppliesTotal" style="font-size:22px; font-weight:700; color:#1d4ed8;">₱0.00</p>
         </div>
-        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08); min-width:160px;">
+        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
           <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Equipment Cost</p>
           <p id="evEquipTotal" style="font-size:22px; font-weight:700; color:#7c3aed;">₱0.00</p>
         </div>
@@ -635,6 +669,39 @@
     let materials = JSON.parse(localStorage.getItem('materials') || '[]');
     let products = JSON.parse(localStorage.getItem('products') || '[]');
     let equipment = JSON.parse(localStorage.getItem('equipment') || '[]');
+
+    // Logo & brand name persistence
+    function uploadLogo(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const dataUrl = ev.target.result;
+        localStorage.setItem('brandLogo', dataUrl);
+        applyLogo(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyLogo(dataUrl) {
+      const img = document.getElementById('logoImg');
+      const placeholder = document.getElementById('logoPlaceholder');
+      img.src = dataUrl;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+    }
+
+    function saveBrandName() {
+      localStorage.setItem('brandName', document.getElementById('brandName').value);
+    }
+
+    // Restore logo & brand name on load
+    window.addEventListener('load', () => {
+      const logo = localStorage.getItem('brandLogo');
+      if (logo) applyLogo(logo);
+      const name = localStorage.getItem('brandName');
+      if (name) document.getElementById('brandName').value = name;
+    });
     let overhead = JSON.parse(localStorage.getItem('overhead') || '[]');
     let orders = JSON.parse(localStorage.getItem('orders') || '[]');
 
@@ -765,7 +832,7 @@
           <td>${m.shop || '—'}</td>
           <td>${m.name}</td>
           <td>${m.variation || '—'}</td>
-          <td>${qty}</td>
+          <td style="text-align:right;">${qty}</td>
           <td class="price-col">${fmt(price)}</td>
           <td class="price-col">${fmt(pricePerQty)}</td>
           <td>
@@ -895,7 +962,7 @@
           <td>${e.shop || '—'}</td>
           <td>${e.name}</td>
           <td>${e.variation || '—'}</td>
-          <td>${parseFloat(e.qty) || 0}</td>
+          <td style="text-align:right;">${parseFloat(e.qty) || 0}</td>
           <td class="price-col">${fmt(parseFloat(e.price) || 0)}</td>
           <td>
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editEquipment(${i})">✏️ Edit</button>
@@ -1072,7 +1139,7 @@
           <td>${i + 1}</td>
           <td>${o.date || '—'}</td>
           <td>${o.desc}</td>
-          <td>${qty}</td>
+          <td style="text-align:right;">${qty}</td>
           <td class="price-col">${fmt(amount)}</td>
           <td class="price-col">${fmt(amountPerQty)}</td>
           <td>
@@ -1292,7 +1359,7 @@
           <td class="price-col">${fmt(taxAmt)}</td>
           <td class="price-col">${fmt(selling)}</td>
           <td class="price-col">${fmt(profit)}</td>
-          <td>${margin.toFixed(1)}%</td>
+          <td style="text-align:right;">${margin.toFixed(1)}%</td>
           <td>
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${i})">✏️ Edit</button>
             <button class="btn-delete" onclick="deleteProduct(${i})">Delete</button>
@@ -1396,9 +1463,9 @@
           <td>${o.email || '—'}</td>
           <td>${o.product}</td>
           <td>${o.variation || '—'}</td>
-          <td>${o.qty}</td>
-          <td>${fmt(parseFloat(o.price))}</td>
-          <td style="color:#2e7d32; font-weight:600;">${fmt(parseFloat(o.total))}</td>
+          <td style="text-align:right;">${o.qty}</td>
+          <td style="text-align:right;">${fmt(parseFloat(o.price))}</td>
+          <td style="color:#2e7d32; font-weight:600; text-align:right;">${fmt(parseFloat(o.total))}</td>
           <td>${getPaymentBadge(o.payment)}</td>
           <td>${getStatusBadge(o.status)}</td>
           <td>${o.notes || '—'}</td>
@@ -1690,7 +1757,7 @@
           <td>${r.shop}</td>
           <td>${r.name}</td>
           <td>${r.variation}</td>
-          <td>${r.qty}</td>
+          <td style="text-align:right;">${r.qty}</td>
           <td class="price-col">${fmt(r.price)}</td>
         </tr>
       `).join('');
@@ -1709,7 +1776,7 @@
     function exportExpensePDF() {
       const win = window.open('', '_blank');
       const rows = [...document.querySelectorAll('#evBody tr')].map(tr => `<tr>${[...tr.querySelectorAll('td')].map(td => `<td style="padding:6px 10px;border:1px solid #ddd;">${td.innerHTML}</td>`).join('')}</tr>`).join('');
-      win.document.write(`<html><head><title>Expense View</title><style>body{font-family:sans-serif;font-size:13px;}table{border-collapse:collapse;width:100%;}th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}</style></head><body><h2>Expense View</h2><p>Total: ${document.getElementById('evTotalBottom').textContent}</p><table><thead><tr><th>No.</th><th>Type</th><th>Date</th><th>Shop</th><th>Product</th><th>Variation</th><th>Qty</th><th>Total Price</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+      win.document.write(`<html><head><title>Expense Overview</title><style>body{font-family:sans-serif;font-size:13px;}table{border-collapse:collapse;width:100%;}th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}</style></head><body><h2>Expense Overview</h2><p>Total: ${document.getElementById('evTotalBottom').textContent}</p><table><thead><tr><th>No.</th><th>Type</th><th>Date</th><th>Shop</th><th>Product</th><th>Variation</th><th>Qty</th><th>Total Price</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
       win.document.close(); win.print();
     }
 
@@ -1763,12 +1830,12 @@
         const empty = mOrders.length === 0;
         return `<tr>
           <td>${mName}</td>
-          <td>${empty ? '—' : mOrders.length}</td>
+          <td style="text-align:right;">${empty ? '—' : mOrders.length}</td>
           <td class="price-col">${empty ? '—' : fmt(mRev)}</td>
           <td class="price-col">${empty ? '—' : fmt(mPaid)}</td>
           <td class="price-col">${empty ? '—' : fmt(mPending)}</td>
-          <td>${empty ? '—' : mDelivered}</td>
-          <td>${empty ? '—' : mCancelled}</td>
+          <td style="text-align:right;">${empty ? '—' : mDelivered}</td>
+          <td style="text-align:right;">${empty ? '—' : mCancelled}</td>
         </tr>`;
       }).join('');
 
@@ -1788,8 +1855,8 @@
         : topProds.map(p => `<tr>
             <td>${p.product}</td>
             <td>${p.variation}</td>
-            <td>${p.orders}</td>
-            <td>${p.qty}</td>
+            <td style="text-align:right;">${p.orders}</td>
+            <td style="text-align:right;">${p.qty}</td>
             <td class="price-col">${fmt(p.revenue)}</td>
           </tr>`).join('');
     }
