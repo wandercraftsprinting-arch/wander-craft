@@ -23,11 +23,11 @@
     .sidebar h1 { font-size: 20px; color: #2e7d32; margin-bottom: 30px; }
     .tabs { display: flex; flex-direction: column; gap: 5px; }
     .tab { 
-      padding: 12px 15px; 
+      padding: 8px 15px; 
       background: transparent; 
       border: none; 
       cursor: pointer; 
-      font-size: 15px; 
+      font-size: 13px; 
       color: #7a6248;
       text-align: left;
       border-radius: 8px;
@@ -81,12 +81,16 @@
   <div class="sidebar">
     <h1>🏷️ WanderCrafts PH</h1>
     <div class="tabs">
-      <button class="tab active" onclick="showTab('materials')">📦 Supplies</button>
-      <button class="tab" onclick="showTab('products')">🛍️ Products</button>
+      <p style="font-size:10px; font-weight:700; color:#a08060; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Inventory</p>
+      <button class="tab active" onclick="showTab('products')">🛍️ Products</button>
+      <button class="tab" onclick="showTab('calculator')">🧮 Calculator</button>
+      <button class="tab" onclick="showTab('materials')">📦 Supplies</button>
       <button class="tab" onclick="showTab('equipment')">🔧 Equipment</button>
       <button class="tab" onclick="showTab('overhead')">💡 Overhead</button>
+      <button class="tab" onclick="showTab('expenseview')">📊 Expense View</button>
+      <p style="font-size:10px; font-weight:700; color:#a08060; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Sales</p>
       <button class="tab" onclick="showTab('orders')">📋 Orders</button>
-      <button class="tab" onclick="showTab('calculator')">🧮 Calculator</button>
+      <button class="tab" onclick="showTab('salesoverview')">📈 Sales Overview</button>
     </div>
     <button class="gsheets-btn-sidebar" id="gsheetsBtn" onclick="connectGoogleSheets()">📊 Connect Google Sheets</button>
   </div>
@@ -94,7 +98,7 @@
   <div class="main-content">
 
     <!-- SUPPLIES TAB -->
-    <div id="materials" class="tab-content active">
+    <div id="materials" class="tab-content">
       <h2>Supplies</h2>
       <div class="form-grid">
         <div class="form-group">
@@ -154,7 +158,7 @@
     </div>
 
     <!-- PRODUCTS TAB -->
-    <div id="products" class="tab-content">
+    <div id="products" class="tab-content active">
       <h2>Products</h2>
       <p style="font-size:13px; color:#7a6248; margin-bottom:15px;">Products are saved here from the 🧮 Calculator tab.</p>
       <table>
@@ -289,47 +293,256 @@
     <!-- ORDERS TAB -->
     <div id="orders" class="tab-content">
       <h2>Orders</h2>
-      <div class="form-group">
-        <label>Customer Name</label>
-        <input type="text" id="ordCustomer" placeholder="e.g. Maria Santos">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Order Date</label>
+          <input type="date" id="ordDate">
+        </div>
+        <div class="form-group">
+          <label>Customer Name</label>
+          <input type="text" id="ordCustomer" placeholder="e.g. Maria Santos">
+        </div>
+        <div class="form-group">
+          <label>Contact No.</label>
+          <input type="text" id="ordContact" placeholder="e.g. 09178024092">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="text" id="ordEmail" placeholder="e.g. maria@email.com">
+        </div>
+        <div class="form-group">
+          <label>Product</label>
+          <input type="text" id="ordProduct" placeholder="e.g. Bookmark">
+        </div>
+        <div class="form-group">
+          <label>Variation</label>
+          <input type="text" id="ordVariation" placeholder="e.g. Red">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="ordQty" placeholder="1" min="1" oninput="calculateOrder()">
+        </div>
+        <div class="form-group">
+          <label>Unit Price (₱)</label>
+          <input type="number" id="ordPrice" placeholder="0.00" step="0.01" oninput="calculateOrder()">
+        </div>
+        <div class="form-group">
+          <label>Total Amount (₱)</label>
+          <input type="number" id="ordTotal" readonly style="background:#f5f0e8; cursor:not-allowed;">
+        </div>
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select id="ordPayment" style="width:100%; padding:10px; border:1px solid #d9cfc0; border-radius:5px; font-size:14px;">
+            <option value="Pending">Pending</option>
+            <option value="Partial">Partial</option>
+            <option value="Paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Order Status</label>
+          <select id="ordStatus" style="width:100%; padding:10px; border:1px solid #d9cfc0; border-radius:5px; font-size:14px;">
+            <option value="New">New</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Ready">Ready</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <input type="text" id="ordNotes" placeholder="Optional notes">
+        </div>
       </div>
-      <div class="form-group">
-        <label>Product</label>
-        <input type="text" id="ordProduct" placeholder="e.g. Handmade Bag">
-      </div>
-      <div class="form-group">
-        <label>Quantity</label>
-        <input type="number" id="ordQty" placeholder="1" min="1">
-      </div>
-      <div class="form-group">
-        <label>Unit Price (₱)</label>
-        <input type="number" id="ordPrice" placeholder="0.00" step="0.01">
-      </div>
-      <div class="form-group">
-        <label>Total (₱)</label>
-        <input type="number" id="ordTotal" readonly style="background:#f5f0e8;">
-      </div>
-      <button onclick="calculateOrder()">Calculate Total</button>
       <button onclick="addOrder()">+ Add Order</button>
-      
-      <table>
+
+      <table style="margin-top:20px;">
         <thead>
           <tr>
             <th>No.</th>
+            <th>Order Date</th>
             <th>Customer</th>
+            <th>Contact</th>
+            <th>Email</th>
             <th>Product</th>
+            <th>Variation</th>
             <th>Qty</th>
             <th>Unit Price</th>
             <th>Total</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Notes</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="ordersBody">
-          <tr><td colspan="7" style="text-align:center; color:#999;">No orders added yet</td></tr>
+          <tr><td colspan="14" style="text-align:center; color:#999;">No orders added yet</td></tr>
         </tbody>
       </table>
       <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Revenue: <span id="totalRevenue" style="color:#2e7d32;">₱0.00</span></p>
     </div>
+    <!-- SALES OVERVIEW TAB -->
+    <div id="salesoverview" class="tab-content">
+      <h2>Sales Overview</h2>
+
+      <!-- Filters -->
+      <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:20px;">
+        <div class="form-group" style="margin:0;">
+          <label>Year</label>
+          <select id="soYear" onchange="renderSalesOverview()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Month</label>
+          <select id="soMonth" onchange="renderSalesOverview()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All Months</option>
+            <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+            <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+            <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Payment</label>
+          <select id="soPayment" onchange="renderSalesOverview()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All</option>
+            <option value="Pending">Pending</option><option value="Partial">Partial</option><option value="Paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Order Status</label>
+          <select id="soStatus" onchange="renderSalesOverview()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All</option>
+            <option value="New">New</option><option value="In Progress">In Progress</option>
+            <option value="Ready">Ready</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button onclick="exportSalesExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px;">📥 Export Excel</button>
+          <button onclick="exportSalesPDF()" style="background:#c0392b; font-size:13px; padding:8px 14px;">🖨️ Export PDF</button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display:flex; gap:15px; margin-bottom:24px; flex-wrap:wrap;">
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+          <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Total Revenue</p>
+          <p id="soTotalRev" style="font-size:22px;font-weight:700;color:#2e7d32;">₱0.00</p>
+        </div>
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+          <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Total Orders</p>
+          <p id="soTotalOrders" style="font-size:22px;font-weight:700;color:#1d4ed8;">0</p>
+        </div>
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+          <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Paid Revenue</p>
+          <p id="soPaidRev" style="font-size:22px;font-weight:700;color:#16a34a;">₱0.00</p>
+        </div>
+        <div style="background:white;border-radius:10px;padding:16px 24px;box-shadow:0 1px 4px rgba(0,0,0,0.08);min-width:150px;">
+          <p style="font-size:11px;color:#7a6248;text-transform:uppercase;font-weight:600;">Pending / Partial</p>
+          <p id="soPendingRev" style="font-size:22px;font-weight:700;color:#dc2626;">₱0.00</p>
+        </div>
+      </div>
+
+      <!-- Monthly Breakdown -->
+      <h3 style="color:#2e7d32;margin-bottom:10px;font-size:15px;">Monthly Breakdown</h3>
+      <table style="margin-bottom:24px;">
+        <thead>
+          <tr>
+            <th>Month</th><th>No. of Orders</th><th>Total Revenue</th>
+            <th>Paid</th><th>Pending / Partial</th><th>Delivered</th><th>Cancelled</th>
+          </tr>
+        </thead>
+        <tbody id="soMonthlyBody"></tbody>
+      </table>
+
+      <!-- Top Products -->
+      <h3 style="color:#2e7d32;margin-bottom:10px;font-size:15px;">Top Products</h3>
+      <table>
+        <thead>
+          <tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty Sold</th><th>Revenue</th></tr>
+        </thead>
+        <tbody id="soProductsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- EXPENSE VIEW TAB -->
+    <div id="expenseview" class="tab-content">
+      <h2>Expense View</h2>
+
+      <!-- Filters -->
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
+        <div class="form-group" style="margin:0;">
+          <label>Year</label>
+          <select id="evYear" onchange="renderExpenseView()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Month</label>
+          <select id="evMonth" onchange="renderExpenseView()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All Months</option>
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Type</label>
+          <select id="evType" onchange="renderExpenseView()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All</option>
+            <option value="Supplies">Supplies</option>
+            <option value="Equipment">Equipment</option>
+          </select>
+        </div>
+        <div style="margin-top:18px; display:flex; gap:8px;">
+          <button onclick="exportExpenseExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px;">📥 Export Excel</button>
+          <button onclick="exportExpensePDF()" style="background:#c0392b; font-size:13px; padding:8px 14px;">🖨️ Export PDF</button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap;">
+        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08); min-width:160px;">
+          <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Total Expenses</p>
+          <p id="evTotal" style="font-size:22px; font-weight:700; color:#2e7d32;">₱0.00</p>
+        </div>
+        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08); min-width:160px;">
+          <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Supplies Cost</p>
+          <p id="evSuppliesTotal" style="font-size:22px; font-weight:700; color:#1d4ed8;">₱0.00</p>
+        </div>
+        <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08); min-width:160px;">
+          <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Equipment Cost</p>
+          <p id="evEquipTotal" style="font-size:22px; font-weight:700; color:#7c3aed;">₱0.00</p>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Shop</th>
+            <th>Product</th>
+            <th>Variation</th>
+            <th>Qty</th>
+            <th>Total Price</th>
+          </tr>
+        </thead>
+        <tbody id="evBody">
+          <tr><td colspan="8" style="text-align:center; color:#999;">No records found</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:16px; font-size:15px; font-weight:600;">Total Expenses: <span id="evTotalBottom" style="color:#2e7d32;">₱0.00</span></p>
+    </div>
+
     <!-- CALCULATOR TAB -->
     <div id="calculator" class="tab-content">
       <h2>Pricing Calculator</h2>
@@ -511,6 +724,10 @@
         renderEquipment();
         renderOverhead();
         renderOrders();
+        buildYearOptions();
+        renderExpenseView();
+        buildSalesYearOptions();
+        renderSalesOverview();
       }
     }
 
@@ -1124,28 +1341,35 @@
     }
 
     async function addOrder() {
+      const date     = document.getElementById('ordDate').value;
       const customer = document.getElementById('ordCustomer').value.trim();
-      const product = document.getElementById('ordProduct').value.trim();
-      const qty = parseFloat(document.getElementById('ordQty').value) || 0;
-      const price = parseFloat(document.getElementById('ordPrice').value) || 0;
-      const total = parseFloat(document.getElementById('ordTotal').value) || 0;
-      
+      const contact  = document.getElementById('ordContact').value.trim();
+      const email    = document.getElementById('ordEmail').value.trim();
+      const product  = document.getElementById('ordProduct').value.trim();
+      const variation= document.getElementById('ordVariation').value.trim();
+      const qty      = parseFloat(document.getElementById('ordQty').value) || 0;
+      const price    = parseFloat(document.getElementById('ordPrice').value) || 0;
+      const total    = qty * price;
+      const payment  = document.getElementById('ordPayment').value;
+      const status   = document.getElementById('ordStatus').value;
+      const notes    = document.getElementById('ordNotes').value.trim();
+
       if (!customer || !product || qty <= 0 || price <= 0) {
-        alert('Please fill all fields');
+        alert('Please fill required fields (Customer, Product, Qty, Unit Price)');
         return;
       }
 
-      orders.push({ customer, product, qty, price, total });
+      orders.push({ date, customer, contact, email, product, variation, qty, price, total, payment, status, notes });
       localStorage.setItem('orders', JSON.stringify(orders));
       await syncToSheets();
-      
-      document.getElementById('ordCustomer').value = '';
-      document.getElementById('ordProduct').value = '';
-      document.getElementById('ordQty').value = '';
-      document.getElementById('ordPrice').value = '';
-      document.getElementById('ordTotal').value = '';
-      
+
+      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordNotes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('ordPayment').value = 'Pending';
+      document.getElementById('ordStatus').value = 'New';
+
       renderOrders();
+      buildSalesYearOptions();
+      renderSalesOverview();
     }
 
     async function deleteOrder(i) {
@@ -1153,28 +1377,71 @@
       localStorage.setItem('orders', JSON.stringify(orders));
       await syncToSheets();
       renderOrders();
+      renderSalesOverview();
+    }
+
+    function editOrder(i) {
+      const o = orders[i];
+      document.getElementById('ordDate').value      = o.date || '';
+      document.getElementById('ordCustomer').value  = o.customer || '';
+      document.getElementById('ordContact').value   = o.contact || '';
+      document.getElementById('ordEmail').value     = o.email || '';
+      document.getElementById('ordProduct').value   = o.product || '';
+      document.getElementById('ordVariation').value = o.variation || '';
+      document.getElementById('ordQty').value       = o.qty || '';
+      document.getElementById('ordPrice').value     = o.price || '';
+      document.getElementById('ordTotal').value     = o.total || '';
+      document.getElementById('ordPayment').value   = o.payment || 'Pending';
+      document.getElementById('ordStatus').value    = o.status || 'New';
+      document.getElementById('ordNotes').value     = o.notes || '';
+      orders.splice(i, 1);
+      localStorage.setItem('orders', JSON.stringify(orders));
+      renderOrders();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function getPaymentBadge(p) {
+      const map = { 'Paid': '#dcfce7|#16a34a', 'Partial': '#fef9c3|#ca8a04', 'Pending': '#fee2e2|#dc2626' };
+      const [bg, color] = (map[p] || '#f3f4f6|#6b7280').split('|');
+      return `<span style="background:${bg};color:${color};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${p||'—'}</span>`;
+    }
+
+    function getStatusBadge(s) {
+      const map = { 'New': '#dbeafe|#1d4ed8', 'In Progress': '#fef3c7|#d97706', 'Ready': '#d1fae5|#059669', 'Delivered': '#dcfce7|#16a34a', 'Cancelled': '#fee2e2|#dc2626' };
+      const [bg, color] = (map[s] || '#f3f4f6|#6b7280').split('|');
+      return `<span style="background:${bg};color:${color};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${s||'—'}</span>`;
     }
 
     function renderOrders() {
       const tbody = document.getElementById('ordersBody');
       if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">No orders added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#999;">No orders added yet</td></tr>';
         document.getElementById('totalRevenue').textContent = '₱0.00';
         return;
       }
       tbody.innerHTML = orders.map((o, i) => `
         <tr>
           <td>${i + 1}</td>
+          <td>${o.date || '—'}</td>
           <td>${o.customer}</td>
+          <td>${o.contact || '—'}</td>
+          <td>${o.email || '—'}</td>
           <td>${o.product}</td>
+          <td>${o.variation || '—'}</td>
           <td>${o.qty}</td>
-          <td>${fmt(o.price)}</td>
-          <td style="color:#2e7d32; font-weight:600;">${fmt(o.total)}</td>
-          <td><button class="btn-delete" onclick="deleteOrder(${i})">Delete</button></td>
+          <td>${fmt(parseFloat(o.price))}</td>
+          <td style="color:#2e7d32; font-weight:600;">${fmt(parseFloat(o.total))}</td>
+          <td>${getPaymentBadge(o.payment)}</td>
+          <td>${getStatusBadge(o.status)}</td>
+          <td>${o.notes || '—'}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn-delete" style="background:#fff8e1;color:#ff9800;border:1px solid #ffe082;margin-right:4px;" onclick="editOrder(${i})">✏️</button>
+            <button class="btn-delete" onclick="deleteOrder(${i})">✕</button>
+          </td>
         </tr>
       `).join('');
-      
-      const totalRev = orders.reduce((sum, o) => sum + o.total, 0);
+
+      const totalRev = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
       document.getElementById('totalRevenue').textContent = fmt(totalRev);
     }
 
@@ -1435,6 +1702,197 @@
       alert(`✅ "${name}" saved to Products!`);
     }
 
+    function buildYearOptions() {
+      const sel = document.getElementById('evYear');
+      if (!sel) return;
+      const years = new Set();
+      [...materials, ...equipment].forEach(r => {
+        if (r.date) years.add(r.date.substring(0, 4));
+      });
+      if (years.size === 0) years.add(new Date().getFullYear().toString());
+      const current = new Date().getFullYear().toString();
+      sel.innerHTML = '<option value="">All Years</option>' +
+        [...years].sort().reverse().map(y =>
+          `<option value="${y}" ${y === current ? 'selected' : ''}>${y}</option>`
+        ).join('');
+    }
+
+    function renderExpenseView() {
+      const year  = document.getElementById('evYear').value;
+      const month = document.getElementById('evMonth').value;
+      const type  = document.getElementById('evType').value;
+
+      let rows = [];
+      if (!type || type === 'Supplies') {
+        materials.forEach(m => rows.push({ type: 'Supplies', date: m.date || '', shop: m.shop || '—', name: m.name, variation: m.variation || '—', qty: parseFloat(m.qty) || 0, price: parseFloat(m.price) || 0 }));
+      }
+      if (!type || type === 'Equipment') {
+        equipment.forEach(e => rows.push({ type: 'Equipment', date: e.date || '', shop: e.shop || '—', name: e.name, variation: e.variation || '—', qty: parseFloat(e.qty) || 0, price: parseFloat(e.price) || 0 }));
+      }
+
+      // Filter
+      rows = rows.filter(r => {
+        if (year  && !r.date.startsWith(year)) return false;
+        if (month && r.date.substring(5, 7) !== month) return false;
+        return true;
+      });
+
+      // Sort by date desc
+      rows.sort((a, b) => b.date.localeCompare(a.date));
+
+      const totalAll   = rows.reduce((s, r) => s + r.price, 0);
+      const totalSup   = rows.filter(r => r.type === 'Supplies').reduce((s, r) => s + r.price, 0);
+      const totalEquip = rows.filter(r => r.type === 'Equipment').reduce((s, r) => s + r.price, 0);
+
+      document.getElementById('evTotal').textContent        = fmt(totalAll);
+      document.getElementById('evSuppliesTotal').textContent = fmt(totalSup);
+      document.getElementById('evEquipTotal').textContent    = fmt(totalEquip);
+      document.getElementById('evTotalBottom').textContent   = fmt(totalAll);
+
+      const tbody = document.getElementById('evBody');
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#999;">No records found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><span style="background:${r.type==='Supplies'?'#dbeafe':'#ede9fe'};color:${r.type==='Supplies'?'#1d4ed8':'#7c3aed'};padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">${r.type}</span></td>
+          <td>${r.date || '—'}</td>
+          <td>${r.shop}</td>
+          <td>${r.name}</td>
+          <td>${r.variation}</td>
+          <td>${r.qty}</td>
+          <td class="price-col">${fmt(r.price)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function exportExpenseExcel() {
+      const rows = [...document.querySelectorAll('#evBody tr')].map(tr =>
+        [...tr.querySelectorAll('td')].map(td => td.innerText).join('\t')
+      ).join('\n');
+      const header = 'No.\tType\tDate\tShop\tProduct\tVariation\tQty\tTotal Price\n';
+      const blob = new Blob([header + rows], { type: 'text/tab-separated-values' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'expense-view.xls'; a.click();
+    }
+
+    function exportExpensePDF() {
+      const win = window.open('', '_blank');
+      const rows = [...document.querySelectorAll('#evBody tr')].map(tr => `<tr>${[...tr.querySelectorAll('td')].map(td => `<td style="padding:6px 10px;border:1px solid #ddd;">${td.innerHTML}</td>`).join('')}</tr>`).join('');
+      win.document.write(`<html><head><title>Expense View</title><style>body{font-family:sans-serif;font-size:13px;}table{border-collapse:collapse;width:100%;}th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}</style></head><body><h2>Expense View</h2><p>Total: ${document.getElementById('evTotalBottom').textContent}</p><table><thead><tr><th>No.</th><th>Type</th><th>Date</th><th>Shop</th><th>Product</th><th>Variation</th><th>Qty</th><th>Total Price</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+      win.document.close(); win.print();
+    }
+
+    function buildSalesYearOptions() {
+      const sel = document.getElementById('soYear');
+      if (!sel) return;
+      const years = new Set();
+      orders.forEach(o => { if (o.date) years.add(o.date.substring(0, 4)); });
+      if (years.size === 0) years.add(new Date().getFullYear().toString());
+      const current = new Date().getFullYear().toString();
+      sel.innerHTML = '<option value="">All Years</option>' +
+        [...years].sort().reverse().map(y =>
+          `<option value="${y}" ${y === current ? 'selected' : ''}>${y}</option>`
+        ).join('');
+    }
+
+    function renderSalesOverview() {
+      const year    = document.getElementById('soYear').value;
+      const month   = document.getElementById('soMonth').value;
+      const payment = document.getElementById('soPayment').value;
+      const status  = document.getElementById('soStatus').value;
+
+      let filtered = orders.filter(o => {
+        if (year    && !(o.date || '').startsWith(year)) return false;
+        if (month   && (o.date || '').substring(5, 7) !== month) return false;
+        if (payment && o.payment !== payment) return false;
+        if (status  && o.status !== status) return false;
+        return true;
+      });
+
+      const totalRev   = filtered.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+      const paidRev    = filtered.filter(o => o.payment === 'Paid').reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+      const pendingRev = filtered.filter(o => o.payment !== 'Paid').reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+
+      document.getElementById('soTotalRev').textContent    = fmt(totalRev);
+      document.getElementById('soTotalOrders').textContent = filtered.length;
+      document.getElementById('soPaidRev').textContent     = fmt(paidRev);
+      document.getElementById('soPendingRev').textContent  = fmt(pendingRev);
+
+      // Monthly breakdown
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const monthlyBody = document.getElementById('soMonthlyBody');
+      monthlyBody.innerHTML = months.map((mName, mi) => {
+        const mm = String(mi + 1).padStart(2, '0');
+        const mOrders = filtered.filter(o => (o.date || '').substring(5, 7) === mm);
+        const mRev       = mOrders.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+        const mPaid      = mOrders.filter(o => o.payment === 'Paid').reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+        const mPending   = mOrders.filter(o => o.payment !== 'Paid').reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+        const mDelivered = mOrders.filter(o => o.status === 'Delivered').length;
+        const mCancelled = mOrders.filter(o => o.status === 'Cancelled').length;
+        const empty = mOrders.length === 0;
+        return `<tr>
+          <td>${mName}</td>
+          <td>${empty ? '—' : mOrders.length}</td>
+          <td class="price-col">${empty ? '—' : fmt(mRev)}</td>
+          <td class="price-col">${empty ? '—' : fmt(mPaid)}</td>
+          <td class="price-col">${empty ? '—' : fmt(mPending)}</td>
+          <td>${empty ? '—' : mDelivered}</td>
+          <td>${empty ? '—' : mCancelled}</td>
+        </tr>`;
+      }).join('');
+
+      // Top products
+      const prodMap = {};
+      filtered.forEach(o => {
+        const key = (o.product || '') + '|' + (o.variation || '—');
+        if (!prodMap[key]) prodMap[key] = { product: o.product, variation: o.variation || '—', orders: 0, qty: 0, revenue: 0 };
+        prodMap[key].orders++;
+        prodMap[key].qty += parseFloat(o.qty) || 0;
+        prodMap[key].revenue += parseFloat(o.total) || 0;
+      });
+      const topProds = Object.values(prodMap).sort((a, b) => b.revenue - a.revenue);
+      const prodBody = document.getElementById('soProductsBody');
+      prodBody.innerHTML = topProds.length === 0
+        ? '<tr><td colspan="5" style="text-align:center;color:#999;">No data</td></tr>'
+        : topProds.map(p => `<tr>
+            <td>${p.product}</td>
+            <td>${p.variation}</td>
+            <td>${p.orders}</td>
+            <td>${p.qty}</td>
+            <td class="price-col">${fmt(p.revenue)}</td>
+          </tr>`).join('');
+    }
+
+    function exportSalesExcel() {
+      const rows = [
+        ['Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled'],
+        ...[...document.querySelectorAll('#soMonthlyBody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText))
+      ].map(r => r.join('\t')).join('\n');
+      const blob = new Blob([rows], { type: 'text/tab-separated-values' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = 'sales-overview.xls'; a.click();
+    }
+
+    function exportSalesPDF() {
+      const win = window.open('', '_blank');
+      const monthly = [...document.querySelectorAll('#soMonthlyBody tr')].map(tr =>
+        `<tr>${[...tr.querySelectorAll('td')].map(td => `<td style="padding:6px 10px;border:1px solid #ddd;">${td.innerText}</td>`).join('')}</tr>`).join('');
+      const top = [...document.querySelectorAll('#soProductsBody tr')].map(tr =>
+        `<tr>${[...tr.querySelectorAll('td')].map(td => `<td style="padding:6px 10px;border:1px solid #ddd;">${td.innerText}</td>`).join('')}</tr>`).join('');
+      win.document.write(`<html><head><title>Sales Overview</title><style>body{font-family:sans-serif;font-size:13px;}table{border-collapse:collapse;width:100%;margin-bottom:20px;}th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}</style></head><body>
+        <h2>Sales Overview</h2>
+        <p>Total Revenue: ${document.getElementById('soTotalRev').textContent} | Orders: ${document.getElementById('soTotalOrders').textContent}</p>
+        <h3>Monthly Breakdown</h3>
+        <table><thead><tr><th>Month</th><th>Orders</th><th>Revenue</th><th>Paid</th><th>Pending</th><th>Delivered</th><th>Cancelled</th></tr></thead><tbody>${monthly}</tbody></table>
+        <h3>Top Products</h3>
+        <table><thead><tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>${top}</tbody></table>
+      </body></html>`);
+      win.document.close(); win.print();
+    }
+
     window.addEventListener('load', () => {
       renderMaterials();
       renderProducts();
@@ -1442,6 +1900,10 @@
       renderOverhead();
       renderOrders();
       renderCalcOverheadList();
+      buildYearOptions();
+      renderExpenseView();
+      buildSalesYearOptions();
+      renderSalesOverview();
     });
   </script>
 </body>
