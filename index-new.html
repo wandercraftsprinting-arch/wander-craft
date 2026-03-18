@@ -125,7 +125,8 @@
       <button class="tab" onclick="showTab('calculator')" style="padding-left:28px;">🧮 Pricing Calculator</button>
       <button class="tab" onclick="showTab('materials')" style="padding-left:28px;">📦 Material</button>
       <button class="tab" onclick="showTab('equipment')" style="padding-left:28px;">🔧 Equipment</button>
-      <button class="tab" onclick="showTab('overhead')" style="padding-left:28px;">💡 Overhead</button>
+      <button class="tab" onclick="showTab('overhead')" style="padding-left:28px;">⚡ Electricity Cost</button>
+      <button class="tab" onclick="showTab('laborcost')" style="padding-left:28px;">👷 Labor Cost</button>
       <button class="tab" onclick="showTab('expenseview')" style="padding-left:28px;">📊 Expense Overview</button>
       <p style="font-size:15px; font-weight:700; color:#4a90d9; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Sales</p>
       <button class="tab" onclick="showTab('orders')" style="padding-left:28px;">📋 Order</button>
@@ -278,55 +279,95 @@
       </table>
     </div>
 
-    <!-- OVERHEAD TAB -->
+    <!-- ELECTRICITY COST TAB -->
     <div id="overhead" class="tab-content">
-      <h2>Overhead Cost</h2>
+      <h2>Electricity Cost</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label>Date</label>
-          <input type="date" id="ohDate">
+          <label>Equipment</label>
+          <input type="text" id="ohDesc" placeholder="e.g. Heat Press, Printer">
         </div>
         <div class="form-group">
-          <label>Description</label>
-          <input type="text" id="ohDesc" placeholder="e.g. Electricity, Manpower">
+          <label>Rate per kWh (₱)</label>
+          <input type="number" id="ohRate" placeholder="0.00" step="0.01" oninput="calcAmountPerQty()">
         </div>
         <div class="form-group">
-          <label>HR / QTY</label>
+          <label>No. of Hours</label>
           <input type="number" id="ohQty" placeholder="1" min="0.01" step="any" oninput="calcAmountPerQty()">
         </div>
         <div class="form-group">
           <label>Total Amount (₱)</label>
-          <input type="number" id="ohAmount" placeholder="0.00" step="0.01" oninput="calcAmountPerQty()">
-        </div>
-        <div class="form-group">
-          <label>Amount per HR/QTY (₱)</label>
-          <input type="number" id="ohAmountPerQty" placeholder="auto" readonly style="background:#f5f0e8; cursor:not-allowed;">
+          <input type="number" id="ohAmount" placeholder="auto" readonly style="background:#f5f0e8; cursor:not-allowed;">
         </div>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
-        <button id="ohAddBtn" onclick="addOverhead()">+ Add Overhead</button>
+        <button id="ohAddBtn" onclick="addOverhead()">+ Add Electricity Cost</button>
         <button id="ohUpdateBtn" onclick="updateOverhead()" style="display:none; background:#ff9800;">✔ Update</button>
         <button id="ohCancelBtn" onclick="cancelEditOverhead()" style="display:none; background:#757575;">Cancel</button>
-        <span id="ohEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing overhead</span>
+        <span id="ohEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing electricity cost</span>
       </div>
       
       <table>
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
-            <th style="text-align:center;">Date</th>
-            <th>Description</th>
-            <th style="text-align:center;">HR/QTY</th>
+            <th>Equipment</th>
+            <th style="text-align:right; padding-right:16px;">Rate per kWh</th>
+            <th style="text-align:center;">No. of Hours</th>
             <th style="text-align:right; padding-right:16px;">Total Amount</th>
-            <th style="text-align:right; padding-right:16px;">Amount/HR/QTY</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
         <tbody id="overheadBody">
-          <tr><td colspan="7" style="text-align:center; color:#999;">No overhead costs added yet</td></tr>
+          <tr><td colspan="6" style="text-align:center; color:#999;">No electricity costs added yet</td></tr>
         </tbody>
       </table>
-      <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Overhead: <span id="totalOverhead" style="color:#2e7d32;">₱0.00</span></p>
+      <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Electricity Cost: <span id="totalOverhead" style="color:#2e7d32;">₱0.00</span></p>
+    </div>
+
+    <!-- LABOR COST TAB -->
+    <div id="laborcost" class="tab-content">
+      <h2>Labor Cost</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="lcDesc" placeholder="e.g. Cutting, Sewing">
+        </div>
+        <div class="form-group">
+          <label>Rate per Hour (₱)</label>
+          <input type="number" id="lcRate" placeholder="0.00" step="0.01" oninput="calcLaborTotal()">
+        </div>
+        <div class="form-group">
+          <label>No. of Hours</label>
+          <input type="number" id="lcHours" placeholder="0" min="0.01" step="any" oninput="calcLaborTotal()">
+        </div>
+        <div class="form-group">
+          <label>Total Amount (₱)</label>
+          <input type="number" id="lcTotal" placeholder="auto" readonly style="background:#f5f0e8; cursor:not-allowed;">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button id="lcAddBtn" onclick="addLaborCost()">+ Add Labor Cost</button>
+        <button id="lcUpdateBtn" onclick="updateLaborCost()" style="display:none; background:#ff9800;">✔ Update</button>
+        <button id="lcCancelBtn" onclick="cancelEditLaborCost()" style="display:none; background:#757575;">Cancel</button>
+        <span id="lcEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing labor cost</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:center;">No.</th>
+            <th>Description</th>
+            <th style="text-align:right; padding-right:16px;">Rate per Hour</th>
+            <th style="text-align:center;">No. of Hours</th>
+            <th style="text-align:right; padding-right:16px;">Total Amount</th>
+            <th style="text-align:center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="laborBody">
+          <tr><td colspan="6" style="text-align:center; color:#999;">No labor costs added yet</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Labor Cost: <span id="totalLaborCost" style="color:#2e7d32;">₱0.00</span></p>
     </div>
 
     <!-- ORDER TAB -->
@@ -607,12 +648,12 @@
 
           <!-- Supplies Cost -->
           <div class="form-group">
-            <label>Cost Price — Material</label>
+            <label>Material Cost</label>
             <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
               <table style="margin:0; box-shadow:none; background:transparent;" id="calcSuppliesTable">
                 <thead>
                   <tr>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Supply</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Material</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Qty</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
@@ -626,11 +667,62 @@
           </div>
 
           <div class="form-group">
-            <label>Overhead Cost</label>
-            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;" id="calcOverheadList">
-              <p style="color:#999; font-size:13px;">No overhead costs added yet</p>
+            <label>Electricity Cost</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcElecTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Equipment</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Hours</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcElecBody"></tbody>
+              </table>
+              <button onclick="addCalcElecRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Electricity Cost: <span id="calcOverheadTotal" style="color:#2e7d32;">₱0.00</span></p>
             </div>
-            <p style="margin-top:8px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Overhead Cost: <span id="calcOverheadTotal" style="color:#2e7d32;">₱0.00</span></p>
+          </div>
+
+          <!-- Labor Cost in Calculator -->
+          <div class="form-group">
+            <label>Labor Cost</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcLaborTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Labor</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Hours</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcLaborBody"></tbody>
+              </table>
+              <button onclick="addCalcLaborRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Labor Cost: <span id="calcLaborTotal" style="color:#2e7d32;">₱0.00</span></p>
+            </div>
+          </div>
+
+          <!-- Packaging Cost in Calculator -->
+          <div class="form-group">
+            <label>Packaging Cost</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcPackagingTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Material</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcPackagingBody"></tbody>
+              </table>
+              <button onclick="addCalcPackagingRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Packaging Cost: <span id="calcPackagingTotal" style="color:#2e7d32;">₱0.00</span></p>
+            </div>
           </div>
           <div class="form-group">
             <label>Markup (%)</label>
@@ -658,8 +750,10 @@
             <table style="margin-top:0; box-shadow:none;">
               <tbody>
                 <tr><td style="color:#7a6248;">Product</td><td id="rCalcName" style="font-weight:600;">—</td></tr>
-                <tr><td style="color:#7a6248;">Supplies Cost</td><td id="rCalcSupplies" class="price-col">₱0.00</td></tr>
-                <tr><td style="color:#7a6248;">Overhead Cost</td><td id="rCalcOverheadAmt" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Material Cost</td><td id="rCalcSupplies" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Electricity Cost</td><td id="rCalcOverheadAmt" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Labor Cost</td><td id="rCalcLaborAmt" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Packaging Cost</td><td id="rCalcPackagingAmt" class="price-col">₱0.00</td></tr>
                 <tr style="border-top:1px solid #e0d5c5;"><td style="color:#7a6248;">Total Cost Price</td><td id="rCalcCost" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Markup Amount</td><td id="rCalcMarkupAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Price Before Discount</td><td id="rCalcBeforeDiscount" class="price-col">₱0.00</td></tr>
@@ -719,6 +813,7 @@
       if (name) document.getElementById('brandName').value = name;
     });
     let overhead = JSON.parse(localStorage.getItem('overhead') || '[]');
+    let laborCosts = JSON.parse(localStorage.getItem('laborCosts') || '[]');
     let orders = JSON.parse(localStorage.getItem('orders') || '[]');
 
     function calcPricePerQty() {
@@ -729,10 +824,9 @@
     }
 
     function calcAmountPerQty() {
-      const qty = parseFloat(document.getElementById('ohQty').value) || 0;
-      const amount = parseFloat(document.getElementById('ohAmount').value) || 0;
-      const amountPerQty = qty > 0 ? (amount / qty).toFixed(2) : '';
-      document.getElementById('ohAmountPerQty').value = amountPerQty;
+      const rate  = parseFloat(document.getElementById('ohRate').value) || 0;
+      const hours = parseFloat(document.getElementById('ohQty').value) || 0;
+      document.getElementById('ohAmount').value = (rate * hours).toFixed(2);
     }
 
     async function syncToSheets() {
@@ -740,6 +834,7 @@
       await window.supabase.save('products', products);
       await window.supabase.save('equipment', equipment);
       await window.supabase.save('overhead', overhead);
+      await window.supabase.save('laborcosts', laborCosts);
       await window.supabase.save('orders', orders);
     }
 
@@ -748,6 +843,7 @@
       const prod = await window.supabase.loadData('products');
       const eq   = await window.supabase.loadData('equipment');
       const oh   = await window.supabase.loadData('overhead');
+      const lc   = await window.supabase.loadData('laborcosts');
       const ord  = await window.supabase.loadData('orders');
 
       if (mat && mat.length > 0) {
@@ -763,8 +859,12 @@
         localStorage.setItem('equipment', JSON.stringify(equipment));
       }
       if (oh && oh.length > 0) {
-        overhead = oh.map(o => ({ ...o, qty: +o.qty||0, amount: +o.amount||0, amountPerQty: +o.qty > 0 ? +o.amount / +o.qty : (+o.amountPerQty||0) }));
+        overhead = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
         localStorage.setItem('overhead', JSON.stringify(overhead));
+      }
+      if (lc && lc.length > 0) {
+        laborCosts = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
+        localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
       }
       if (ord && ord.length > 0) {
         orders = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
@@ -775,6 +875,8 @@
       renderProducts();
       renderEquipment();
       renderOverhead();
+      renderLaborCosts();
+      renderCalcLaborList();
       renderOrders();
       buildYearOptions();
       renderExpenseView();
@@ -1053,17 +1155,16 @@
     function editOverhead(i) {
       const o = overhead[i];
       editingOverheadIndex = i;
-      const qty = parseFloat(o.qty) || 0;
-      const amount = parseFloat(o.amount) || 0;
-      const amountPerQty = qty > 0 ? amount / qty : 0;
+      const rate  = parseFloat(o.rate) || 0;
+      const hours = parseFloat(o.qty) || 0;
+      const amount = rate * hours;
 
-      document.getElementById('ohDate').value = o.date || '';
-      document.getElementById('ohDesc').value = o.desc;
-      document.getElementById('ohQty').value = qty;
-      document.getElementById('ohAmount').value = amount;
-      document.getElementById('ohAmountPerQty').value = amountPerQty.toFixed(2);
+      document.getElementById('ohDesc').value   = o.desc;
+      document.getElementById('ohRate').value   = rate;
+      document.getElementById('ohQty').value    = hours;
+      document.getElementById('ohAmount').value = amount.toFixed(2);
 
-      document.getElementById('ohAddBtn').style.display = 'none';
+      document.getElementById('ohAddBtn').style.display    = 'none';
       document.getElementById('ohUpdateBtn').style.display = 'inline-block';
       document.getElementById('ohCancelBtn').style.display = 'inline-block';
       document.getElementById('ohEditBanner').style.display = 'inline';
@@ -1073,18 +1174,17 @@
     }
 
     async function updateOverhead() {
-      const date = document.getElementById('ohDate').value;
-      const desc = document.getElementById('ohDesc').value.trim();
-      const qty = parseFloat(document.getElementById('ohQty').value) || 0;
-      const amount = parseFloat(document.getElementById('ohAmount').value) || 0;
+      const desc  = document.getElementById('ohDesc').value.trim();
+      const rate  = parseFloat(document.getElementById('ohRate').value) || 0;
+      const hours = parseFloat(document.getElementById('ohQty').value) || 0;
       
-      if (!desc || qty <= 0 || amount <= 0) {
-        alert('Please fill required fields (Description, HR/QTY, Total Amount)');
+      if (!desc || rate <= 0 || hours <= 0) {
+        alert('Please fill required fields (Equipment, Rate per kWh, No. of Hours)');
         return;
       }
 
-      const amountPerQty = amount / qty;
-      overhead[editingOverheadIndex] = { date, desc, qty, amount, amountPerQty };
+      const amount = rate * hours;
+      overhead[editingOverheadIndex] = { desc, rate, qty: hours, amount, amountPerQty: rate };
       localStorage.setItem('overhead', JSON.stringify(overhead));
       await syncToSheets();
       
@@ -1095,39 +1195,36 @@
     function cancelEditOverhead() {
       editingOverheadIndex = -1;
       
-      document.getElementById('ohDate').value = '';
-      document.getElementById('ohDesc').value = '';
-      document.getElementById('ohQty').value = '';
+      document.getElementById('ohDesc').value   = '';
+      document.getElementById('ohRate').value   = '';
+      document.getElementById('ohQty').value    = '';
       document.getElementById('ohAmount').value = '';
-      document.getElementById('ohAmountPerQty').value = '';
       
-      document.getElementById('ohAddBtn').style.display = 'inline-block';
+      document.getElementById('ohAddBtn').style.display    = 'inline-block';
       document.getElementById('ohUpdateBtn').style.display = 'none';
       document.getElementById('ohCancelBtn').style.display = 'none';
       document.getElementById('ohEditBanner').style.display = 'none';
     }
 
     async function addOverhead() {
-      const date = document.getElementById('ohDate').value;
-      const desc = document.getElementById('ohDesc').value.trim();
-      const qty = parseFloat(document.getElementById('ohQty').value) || 0;
-      const amount = parseFloat(document.getElementById('ohAmount').value) || 0;
+      const desc  = document.getElementById('ohDesc').value.trim();
+      const rate  = parseFloat(document.getElementById('ohRate').value) || 0;
+      const hours = parseFloat(document.getElementById('ohQty').value) || 0;
       
-      if (!desc || qty <= 0 || amount <= 0) {
-        alert('Please fill required fields (Description, HR/QTY, Total Amount)');
+      if (!desc || rate <= 0 || hours <= 0) {
+        alert('Please fill required fields (Equipment, Rate per kWh, No. of Hours)');
         return;
       }
 
-      const amountPerQty = amount / qty;
-      overhead.push({ date, desc, qty, amount, amountPerQty });
+      const amount = rate * hours;
+      overhead.push({ desc, rate, qty: hours, amount, amountPerQty: rate });
       localStorage.setItem('overhead', JSON.stringify(overhead));
       await syncToSheets();
       
-      document.getElementById('ohDate').value = '';
-      document.getElementById('ohDesc').value = '';
-      document.getElementById('ohQty').value = '';
+      document.getElementById('ohDesc').value   = '';
+      document.getElementById('ohRate').value   = '';
+      document.getElementById('ohQty').value    = '';
       document.getElementById('ohAmount').value = '';
-      document.getElementById('ohAmountPerQty').value = '';
       
       renderOverhead();
     }
@@ -1142,35 +1239,140 @@
     function renderOverhead() {
       const tbody = document.getElementById('overheadBody');
       if (overhead.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">No overhead costs added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No electricity costs added yet</td></tr>';
         document.getElementById('totalOverhead').textContent = '₱0.00';
         return;
       }
-      const sorted = [...overhead].map((o, i) => ({ ...o, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-      tbody.innerHTML = sorted.map((o, idx) => {
-        const qty = parseFloat(o.qty) || 0;
-        const amount = parseFloat(o.amount) || 0;
-        const amountPerQty = qty > 0 ? amount / qty : (parseFloat(o.amountPerQty) || 0);
+      tbody.innerHTML = overhead.map((o, i) => {
+        const rate   = parseFloat(o.rate) || 0;
+        const hours  = parseFloat(o.qty) || 0;
+        const amount = rate * hours;
         return `
         <tr>
-          <td style="text-align:center;">${idx + 1}</td>
-          <td style="text-align:center;">${o.date || '—'}</td>
+          <td style="text-align:center;">${i + 1}</td>
           <td>${o.desc}</td>
-          <td style="text-align:center;">${qty}</td>
+          <td class="price-col">${fmt(rate)}</td>
+          <td style="text-align:center;">${hours}</td>
           <td class="price-col">${fmt(amount)}</td>
-          <td class="price-col">${fmt(amountPerQty)}</td>
           <td style="text-align:center;">
-            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editOverhead(${o._i})">✏️ Edit</button>
-            <button class="btn-delete" onclick="deleteOverhead(${o._i})">✕ Delete</button>
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editOverhead(${i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteOverhead(${i})">✕ Delete</button>
           </td>
         </tr>
         `;
       }).join('');
       
-      const totalOh = overhead.reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+      const totalOh = overhead.reduce((sum, o) => {
+        const rate = parseFloat(o.rate) || 0;
+        const hours = parseFloat(o.qty) || 0;
+        return sum + rate * hours;
+      }, 0);
       document.getElementById('totalOverhead').textContent = fmt(totalOh);
-      renderCalcOverheadList();
+      renderCalcElecList();
     }
+
+    // ── LABOR COST ──────────────────────────────────────────
+    function calcLaborTotal() {
+      const rate  = parseFloat(document.getElementById('lcRate').value) || 0;
+      const hours = parseFloat(document.getElementById('lcHours').value) || 0;
+      document.getElementById('lcTotal').value = (rate * hours).toFixed(2);
+    }
+
+    let editingLaborIndex = -1;
+
+    async function addLaborCost() {
+      const desc  = document.getElementById('lcDesc').value.trim();
+      const rate  = parseFloat(document.getElementById('lcRate').value) || 0;
+      const hours = parseFloat(document.getElementById('lcHours').value) || 0;
+      if (!desc || rate <= 0 || hours <= 0) { alert('Please fill all fields (Description, Rate, Hours)'); return; }
+      const total = rate * hours;
+      laborCosts.push({ desc, rate, hours, total });
+      localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
+      await syncToSheets();
+      clearLaborForm();
+      renderLaborCosts();
+    }
+
+    function editLaborCost(i) {
+      const l = laborCosts[i];
+      editingLaborIndex = i;
+      document.getElementById('lcDesc').value  = l.desc;
+      document.getElementById('lcRate').value  = l.rate;
+      document.getElementById('lcHours').value = l.hours;
+      document.getElementById('lcTotal').value = l.total;
+      document.getElementById('lcAddBtn').style.display    = 'none';
+      document.getElementById('lcUpdateBtn').style.display = 'inline-block';
+      document.getElementById('lcCancelBtn').style.display = 'inline-block';
+      document.getElementById('lcEditBanner').style.display = 'inline';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function updateLaborCost() {
+      const desc  = document.getElementById('lcDesc').value.trim();
+      const rate  = parseFloat(document.getElementById('lcRate').value) || 0;
+      const hours = parseFloat(document.getElementById('lcHours').value) || 0;
+      if (!desc || rate <= 0 || hours <= 0) { alert('Please fill all fields'); return; }
+      const total = rate * hours;
+      laborCosts[editingLaborIndex] = { desc, rate, hours, total };
+      localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
+      await syncToSheets();
+      cancelEditLaborCost();
+      renderLaborCosts();
+    }
+
+    function cancelEditLaborCost() {
+      editingLaborIndex = -1;
+      clearLaborForm();
+      document.getElementById('lcAddBtn').style.display    = 'inline-block';
+      document.getElementById('lcUpdateBtn').style.display = 'none';
+      document.getElementById('lcCancelBtn').style.display = 'none';
+      document.getElementById('lcEditBanner').style.display = 'none';
+    }
+
+    function clearLaborForm() {
+      ['lcDesc','lcRate','lcHours','lcTotal'].forEach(id => document.getElementById(id).value = '');
+    }
+
+    async function deleteLaborCost(i) {
+      laborCosts.splice(i, 1);
+      localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
+      await syncToSheets();
+      renderLaborCosts();
+    }
+
+    function renderLaborCosts() {
+      const tbody = document.getElementById('laborBody');
+      if (laborCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No labor costs added yet</td></tr>';
+        document.getElementById('totalLaborCost').textContent = '₱0.00';
+        return;
+      }
+      tbody.innerHTML = laborCosts.map((l, i) => `
+        <tr>
+          <td style="text-align:center;">${i + 1}</td>
+          <td>${l.desc}</td>
+          <td class="price-col">${fmt(parseFloat(l.rate))}</td>
+          <td style="text-align:center;">${parseFloat(l.hours)}</td>
+          <td class="price-col">${fmt(parseFloat(l.total))}</td>
+          <td style="text-align:center;">
+            <button class="btn-delete" style="background:#fff8e1;color:#ff9800;border:1px solid #ffe082;margin-right:5px;" onclick="editLaborCost(${i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteLaborCost(${i})">✕ Delete</button>
+          </td>
+        </tr>
+      `).join('');
+      const total = laborCosts.reduce((s, l) => s + (parseFloat(l.total) || 0), 0);
+      document.getElementById('totalLaborCost').textContent = fmt(total);
+      // Refresh labor dropdowns in calculator
+      document.querySelectorAll('#calcLaborBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = buildLaborOptions('');
+        sel.value = cur;
+      });
+    }
+
+    function renderCalcLaborList() { /* no-op: now uses dropdown rows */ }
 
     function calculateProductPrice() {
       const cost = parseFloat(document.getElementById('prodCost').value) || 0;
@@ -1557,7 +1759,6 @@
       btn.disabled = true;
       try {
         await loadFromSheets();
-        renderCalcOverheadList();
         btn.textContent = '✅ Synced';
         btn.style.background = '#34a853';
       } catch(e) {
@@ -1567,30 +1768,71 @@
         btn.disabled = false;
       }
     }
-    function renderCalcOverheadList() {
-      const container = document.getElementById('calcOverheadList');
-      if (!container) return;
-      if (overhead.length === 0) {
-        container.innerHTML = '<p style="color:#999; font-size:13px;">No overhead costs added yet</p>';
-        return;
-      }
-      container.innerHTML = overhead.map((o, i) => `
-        <label style="display:flex; align-items:center; gap:10px; padding:7px 4px; border-bottom:1px solid #f0ebe0; cursor:pointer; font-size:13px;">
-          <input type="checkbox" onchange="updateCalcOverheadTotal()" style="width:16px; height:16px; cursor:pointer;">
-          <span style="flex:1;">${o.desc}</span>
-          <span style="color:#2e7d32; font-weight:700;">${fmt(o.amount)}</span>
-        </label>
-      `).join('');
-      updateCalcOverheadTotal();
+    function renderCalcElecList() {
+      // Refresh all existing elec row dropdowns with updated options
+      document.querySelectorAll('#calcElecBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = buildElecOptions('');
+        sel.value = cur;
+      });
     }
 
-    function updateCalcOverheadTotal() {
+    function buildElecOptions(selectedVal) {
+      let opts = `<option value="">— Select equipment —</option>`;
+      overhead.forEach((o, i) => {
+        const rate   = parseFloat(o.rate) || 0;
+        const label  = `${o.desc} (₱${rate.toFixed(2)}/kWh)`;
+        const val    = `${i}|${rate}`;
+        const sel    = selectedVal === val ? 'selected' : '';
+        opts += `<option value="${val}" ${sel}>${label}</option>`;
+      });
+      return opts;
+    }
+
+    function addCalcElecRow() {
+      const tbody = document.getElementById('calcElecBody');
+      const rowId = 'er_' + Date.now();
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      tr.innerHTML = `
+        <td><select onchange="updateCalcElecRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildElecOptions('')}</select></td>
+        <td><input type="number" value="1" min="0.01" step="any" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcElecRow('${rowId}')"></td>
+        <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
+        <td><button onclick="removeCalcElecRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      updateCalcElecTotal();
+    }
+
+    function updateCalcElecRow(rowId) {
+      const tr = document.getElementById(rowId);
+      const sel = tr.querySelector('select');
+      const hoursInput = tr.querySelector('input');
+      const costCell = tr.querySelector('.row-cost');
+      const parts = sel.value.split('|');
+      const rate  = parseFloat(parts[1]) || 0;
+      const hours = parseFloat(hoursInput.value) || 0;
+      costCell.textContent = fmt(rate * hours);
+      updateCalcElecTotal();
+    }
+
+    function removeCalcElecRow(rowId) {
+      document.getElementById(rowId).remove();
+      updateCalcElecTotal();
+    }
+
+    function updateCalcElecTotal() {
       let total = 0;
-      const container = document.getElementById('calcOverheadList');
-      container.querySelectorAll('label').forEach((label, i) => {
-        if (label.querySelector('input[type=checkbox]').checked) {
-          total += parseFloat(overhead[i].amount) || 0;
-        }
+      document.querySelectorAll('#calcElecBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hoursInput = tr.querySelector('input');
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        const rate  = parseFloat(parts[1]) || 0;
+        const hours = parseFloat(hoursInput.value) || 0;
+        total += rate * hours;
       });
       document.getElementById('calcOverheadTotal').textContent = fmt(total);
       runCalculator();
@@ -1598,12 +1840,150 @@
 
     function getCalcOverheadTotal() {
       let total = 0;
-      const container = document.getElementById('calcOverheadList');
-      if (!container) return 0;
-      container.querySelectorAll('label').forEach((label, i) => {
-        if (label.querySelector('input[type=checkbox]').checked) {
-          total += parseFloat(overhead[i].amount) || 0;
-        }
+      document.querySelectorAll('#calcElecBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hoursInput = tr.querySelector('input');
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        const rate  = parseFloat(parts[1]) || 0;
+        const hours = parseFloat(hoursInput.value) || 0;
+        total += rate * hours;
+      });
+      return total;
+    }
+
+    // ── LABOR COST ROWS (Calculator) ─────────────────────────
+    function buildLaborOptions(selectedVal) {
+      let opts = `<option value="">— Select labor —</option>`;
+      laborCosts.forEach((l, i) => {
+        const rate  = parseFloat(l.rate) || 0;
+        const label = `${l.desc} (₱${rate.toFixed(2)}/hr)`;
+        const val   = `${i}|${rate}`;
+        const sel   = selectedVal === val ? 'selected' : '';
+        opts += `<option value="${val}" ${sel}>${label}</option>`;
+      });
+      return opts;
+    }
+
+    function addCalcLaborRow() {
+      const tbody = document.getElementById('calcLaborBody');
+      const rowId = 'lr_' + Date.now();
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      tr.innerHTML = `
+        <td><select onchange="updateCalcLaborRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildLaborOptions('')}</select></td>
+        <td><input type="number" value="1" min="0.01" step="any" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcLaborRow('${rowId}')"></td>
+        <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
+        <td><button onclick="removeCalcLaborRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      updateCalcLaborTotal();
+    }
+
+    function updateCalcLaborRow(rowId) {
+      const tr = document.getElementById(rowId);
+      const sel = tr.querySelector('select');
+      const hoursInput = tr.querySelector('input');
+      const costCell = tr.querySelector('.row-cost');
+      const parts = sel.value.split('|');
+      const rate  = parseFloat(parts[1]) || 0;
+      const hours = parseFloat(hoursInput.value) || 0;
+      costCell.textContent = fmt(rate * hours);
+      updateCalcLaborTotal();
+    }
+
+    function removeCalcLaborRow(rowId) {
+      document.getElementById(rowId).remove();
+      updateCalcLaborTotal();
+    }
+
+    function updateCalcLaborTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcLaborBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hoursInput = tr.querySelector('input');
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        const rate  = parseFloat(parts[1]) || 0;
+        const hours = parseFloat(hoursInput.value) || 0;
+        total += rate * hours;
+      });
+      document.getElementById('calcLaborTotal').textContent = fmt(total);
+      runCalculator();
+    }
+
+    function getCalcLaborTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcLaborBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hoursInput = tr.querySelector('input');
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        const rate  = parseFloat(parts[1]) || 0;
+        const hours = parseFloat(hoursInput.value) || 0;
+        total += rate * hours;
+      });
+      return total;
+    }
+
+    // ── PACKAGING COST ROWS (Calculator) ─────────────────────
+    function addCalcPackagingRow() {
+      const tbody = document.getElementById('calcPackagingBody');
+      const rowId = 'pk_' + Date.now();
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      tr.innerHTML = `
+        <td><select onchange="updateCalcPackagingRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptions('')}</select></td>
+        <td><input type="number" value="1" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcPackagingRow('${rowId}')"></td>
+        <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
+        <td><button onclick="removeCalcPackagingRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      updateCalcPackagingTotal();
+    }
+
+    function updateCalcPackagingRow(rowId) {
+      const tr = document.getElementById(rowId);
+      const sel = tr.querySelector('select');
+      const qtyInput = tr.querySelector('input');
+      const costCell = tr.querySelector('.row-cost');
+      const parts = sel.value.split('|');
+      const pricePerQty = parseFloat(parts[2]) || 0;
+      const qty = parseFloat(qtyInput.value) || 0;
+      costCell.textContent = fmt(pricePerQty * qty);
+      updateCalcPackagingTotal();
+    }
+
+    function removeCalcPackagingRow(rowId) {
+      document.getElementById(rowId).remove();
+      updateCalcPackagingTotal();
+    }
+
+    function updateCalcPackagingTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const qtyInput = tr.querySelector('input');
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        const pricePerQty = parseFloat(parts[2]) || 0;
+        const qty = parseFloat(qtyInput.value) || 0;
+        total += pricePerQty * qty;
+      });
+      document.getElementById('calcPackagingTotal').textContent = fmt(total);
+      runCalculator();
+    }
+
+    function getCalcPackagingTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const qtyInput = tr.querySelector('input');
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        const pricePerQty = parseFloat(parts[2]) || 0;
+        const qty = parseFloat(qtyInput.value) || 0;
+        total += pricePerQty * qty;
       });
       return total;
     }
@@ -1692,13 +2072,15 @@
 
     function runCalculator() {
       const name = document.getElementById('calcName').value.trim();
-      const suppliesCost = getCalcSuppliesTotal();
-      const overheadCost = getCalcOverheadTotal();
-      const markup = parseFloat(document.getElementById('calcMarkup').value) || 0;
+      const suppliesCost  = getCalcSuppliesTotal();
+      const overheadCost  = getCalcOverheadTotal();
+      const laborCost     = getCalcLaborTotal();
+      const packagingCost = getCalcPackagingTotal();
+      const markup  = parseFloat(document.getElementById('calcMarkup').value) || 0;
       const discount = parseFloat(document.getElementById('calcDiscount').value) || 0;
       const tax      = parseFloat(document.getElementById('calcTax').value) || 0;
 
-      const totalCost = suppliesCost + overheadCost;
+      const totalCost = suppliesCost + overheadCost + laborCost + packagingCost;
       const markupAmt = totalCost * (markup / 100);
       const priceBeforeDiscount = totalCost + markupAmt;
       const discountAmt = priceBeforeDiscount * (discount / 100);
@@ -1708,18 +2090,20 @@
       const profit = sellingPrice - totalCost;
       const margin = sellingPrice > 0 ? (profit / sellingPrice * 100) : 0;
 
-      document.getElementById('rCalcName').textContent = name || '—';
-      document.getElementById('rCalcSupplies').textContent = fmt(suppliesCost);
-      document.getElementById('rCalcOverheadAmt').textContent = fmt(overheadCost);
-      document.getElementById('rCalcCost').textContent = fmt(totalCost);
-      document.getElementById('rCalcMarkupAmt').textContent = fmt(markupAmt);
+      document.getElementById('rCalcName').textContent         = name || '—';
+      document.getElementById('rCalcSupplies').textContent     = fmt(suppliesCost);
+      document.getElementById('rCalcOverheadAmt').textContent  = fmt(overheadCost);
+      document.getElementById('rCalcLaborAmt').textContent     = fmt(laborCost);
+      document.getElementById('rCalcPackagingAmt').textContent = fmt(packagingCost);
+      document.getElementById('rCalcCost').textContent         = fmt(totalCost);
+      document.getElementById('rCalcMarkupAmt').textContent    = fmt(markupAmt);
       document.getElementById('rCalcBeforeDiscount').textContent = fmt(priceBeforeDiscount);
-      document.getElementById('rCalcDiscountAmt').textContent = fmt(discountAmt);
-      document.getElementById('rCalcBeforeTax').textContent = fmt(priceBeforeTax);
-      document.getElementById('rCalcTaxAmt').textContent = fmt(taxAmt);
-      document.getElementById('rCalcSelling').textContent = fmt(sellingPrice);
-      document.getElementById('rCalcProfit').textContent = fmt(profit);
-      document.getElementById('rCalcMargin').textContent = margin.toFixed(2) + '%';
+      document.getElementById('rCalcDiscountAmt').textContent  = fmt(discountAmt);
+      document.getElementById('rCalcBeforeTax').textContent    = fmt(priceBeforeTax);
+      document.getElementById('rCalcTaxAmt').textContent       = fmt(taxAmt);
+      document.getElementById('rCalcSelling').textContent      = fmt(sellingPrice);
+      document.getElementById('rCalcProfit').textContent       = fmt(profit);
+      document.getElementById('rCalcMargin').textContent       = margin.toFixed(2) + '%';
     }
 
     function resetCalculator() {
@@ -1728,8 +2112,12 @@
       });
       document.getElementById('calcSuppliesBody').innerHTML = '';
       document.getElementById('calcSuppliesTotal').textContent = '₱0.00';
-      document.querySelectorAll('#calcOverheadList input[type=checkbox]').forEach(cb => cb.checked = false);
+      document.getElementById('calcElecBody').innerHTML = '';
       document.getElementById('calcOverheadTotal').textContent = '₱0.00';
+      document.getElementById('calcLaborBody').innerHTML = '';
+      document.getElementById('calcLaborTotal').textContent = '₱0.00';
+      document.getElementById('calcPackagingBody').innerHTML = '';
+      document.getElementById('calcPackagingTotal').textContent = '₱0.00';
       runCalculator();
       document.getElementById('rCalcName').textContent = '—';
     }
@@ -1740,8 +2128,10 @@
 
       const suppliesCost   = getCalcSuppliesTotal();
       const overheadCost   = getCalcOverheadTotal();
-      const cost           = suppliesCost + overheadCost;
-      if (cost <= 0) { alert('Please add supplies or overhead before saving.'); return; }
+      const laborCost      = getCalcLaborTotal();
+      const packagingCost  = getCalcPackagingTotal();
+      const cost           = suppliesCost + overheadCost + laborCost + packagingCost;
+      if (cost <= 0) { alert('Please add materials, electricity, labor or packaging before saving.'); return; }
 
       const markup         = parseFloat(document.getElementById('calcMarkup').value) || 0;
       const discount       = parseFloat(document.getElementById('calcDiscount').value) || 0;
@@ -1963,8 +2353,9 @@
       renderProducts();
       renderEquipment();
       renderOverhead();
+      renderLaborCosts();
+      renderCalcLaborList();
       renderOrders();
-      renderCalcOverheadList();
       buildYearOptions();
       renderExpenseView();
       buildSalesYearOptions();
