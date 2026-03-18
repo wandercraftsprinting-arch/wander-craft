@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WanderCrafts PH</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" onerror="window._fbFailed=true"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" onerror="window._fbFailed=true"></script>
+  <script>
+    if (!window._fbFailed && typeof firebase !== 'undefined') {
+    const _fbApp = firebase.initializeApp({
+      apiKey: "AIzaSyD6tmI32hWFnkRgZy5WVBSmKbqaw4BfiWg",
+      authDomain: "pricing-calculator-and-order.firebaseapp.com",
+      projectId: "pricing-calculator-and-order",
+      storageBucket: "pricing-calculator-and-order.firebasestorage.app",
+      messagingSenderId: "47664964583",
+      appId: "1:47664964583:web:703fab74f65a21e5035342"
+    });
+    const _db = firebase.firestore();
+    const STORE = 'wandercrafts';
+
+    window._fbSave = async (key, data) => {
+      try { await _db.collection(STORE).doc(key).set({ data: JSON.stringify(data) }); }
+      catch(e) { console.warn('Firestore save failed', e); }
+    };
+
+    window._fbLoad = async (key, fallback) => {
+      try {
+        const snap = await _db.collection(STORE).doc(key).get();
+        if (snap.exists) return JSON.parse(snap.data().data);
+      } catch(e) { console.warn('Firestore load failed', e); }
+      return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+    };
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f0e8;
+      min-height: 100vh;
+      display: flex;
+      color: #3d2e1e;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 210px;
+      min-height: 100vh;
+      background: #fff8f0;
+      border-right: 1px solid #e0d5c5;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 14px;
+      flex-shrink: 0;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+    }
+
+    .sidebar-title { font-size: 1rem; font-weight: 700; color: #3d2e1e; margin-bottom: 4px; }
+    .sidebar-sub { font-size: 0.72rem; color: #a08060; margin-bottom: 28px; }
+
+    .tabs { display: flex; flex-direction: column; gap: 4px; }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #a08060;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 6px 4px 4px;
+      margin-top: 10px;
+      display: block !important;
+    }
+
+    .tab-btn {
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #7a6248;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0;
+      text-align: left;
+    }
+
+    .tab-btn.active { background: #e8f5e9; color: #2e7d32; border-left: 3px solid #4caf50; }
+    .tab-btn:hover:not(.active) { background: #f0ebe0; color: #3d2e1e; }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      padding: 36px;
+      overflow-y: auto;
+      min-height: 100vh;
+      background: #f5f0e8;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .field { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #7a6248;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      padding: 9px 14px;
+      background: #fff;
+      border: 1px solid #d9cfc0;
+      border-radius: 8px;
+      color: #3d2e1e;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: #4caf50; box-shadow: 0 0 0 3px rgba(76,175,80,0.1); }
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    input[readonly] { background: #f5f0e8 !important; cursor: not-allowed; opacity: 0.7; }
+
+    .input-wrap { position: relative; }
+    .input-wrap span {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%); color: #a08060; font-size: 0.95rem;
+    }
+    .input-wrap input { padding-left: 28px; }
+
+    button {
+      width: 100%;
+      margin-top: 16px;
+      padding: 10px;
+      background: #4caf50;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #388e3c; }
+
+    .btn-sm { width: auto; margin-top: 0; padding: 7px 14px; font-size: 0.82rem; }
+    .btn-danger { background: #fdecea; border: 1px solid #f5c6c2; color: #c0392b; }
+    .btn-danger:hover { background: #fad4d0; }
+    .btn-secondary { background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; }
+    .btn-secondary:hover { background: #d0ebd1; }
+    .btn-warning { background: #fff8e1; border: 1px solid #ffe082; color: #b8860b; }
+    .btn-warning:hover { background: #fff0c0; }
+
+    .mat-form-actions { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+    #editBanner {
+      display: none;
+      font-size: 0.78rem;
+      color: #7a5c00;
+      background: #fff8dc;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: 6px 12px;
+      margin-bottom: 10px;
+    }
+
+    .mat-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .mat-form-grid .field { margin-bottom: 0; }
+    .mat-table-wrap { overflow-x: auto; margin-top: 6px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      min-width: 560px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    thead tr { background: #dbeafe; }
+
+    th {
+      padding: 10px 12px;
+      text-align: left;
+      color: #1d4ed8;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 9px 12px;
+      color: #3d2e1e;
+      border-bottom: 1px solid #f0ebe0;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover { background: #faf7f2; }
+    td.price-col { color: #2e7d32; font-weight: 700; }
+    .empty-state { text-align: center; color: #a08060; font-size: 0.85rem; padding: 24px 0; }
+
+    /* Calculator */
+    .ingredient-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+
+    .ingredient-row select {
+      flex: 2;
+      padding: 9px 10px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #1e293b;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .ingredient-row select option { background: #fff; color: #1e293b; }
+    .ingredient-row .qty-wrap { flex: 1; }
+    .ingredient-row .qty-wrap input { padding: 9px 10px; border-radius: 8px; font-size: 0.9rem; }
+
+    .row-cost { font-size: 0.82rem; color: #2e7d32; font-weight: 700; min-width: 70px; text-align: right; }
+
+    .cost-total { font-size: 0.82rem; color: #7a6248; margin-top: 8px; }
+    .cost-total span { color: #2e7d32; font-weight: 700; }
+
+    .ingredients-section {
+      background: #fff;
+      border: 1px solid #e0d5c5;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .ingredients-section > label { margin-bottom: 10px; color: #3d2e1e; font-size: 0.78rem; }
+
+    .divider { border: none; border-top: 1px solid #e0d5c5; margin: 20px 0; }
+
+    .results { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .result-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      border: 1px solid #e0d5c5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .result-box.highlight {
+      background: #e8f5e9;
+      border-color: #c8e6c9;
+      grid-column: span 2;
+    }
+
+    .result-box .rlabel { font-size: 0.72rem; color: #7a6248; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .result-box.highlight .rlabel { color: #388e3c; }
+    .result-box .value { font-size: 1.3rem; font-weight: 700; color: #3d2e1e; }
+    .result-box.highlight .value { font-size: 1.7rem; color: #2e7d32; }
+    .value.positive { color: #2e7d32; }
+    .value.negative { color: #c0392b; }
+
+    .save-btn { margin-top: 12px; }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+      <img id="sidebarLogo" src="" alt="" style="width:32px; height:32px; border-radius:6px; object-fit:cover; display:none;" />
+      <div id="sidebarTitleDisplay" class="sidebar-title" style="cursor:pointer;" onclick="startEditBrand()">🏷️ WanderCrafts</div>
+      <input id="sidebarTitleInput" type="text" style="display:none; font-size:1rem; font-weight:700; color:#3d2e1e; border:1px solid #d9cfc0; border-radius:6px; padding:3px 8px; width:130px;" onblur="saveBrand()" onkeydown="if(event.key==='Enter') saveBrand()" />
+    </div>
+    <label style="display:flex; align-items:center; gap:6px; font-size:0.72rem; color:#a08060; cursor:pointer; margin-bottom:20px; text-transform:none; letter-spacing:0;">
+      <input type="file" accept="image/*" style="display:none;" onchange="uploadLogo(event)" />
+      🖼️ Upload Logo
+    </label>
+  <div class="tabs">
+    <div class="section-label">Product Calculator</div>
+    <button class="tab-btn active" onclick="switchTab('products', this)">🛍️ Products</button>
+    <button class="tab-btn" onclick="switchTab('calculator', this)">🧮 Calculator</button>
+    <button class="tab-btn" onclick="switchTab('equipment', this)">🔧 Equipment</button>
+    <button class="tab-btn" onclick="switchTab('overhead', this)">💡 Overhead</button>
+    <button class="tab-btn" onclick="switchTab('materials', this)">📦 Supplies</button>
+    <button class="tab-btn" onclick="switchTab('expenses', this)">💸 Expense View</button>
+    <div class="section-label" style="margin-top:18px;">Orders</div>
+    <button class="tab-btn" onclick="switchTab('orders', this)">📋 Orders</button>
+    <button class="tab-btn" onclick="switchTab('overview', this)">📊 Sales Overview</button>
+  </div>
+</div>
+<div class="main">
+
+  <!-- SUPPLIES TAB -->
+  <div id="tab-materials" class="tab-content">
+    <div class="mat-form-grid">
+      <div class="field"><label>Order Date</label><input type="date" id="matDate" /></div>
+      <div class="field"><label>Shop Name</label><input type="text" id="matShop" placeholder="e.g. Shopee" /></div>
+      <div class="field"><label>Product Name</label><input type="text" id="matName" placeholder="e.g. Fabric" /></div>
+      <div class="field"><label>Variation</label><input type="text" id="matVariation" placeholder="e.g. Red, 1m" /></div>
+      <div class="field"><label>Quantity</label><input type="number" id="matQty" placeholder="1" min="1" step="1" oninput="calcPricePerQty()" /></div>
+      <div class="field"><label>Total Price (₱)</label><input type="number" id="matTotalPrice" placeholder="0.00" min="0" step="0.01" oninput="calcPricePerQty()" /></div>
+      <div class="field"><label>Price per QTY (₱)</label><input type="number" id="matPricePerQty" placeholder="auto" step="0.01" readonly style="opacity:0.6;cursor:not-allowed;" /></div>
+    </div>
+    <div id="editBanner">✏️ Editing row — make changes and click Update.</div>
+    <div class="mat-form-actions">
+      <button class="btn-sm" id="matAddBtn" style="padding:10px 20px;" onclick="addMaterial()">+ Add Supply</button>
+      <button class="btn-sm btn-warning" id="matUpdateBtn" style="padding:10px 20px; display:none;" onclick="updateMaterial()">✔ Update</button>
+      <button class="btn-sm" style="padding:10px 20px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); display:none;" id="matCancelBtn" onclick="cancelEdit()">Cancel</button>
+    </div>
+    <div class="mat-table-wrap">
+      <table id="materialsTable">
+        <thead>
+          <tr>
+            <th>No.</th><th>Order Date</th><th>Shop</th><th>Product</th><th>Variation</th>
+            <th>Qty</th><th>Total Price</th><th>Price/QTY</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="materialsBody">
+          <tr><td colspan="9" class="empty-state">No supplies added yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EQUIPMENT TAB -->
+  <div id="tab-equipment" class="tab-content">
+    <div class="mat-form-grid">
+      <div class="field"><label>Order Date</label><input type="date" id="eqDate" /></div>
+      <div class="field"><label>Shop Name</label><input type="text" id="eqShop" placeholder="e.g. Lazada" /></div>
+      <div class="field"><label>Product Name</label><input type="text" id="eqName" placeholder="e.g. Sewing Machine" /></div>
+      <div class="field"><label>Variation</label><input type="text" id="eqVariation" placeholder="e.g. White" /></div>
+      <div class="field"><label>Quantity</label><input type="number" id="eqQty" placeholder="1" min="1" step="1" /></div>
+      <div class="field"><label>Total Price (₱)</label><input type="number" id="eqTotalPrice" placeholder="0.00" min="0" step="0.01" /></div>
+    </div>
+    <div class="mat-form-actions">
+      <button class="btn-sm" style="padding:10px 20px;" onclick="addEquipment()">+ Add Equipment</button>
+    </div>
+    <div class="mat-table-wrap">
+      <table>
+        <thead>
+          <tr><th>No.</th><th>Order Date</th><th>Shop</th><th>Product</th><th>Variation</th><th>Qty</th><th>Total Price</th><th></th></tr>
+        </thead>
+        <tbody id="equipmentBody">
+          <tr><td colspan="8" class="empty-state">No equipment added yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- OVERHEAD TAB -->
+  <div id="tab-overhead" class="tab-content">
+    <div class="mat-form-grid">
+      <div class="field"><label>Description</label><input type="text" id="ohDesc" placeholder="e.g. Electricity, Manpower" /></div>
+      <div class="field"><label>HR / QTY</label><input type="number" id="ohHrQty" placeholder="e.g. 8" min="0" step="0.01" oninput="calcOhAmount()" /></div>
+      <div class="field"><label>Amount per HR/QTY (₱)</label><input type="number" id="ohRate" placeholder="0.00" min="0" step="0.01" oninput="calcOhAmount()" /></div>
+      <div class="field"><label>Total Amount (₱)</label><input type="number" id="ohAmount" placeholder="auto" step="0.01" readonly style="opacity:0.6;cursor:not-allowed;" /></div>
+    </div>
+    <div class="mat-form-actions">
+      <button class="btn-sm" style="padding:10px 20px;" onclick="addOverhead()">+ Add Overhead</button>
+    </div>
+    <div class="mat-table-wrap">
+      <table>
+        <thead>
+          <tr><th>No.</th><th>Description</th><th>HR/QTY</th><th>Rate</th><th>Total Amount</th><th></th></tr>
+        </thead>
+        <tbody id="overheadBody">
+          <tr><td colspan="6" class="empty-state">No overhead costs added yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cost-total" style="margin-top:12px;">Total Overhead: <span id="overheadTotal">₱0.00</span></div>
+  </div>
+
+  <!-- CALCULATOR TAB -->
+  <div id="tab-calculator" class="tab-content">
+    <div class="field">
+      <label>Product Name</label>
+      <input type="text" id="productName" placeholder="e.g. Handmade Bag" />
+    </div>
+
+    <div class="ingredients-section">
+      <label>Cost Price — Select Supplies</label>
+      <div id="ingredientRows">
+        <div class="ingredient-row">
+          <select onchange="updateCost()"></select>
+          <div class="qty-wrap"><input type="number" placeholder="Qty" min="1" step="1" value="1" oninput="updateCost()" /></div>
+          <span class="row-cost">₱0.00</span>
+          <button class="btn-sm btn-danger" onclick="removeRow(this)">✕</button>
+        </div>
+      </div>
+      <button class="btn-sm btn-secondary" style="margin-top:8px;" onclick="addIngredientRow()">+ Add Row</button>
+      <div class="cost-total">Total Supplies Cost: <span id="costDisplay">₱0.00</span></div>
+    </div>
+
+    <div class="ingredients-section">
+      <label>Overhead Costs</label>
+      <div id="overheadCheckRows"><p style="color:#475569; font-size:0.82rem;">No overhead items found. Add them in the Overhead tab.</p></div>
+      <div class="cost-total" style="margin-top:8px;">Total Overhead Selected: <span id="overheadSelectedTotal">₱0.00</span></div>
+    </div>
+
+    <div class="field">
+      <label>Markup (%)</label>
+      <div class="input-wrap">
+        <span>%</span>
+        <input type="number" id="markup" placeholder="0" min="0" step="0.1" oninput="calculate()" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Discount (%)</label>
+      <div class="input-wrap">
+        <span>%</span>
+        <input type="number" id="discount" placeholder="0" min="0" max="100" step="0.1" oninput="calculate()" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Tax Rate (%)</label>
+      <div class="input-wrap">
+        <span>%</span>
+        <input type="number" id="tax" placeholder="0" min="0" step="0.1" oninput="calculate()" />
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="results">
+      <div class="result-box highlight">
+        <div class="rlabel">Final Selling Price</div>
+        <div class="value" id="sellingPrice">₱0.00</div>
+      </div>
+      <div class="result-box">
+        <div class="rlabel">Total Cost</div>
+        <div class="value" id="totalCostDisplay">₱0.00</div>
+      </div>
+      <div class="result-box">
+        <div class="rlabel">Price Before Tax</div>
+        <div class="value" id="priceBeforeTax">₱0.00</div>
+      </div>
+      <div class="result-box">
+        <div class="rlabel">Tax Amount</div>
+        <div class="value" id="taxAmount">₱0.00</div>
+      </div>
+      <div class="result-box">
+        <div class="rlabel">Profit</div>
+        <div class="value" id="profit">₱0.00</div>
+      </div>
+      <div class="result-box">
+        <div class="rlabel">Profit Margin</div>
+        <div class="value" id="margin">0.00%</div>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveProduct()">💾 Save to Products</button>
+    <button style="margin-top:8px; background:#f5f0e8; border:1px solid #d9cfc0; color:#7a6248;" onclick="resetCalc()">Reset</button>
+  </div>
+
+  <!-- EXPENSE VIEW TAB -->
+  <div id="tab-expenses" class="tab-content">
+    <!-- Filters -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <label style="margin-bottom:0; white-space:nowrap;">Year</label>
+      <select id="expYear" onchange="renderExpenses()" style="padding:8px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none; width:130px;"></select>
+      <label style="margin-bottom:0; white-space:nowrap;">Month</label>
+      <select id="expMonth" onchange="renderExpenses()" style="padding:8px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none; width:150px;">
+        <option value="">All Months</option>
+        <option value="01">January</option>
+        <option value="02">February</option>
+        <option value="03">March</option>
+        <option value="04">April</option>
+        <option value="05">May</option>
+        <option value="06">June</option>
+        <option value="07">July</option>
+        <option value="08">August</option>
+        <option value="09">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+      <label style="margin-bottom:0; white-space:nowrap;">Type</label>
+      <select id="expType" onchange="renderExpenses()" style="padding:8px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none; width:140px;">
+        <option value="">All</option>
+        <option value="Supplies">Supplies</option>
+        <option value="Equipment">Equipment</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-sm btn-secondary" style="display:flex; align-items:center; gap:6px;" onclick="exportExpenseExcel()">📥 Export Excel</button>
+      <button class="btn-sm" style="display:flex; align-items:center; gap:6px; background:#e8eaf6; border:1px solid #c5cae9; color:#3949ab;" onclick="exportExpensePDF()">🖨️ Export PDF</button>
+    </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="expCards" style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px;"></div>
+
+    <!-- Combined Table -->
+    <div style="font-size:0.75rem; font-weight:800; color:#a08060; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Expense Records</div>
+    <div class="mat-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Shop</th>
+            <th>Product</th>
+            <th>Variation</th>
+            <th>Qty</th>
+            <th>Total Price</th>
+          </tr>
+        </thead>
+        <tbody id="expBody"></tbody>
+      </table>
+    </div>
+    <div class="cost-total" style="margin-top:12px;">Total Expenses: <span id="expTotal">₱0.00</span></div>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <div id="tab-orders" class="tab-content">
+    <div class="mat-form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+      <div class="field"><label>Order Date</label><input type="date" id="ordDate" /></div>
+      <div class="field"><label>Customer Name</label><input type="text" id="ordCustomer" placeholder="e.g. Maria Santos" /></div>
+      <div class="field"><label>Contact No.</label><input type="text" id="ordContact" placeholder="e.g. 09XX XXX XXXX" /></div>
+      <div class="field"><label>Email Address</label><input type="text" id="ordEmail" placeholder="e.g. email@example.com" /></div>
+      <div class="field"><label>Product</label><input type="text" id="ordProduct" placeholder="e.g. Handmade Bag" /></div>
+      <div class="field"><label>Variation</label><input type="text" id="ordVariation" placeholder="e.g. Blue, Large" /></div>
+      <div class="field"><label>Quantity</label><input type="number" id="ordQty" placeholder="1" min="1" step="1" oninput="calcOrderTotal()" /></div>
+      <div class="field"><label>Unit Price (₱)</label><input type="number" id="ordUnitPrice" placeholder="0.00" step="0.01" oninput="calcOrderTotal()" /></div>
+      <div class="field"><label>Total Amount (₱)</label><input type="number" id="ordTotal" placeholder="auto" step="0.01" readonly style="opacity:0.6;cursor:not-allowed;background:#f5f0e8;" /></div>
+      <div class="field"><label>Payment Status</label>
+        <select id="ordPayment" style="width:100%; padding:9px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none;">
+          <option value="Pending">Pending</option>
+          <option value="Partial">Partial</option>
+          <option value="Paid">Paid</option>
+        </select>
+      </div>
+      <div class="field"><label>Order Status</label>
+        <select id="ordStatus" style="width:100%; padding:9px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none;">
+          <option value="New">New</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Ready">Ready</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column: span 3;"><label>Notes</label><input type="text" id="ordNotes" placeholder="e.g. Custom message, color preference..." /></div>
+    </div>
+    <div id="ordEditBanner" style="display:none; font-size:0.78rem; color:#7a5c00; background:#fff8dc; border:1px solid #ffe082; border-radius:8px; padding:6px 12px; margin-bottom:10px;">✏️ Editing order — make changes and click Update.</div>
+    <div class="mat-form-actions">
+      <button class="btn-sm" id="ordAddBtn" style="padding:10px 20px;" onclick="addOrder()">+ Add Order</button>
+      <button class="btn-sm btn-warning" id="ordUpdateBtn" style="padding:10px 20px; display:none;" onclick="updateOrder()">✔ Update</button>
+      <button class="btn-sm" id="ordCancelBtn" style="padding:10px 20px; background:#f5f0e8; border:1px solid #d9cfc0; color:#7a6248; display:none;" onclick="cancelOrderEdit()">Cancel</button>
+    </div>
+    <div class="mat-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Order Date</th>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Product</th>
+            <th>Variation</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr><td colspan="14" class="empty-state">No orders added yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cost-total" style="margin-top:12px;">Total Revenue: <span id="ordersTotal">₱0.00</span></div>
+  </div>
+
+  <!-- SALES OVERVIEW TAB -->
+  <div id="tab-overview" class="tab-content">
+    <!-- Toolbar -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <label style="margin-bottom:0; white-space:nowrap;">Filter by Year</label>
+      <select id="ovYear" onchange="renderOverview()" style="padding:8px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none; width:140px;"></select>
+      <label style="margin-bottom:0; white-space:nowrap;">Month</label>
+      <select id="ovMonth" onchange="renderOverview()" style="padding:8px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none; width:160px;">
+        <option value="">All Months</option>
+        <option value="01">January</option>
+        <option value="02">February</option>
+        <option value="03">March</option>
+        <option value="04">April</option>
+        <option value="05">May</option>
+        <option value="06">June</option>
+        <option value="07">July</option>
+        <option value="08">August</option>
+        <option value="09">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+      <label style="margin-bottom:0; white-space:nowrap;">Payment</label>
+      <select id="ovPayment" onchange="renderOverview()" style="padding:8px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none; width:140px;">
+        <option value="">All</option>
+        <option value="Pending">Pending</option>
+        <option value="Partial">Partial</option>
+        <option value="Paid">Paid</option>
+      </select>
+      <label style="margin-bottom:0; white-space:nowrap;">Order Status</label>
+      <select id="ovStatus" onchange="renderOverview()" style="padding:8px 14px; background:#fff; border:1px solid #d9cfc0; border-radius:8px; color:#3d2e1e; font-size:0.92rem; outline:none; width:150px;">
+        <option value="">All</option>
+        <option value="New">New</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Ready">Ready</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-sm btn-secondary" style="display:flex; align-items:center; gap:6px;" onclick="exportExcel()">📥 Export Excel</button>
+      <button class="btn-sm" style="display:flex; align-items:center; gap:6px; background:#e8eaf6; border:1px solid #c5cae9; color:#3949ab;" onclick="exportPDF()">🖨️ Export PDF</button>
+    </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="ovCards" style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px;"></div>
+
+    <!-- Monthly Breakdown -->
+    <div style="font-size:0.75rem; font-weight:800; color:#a08060; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Monthly Breakdown</div>
+    <div class="mat-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>No. of Orders</th>
+            <th>Total Revenue</th>
+            <th>Paid</th>
+            <th>Pending / Partial</th>
+            <th>Delivered</th>
+            <th>Cancelled</th>
+          </tr>
+        </thead>
+        <tbody id="ovMonthBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Top Products -->
+    <div style="font-size:0.75rem; font-weight:800; color:#a08060; text-transform:uppercase; letter-spacing:0.08em; margin:24px 0 10px;">Top Products</div>
+    <div class="mat-table-wrap">
+      <table>
+        <thead>
+          <tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty Sold</th><th>Revenue</th></tr>
+        </thead>
+        <tbody id="ovProductBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRODUCTS TAB -->
+  <div id="tab-products" class="tab-content active">
+    <div class="mat-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Product</th>
+            <th>Cost Price</th>
+            <th>Markup</th>
+            <th>Discount</th>
+            <th>Tax</th>
+            <th>Price Before Tax</th>
+            <th>Tax Amt</th>
+            <th>Selling Price</th>
+            <th>Profit</th>
+            <th>Margin</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="productsList">
+          <tr><td colspan="12" class="empty-state">No products saved yet. Use the Calculator tab to save a product.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Brand Editing ─────────────────────────────────────
+  const BRAND_KEY = 'pricingBrand';
+  const brand = JSON.parse(localStorage.getItem(BRAND_KEY) || '{"title":"🏷️ WanderCrafts","logo":""}');
+
+  function applyBrand() {
+    document.getElementById('sidebarTitleDisplay').textContent = brand.title;
+    const logo = document.getElementById('sidebarLogo');
+    if (brand.logo) { logo.src = brand.logo; logo.style.display = 'block'; }
+    else logo.style.display = 'none';
+  }
+
+  function startEditBrand() {
+    const inp = document.getElementById('sidebarTitleInput');
+    inp.value = document.getElementById('sidebarTitleDisplay').textContent;
+    document.getElementById('sidebarTitleDisplay').style.display = 'none';
+    inp.style.display = 'inline-block';
+    inp.focus();
+  }
+
+  function saveBrand() {
+    const val = document.getElementById('sidebarTitleInput').value.trim();
+    if (val) brand.title = val;
+    document.getElementById('sidebarTitleInput').style.display = 'none';
+    document.getElementById('sidebarTitleDisplay').style.display = 'inline-block';
+    document.getElementById('sidebarTitleDisplay').textContent = brand.title;
+    localStorage.setItem(BRAND_KEY, JSON.stringify(brand));
+  }
+
+  function startEditSub() {}
+  function saveSub() {}
+
+  function uploadLogo(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      brand.logo = ev.target.result;
+      localStorage.setItem(BRAND_KEY, JSON.stringify(brand));
+      applyBrand();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const KEYS = { materials: 'pricingMaterials', products: 'pricingProducts', equipment: 'pricingEquipment', overhead: 'pricingOverhead', orders: 'pricingOrders' };
+
+  let materials = [];
+  let products  = [];
+  let equipment = [];
+  let overhead  = [];
+  let orders    = [];
+
+  const fmt = v => '₱' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  const persist = () => {
+    // Always keep localStorage as backup
+    localStorage.setItem(KEYS.materials, JSON.stringify(materials));
+    localStorage.setItem(KEYS.products,  JSON.stringify(products));
+    localStorage.setItem(KEYS.equipment, JSON.stringify(equipment));
+    localStorage.setItem(KEYS.overhead,  JSON.stringify(overhead));
+    localStorage.setItem(KEYS.orders,    JSON.stringify(orders));
+    // Save to Firestore if available
+    if (window._fbSave) {
+      window._fbSave(KEYS.materials, materials);
+      window._fbSave(KEYS.products,  products);
+      window._fbSave(KEYS.equipment, equipment);
+      window._fbSave(KEYS.overhead,  overhead);
+      window._fbSave(KEYS.orders,    orders);
+    }
+  };
+
+  async function loadAllData() {
+    const load = window._fbLoad
+      ? (key, fb) => window._fbLoad(key, fb)
+      : (key, fb) => Promise.resolve(JSON.parse(localStorage.getItem(key) || JSON.stringify(fb)));
+    [materials, products, equipment, overhead, orders] = await Promise.all([
+      load(KEYS.materials, []),
+      load(KEYS.products,  []),
+      load(KEYS.equipment, []),
+      load(KEYS.overhead,  []),
+      load(KEYS.orders,    [])
+    ]);
+    applyBrand();
+    renderMaterials();
+    renderProducts();
+    renderEquipment();
+    renderOverhead();
+    renderOrders();
+  }
+
+  // Load data on startup
+  window.addEventListener('DOMContentLoaded', () => loadAllData());
+
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+    if (tab === 'calculator') { refreshSelects(); refreshOverheadChecks(); }
+    if (tab === 'orders') refreshOrderProductSelect();
+    if (tab === 'overview') renderOverview();
+    if (tab === 'expenses') renderExpenses();
+  }
+
+  // ── Expense View ─────────────────────────────────────
+  function exportExpenseExcel() {
+    const year  = document.getElementById('expYear').value;
+    const month = document.getElementById('expMonth').value;
+    const type  = document.getElementById('expType').value;
+    const label = month ? `${year}-${month}` : year;
+    const allItems = [
+      ...materials.map(m => ({ ...m, type: 'Supplies',  amount: m.totalPrice })),
+      ...equipment.map(e => ({ ...e, type: 'Equipment', amount: e.totalPrice }))
+    ];
+    const filtered = allItems.filter(i =>
+      i.date && i.date.slice(0,4) === year &&
+      (!month || i.date.slice(5,7) === month) &&
+      (!type  || i.type === type)
+    );
+    const wb = XLSX.utils.book_new();
+    const numFmt = '0.00';
+    const rows = [['Type','Date','Shop','Product','Variation','Qty','Total Price']];
+    filtered.forEach(i => rows.push([i.type, i.date||'', i.shop||'', i.name, i.variation||'', i.qty, i.amount||0]));
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    for (let r = 1; r < rows.length; r++) {
+      const ref = XLSX.utils.encode_cell({ r, c: 6 });
+      if (ws[ref] && typeof ws[ref].v === 'number') ws[ref].z = numFmt;
+    }
+    XLSX.utils.book_append_sheet(wb, ws, 'Expenses');
+    XLSX.writeFile(wb, `WanderCrafts_Expenses_${label}.xlsx`);
+  }
+
+  function exportExpensePDF() {
+    const year  = document.getElementById('expYear').value;
+    const month = document.getElementById('expMonth').value;
+    const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+    const label = month ? `${monthNames[parseInt(month,10)]} ${year}` : year;
+    const printWin = window.open('', '_blank');
+    const content  = document.getElementById('tab-expenses').innerHTML;
+    printWin.document.write(`<!DOCTYPE html><html><head><title>WanderCrafts Expense Report — ${label}</title>
+      <style>
+        body { font-family: 'Segoe UI', sans-serif; color: #3d2e1e; padding: 24px; }
+        h2 { margin-bottom: 16px; color: #2e7d32; }
+        table { width:100%; border-collapse:collapse; font-size:0.78rem; margin-bottom:20px; }
+        th { background:#dbeafe; color:#1d4ed8; padding:8px 10px; text-align:left; font-weight:700; text-transform:uppercase; }
+        td { padding:7px 10px; border-bottom:1px solid #f0ebe0; }
+        .price-col { color:#2e7d32; font-weight:700; }
+        select, button, input { display:none !important; }
+        label { display:none !important; }
+        #expCards > div { display:inline-block; border:1px solid #ccc; border-radius:8px; padding:12px 16px; margin:0 8px 12px 0; }
+      </style></head><body>
+      <h2>WanderCrafts PH — Expense Report (${label})</h2>
+      ${content}
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); printWin.close(); }, 400);
+  }
+
+  function renderExpenses() {
+    const allItems = [
+      ...materials.map(m => ({ ...m, type: 'Supplies',  amount: m.totalPrice })),
+      ...equipment.map(e => ({ ...e, type: 'Equipment', amount: e.totalPrice }))
+    ];
+
+    const years = [...new Set(allItems.map(i => i.date ? i.date.slice(0,4) : null).filter(Boolean))].sort((a,b) => b-a);
+    const sel = document.getElementById('expYear');
+    const curYear = sel.value || (years[0] || new Date().getFullYear().toString());
+    sel.innerHTML = years.length
+      ? years.map(y => `<option value="${y}" ${y===curYear?'selected':''}>${y}</option>`).join('')
+      : `<option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>`;
+
+    const curMonth = document.getElementById('expMonth').value;
+    const curType  = document.getElementById('expType').value;
+
+    const filtered = allItems.filter(i =>
+      i.date && i.date.slice(0,4) === curYear &&
+      (!curMonth || i.date.slice(5,7) === curMonth) &&
+      (!curType  || i.type === curType)
+    );
+
+    const totalExp   = filtered.reduce((s,i) => s + (i.amount||0), 0);
+    const supTotal   = filtered.filter(i => i.type==='Supplies').reduce((s,i) => s+(i.amount||0), 0);
+    const eqTotal    = filtered.filter(i => i.type==='Equipment').reduce((s,i) => s+(i.amount||0), 0);
+
+    document.getElementById('expCards').innerHTML = [
+      { label:'Total Expenses',  value: fmt(totalExp), color:'#fdecea', border:'#f5c6c2', vcolor:'#c0392b' },
+      { label:'Supplies Cost',   value: fmt(supTotal), color:'#fff8e1', border:'#ffe082', vcolor:'#b8860b' },
+      { label:'Equipment Cost',  value: fmt(eqTotal),  color:'#dbeafe', border:'#bfdbfe', vcolor:'#1d4ed8' },
+    ].map(c => `
+      <div style="background:${c.color}; border:1px solid ${c.border}; border-radius:12px; padding:18px 20px;">
+        <div style="font-size:0.72rem; font-weight:700; color:#7a6248; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">${c.label}</div>
+        <div style="font-size:1.5rem; font-weight:800; color:${c.vcolor};">${c.value}</div>
+      </div>`).join('');
+
+    document.getElementById('expTotal').textContent = fmt(totalExp);
+    document.getElementById('expBody').innerHTML = filtered.length === 0
+      ? '<tr><td colspan="8" class="empty-state">No expense records found.</td></tr>'
+      : filtered.map((i, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><span style="padding:3px 8px; border-radius:20px; font-size:0.75rem; font-weight:700; ${
+              i.type==='Supplies'
+                ? 'background:#fff8e1; color:#b8860b;'
+                : 'background:#dbeafe; color:#1d4ed8;'
+            }">${i.type}</span></td>
+            <td>${i.date || '—'}</td>
+            <td>${i.shop || '—'}</td>
+            <td>${i.name}</td>
+            <td>${i.variation || '—'}</td>
+            <td>${i.qty}</td>
+            <td class="price-col">${fmt(i.amount)}</td>
+          </tr>`).join('');
+  }
+
+  // ── Orders ──────────────────────────────────────────
+  function refreshOrderProductSelect() {}
+
+  function calcOrderTotal() {
+    const price = parseFloat(document.getElementById('ordUnitPrice').value) || 0;
+    const qty   = parseFloat(document.getElementById('ordQty').value) || 0;
+    document.getElementById('ordTotal').value = price > 0 && qty > 0 ? (price * qty).toFixed(2) : '';
+  }
+
+  function addOrder() {
+    const date     = document.getElementById('ordDate').value;
+    const customer = document.getElementById('ordCustomer').value.trim();
+    const contact  = document.getElementById('ordContact').value.trim();
+    const email    = document.getElementById('ordEmail').value.trim();
+    const product   = document.getElementById('ordProduct').value.trim();
+    const variation  = document.getElementById('ordVariation').value.trim();
+    const qty        = parseFloat(document.getElementById('ordQty').value) || 0;
+    const unitPrice= parseFloat(document.getElementById('ordUnitPrice').value) || 0;
+    const total    = unitPrice * qty;
+    const payment  = document.getElementById('ordPayment').value;
+    const status   = document.getElementById('ordStatus').value;
+    const notes    = document.getElementById('ordNotes').value.trim();
+    if (!customer) return alert('Please enter a customer name.');
+    if (!product)  return alert('Please enter a product name.');
+    if (qty <= 0)  return alert('Please enter a valid quantity.');
+    orders.push({ date, customer, contact, email, product, variation, qty, unitPrice, total, payment, status, notes });
+    ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordUnitPrice','ordTotal','ordNotes']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ordPayment').value = 'Pending';
+    document.getElementById('ordStatus').value  = 'New';
+    persist();
+    renderOrders();
+  }
+
+  let editingOrderIndex = -1;
+
+  function editOrder(i) {
+    const o = orders[i];
+    editingOrderIndex = i;
+    document.getElementById('ordDate').value      = o.date || '';
+    document.getElementById('ordCustomer').value  = o.customer;
+    document.getElementById('ordContact').value   = o.contact || '';
+    document.getElementById('ordEmail').value     = o.email || '';
+    document.getElementById('ordProduct').value   = o.product;
+    document.getElementById('ordVariation').value = o.variation || '';
+    document.getElementById('ordQty').value       = o.qty;
+    document.getElementById('ordUnitPrice').value = o.unitPrice;
+    document.getElementById('ordTotal').value     = o.total;
+    document.getElementById('ordPayment').value   = o.payment;
+    document.getElementById('ordStatus').value    = o.status;
+    document.getElementById('ordNotes').value     = o.notes || '';
+    document.getElementById('ordEditBanner').style.display = 'block';
+    document.getElementById('ordAddBtn').style.display     = 'none';
+    document.getElementById('ordUpdateBtn').style.display  = 'inline-block';
+    document.getElementById('ordCancelBtn').style.display  = 'inline-block';
+    document.getElementById('ordCustomer').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateOrder() {
+    const date      = document.getElementById('ordDate').value;
+    const customer  = document.getElementById('ordCustomer').value.trim();
+    const contact   = document.getElementById('ordContact').value.trim();
+    const email     = document.getElementById('ordEmail').value.trim();
+    const product   = document.getElementById('ordProduct').value.trim();
+    const variation = document.getElementById('ordVariation').value.trim();
+    const qty       = parseFloat(document.getElementById('ordQty').value) || 0;
+    const unitPrice = parseFloat(document.getElementById('ordUnitPrice').value) || 0;
+    const total     = unitPrice * qty;
+    const payment   = document.getElementById('ordPayment').value;
+    const status    = document.getElementById('ordStatus').value;
+    const notes     = document.getElementById('ordNotes').value.trim();
+    if (!customer) return alert('Please enter a customer name.');
+    if (!product)  return alert('Please enter a product name.');
+    if (qty <= 0)  return alert('Please enter a valid quantity.');
+    orders[editingOrderIndex] = { date, customer, contact, email, product, variation, qty, unitPrice, total, payment, status, notes };
+    persist();
+    cancelOrderEdit();
+    renderOrders();
+  }
+
+  function cancelOrderEdit() {
+    editingOrderIndex = -1;
+    ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordUnitPrice','ordTotal','ordNotes']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ordPayment').value = 'Pending';
+    document.getElementById('ordStatus').value  = 'New';
+    document.getElementById('ordEditBanner').style.display = 'none';
+    document.getElementById('ordAddBtn').style.display     = 'inline-block';
+    document.getElementById('ordUpdateBtn').style.display  = 'none';
+    document.getElementById('ordCancelBtn').style.display  = 'none';
+  }
+
+  function deleteOrder(i) {
+    orders.splice(i, 1);
+    persist();
+    renderOrders();
+  }
+
+  const statusColors = {
+    'New':         'background:#dbeafe; color:#1d4ed8;',
+    'In Progress': 'background:#fef9c3; color:#b45309;',
+    'Ready':       'background:#dcfce7; color:#15803d;',
+    'Delivered':   'background:#e8f5e9; color:#2e7d32;',
+    'Cancelled':   'background:#fee2e2; color:#b91c1c;'
+  };
+
+  const paymentColors = {
+    'Pending': 'background:#fef3c7; color:#b45309;',
+    'Partial': 'background:#dbeafe; color:#1d4ed8;',
+    'Paid':    'background:#dcfce7; color:#15803d;'
+  };
+
+  // ── Sales Overview ─────────────────────────────────────
+  function exportExcel() {
+    const year  = document.getElementById('ovYear').value;
+    const month = document.getElementById('ovMonth').value;
+    const label = month ? `${year}-${month}` : year;
+    const curMonth  = month;
+    const curPayment = document.getElementById('ovPayment').value;
+    const curStatus  = document.getElementById('ovStatus').value;
+    const filtered = orders.filter(o =>
+      o.date && o.date.slice(0,4) === year &&
+      (!curMonth   || o.date.slice(5,7) === curMonth) &&
+      (!curPayment || o.payment === curPayment) &&
+      (!curStatus  || o.status  === curStatus)
+    );
+
+    const wb = XLSX.utils.book_new();
+    const numFmt = '0.00';
+
+    const applyFmt = (ws, rows, cols) => {
+      cols.forEach(c => {
+        for (let r = 1; r < rows; r++) {
+          const ref = XLSX.utils.encode_cell({ r, c });
+          if (ws[ref] && typeof ws[ref].v === 'number') ws[ref].z = numFmt;
+        }
+      });
+    };
+
+    // Orders sheet — Unit Price col 7, Total col 8
+    const ordRows = [['Date','Customer','Contact','Email','Product','Variation','Qty','Unit Price','Total','Payment','Status','Notes']];
+    filtered.forEach(o => ordRows.push([o.date||'',o.customer,o.contact||'',o.email||'',o.product,o.variation||'',o.qty,o.unitPrice||0,o.total||0,o.payment,o.status,o.notes||'']));
+    const wsOrd = XLSX.utils.aoa_to_sheet(ordRows);
+    applyFmt(wsOrd, ordRows.length, [7, 8]);
+    XLSX.utils.book_append_sheet(wb, wsOrd, 'Orders');
+
+    // Monthly summary sheet — revenue cols 2,3,4
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const monthsToRender = curMonth ? [[parseInt(curMonth,10)-1, months[parseInt(curMonth,10)-1]]] : months.map((m,i)=>[i,m]);
+    const sumRows = [['Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled']];
+    monthsToRender.forEach(([mi, m]) => {
+      const mo   = String(mi+1).padStart(2,'0');
+      const rows = filtered.filter(o => o.date && o.date.slice(5,7) === mo);
+      if (!rows.length) return;
+      sumRows.push([m, rows.length,
+        rows.reduce((s,o)=>s+(o.total||0),0),
+        rows.filter(o=>o.payment==='Paid').reduce((s,o)=>s+(o.total||0),0),
+        rows.filter(o=>o.payment!=='Paid').reduce((s,o)=>s+(o.total||0),0),
+        rows.filter(o=>o.status==='Delivered').length,
+        rows.filter(o=>o.status==='Cancelled').length
+      ]);
+    });
+    const wsSum = XLSX.utils.aoa_to_sheet(sumRows);
+    applyFmt(wsSum, sumRows.length, [2, 3, 4]);
+    XLSX.utils.book_append_sheet(wb, wsSum, 'Monthly Summary');
+
+    // Top products sheet — Revenue col 4
+    const prodMap = {};
+    filtered.forEach(o => {
+      const key = o.product+'|'+(o.variation||'');
+      if (!prodMap[key]) prodMap[key] = { product:o.product, variation:o.variation||'', count:0, qty:0, rev:0 };
+      prodMap[key].count++; prodMap[key].qty += o.qty||0; prodMap[key].rev += o.total||0;
+    });
+    const prodRows = [['Product','Variation','Orders','Qty Sold','Revenue']];
+    Object.values(prodMap).sort((a,b)=>b.rev-a.rev).forEach(p => prodRows.push([p.product,p.variation,p.count,p.qty,p.rev]));
+    const wsProd = XLSX.utils.aoa_to_sheet(prodRows);
+    applyFmt(wsProd, prodRows.length, [4]);
+    XLSX.utils.book_append_sheet(wb, wsProd, 'Top Products');
+
+    XLSX.writeFile(wb, `WanderCrafts_Sales_${label}.xlsx`);
+  }
+
+  function exportPDF() {
+    const year  = document.getElementById('ovYear').value;
+    const month = document.getElementById('ovMonth').value;
+    const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+    const label = month ? `${monthNames[parseInt(month,10)]} ${year}` : year;
+    const printWin = window.open('', '_blank');
+    const content  = document.getElementById('tab-overview').innerHTML;
+    printWin.document.write(`<!DOCTYPE html><html><head><title>WanderCrafts Sales Report — ${label}</title>
+      <style>
+        body { font-family: 'Segoe UI', sans-serif; color: #3d2e1e; padding: 24px; }
+        h2 { margin-bottom: 16px; color: #2e7d32; }
+        table { width:100%; border-collapse:collapse; font-size:0.78rem; margin-bottom:20px; }
+        th { background:#dbeafe; color:#1d4ed8; padding:8px 10px; text-align:left; font-weight:700; text-transform:uppercase; }
+        td { padding:7px 10px; border-bottom:1px solid #f0ebe0; }
+        .price-col { color:#2e7d32; font-weight:700; }
+        select, button, input { display:none !important; }
+        label { display:none !important; }
+        #ovCards > div { display:inline-block; border:1px solid #ccc; border-radius:8px; padding:12px 16px; margin:0 8px 12px 0; }
+      </style></head><body>
+      <h2>WanderCrafts PH — Sales Report (${label})</h2>
+      ${content}
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); printWin.close(); }, 400);
+  }
+
+  function renderOverview() {
+    const years = [...new Set(orders.map(o => o.date ? o.date.slice(0,4) : null).filter(Boolean))].sort((a,b) => b-a);
+    const sel = document.getElementById('ovYear');
+    const curYear = sel.value || (years[0] || new Date().getFullYear().toString());
+    sel.innerHTML = years.length
+      ? years.map(y => `<option value="${y}" ${y===curYear?'selected':''}>${y}</option>`).join('')
+      : `<option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>`;
+
+    const curMonth   = document.getElementById('ovMonth').value;
+    const curPayment  = document.getElementById('ovPayment').value;
+    const curOrdStatus= document.getElementById('ovStatus').value;
+    const filtered = orders.filter(o =>
+      o.date && o.date.slice(0,4) === curYear &&
+      (!curMonth    || o.date.slice(5,7) === curMonth) &&
+      (!curPayment  || o.payment === curPayment) &&
+      (!curOrdStatus|| o.status  === curOrdStatus)
+    );
+    const totalRev  = filtered.reduce((s,o) => s + (o.total||0), 0);
+    const totalOrds = filtered.length;
+    const paidRev   = filtered.filter(o => o.payment==='Paid').reduce((s,o) => s+(o.total||0), 0);
+    const pendRev   = filtered.filter(o => o.payment!=='Paid').reduce((s,o) => s+(o.total||0), 0);
+
+    document.getElementById('ovCards').innerHTML = [
+      { label:'Total Revenue',     value: fmt(totalRev),   color:'#e8f5e9', border:'#c8e6c9', vcolor:'#2e7d32' },
+      { label:'Total Orders',      value: totalOrds,        color:'#dbeafe', border:'#bfdbfe', vcolor:'#1d4ed8' },
+      { label:'Paid Revenue',      value: fmt(paidRev),    color:'#dcfce7', border:'#bbf7d0', vcolor:'#15803d' },
+      { label:'Pending / Partial', value: fmt(pendRev),    color:'#fef9c3', border:'#fde68a', vcolor:'#b45309' },
+    ].map(c => `
+      <div style="background:${c.color}; border:1px solid ${c.border}; border-radius:12px; padding:18px 20px;">
+        <div style="font-size:0.72rem; font-weight:700; color:#7a6248; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">${c.label}</div>
+        <div style="font-size:1.5rem; font-weight:800; color:${c.vcolor};">${c.value}</div>
+      </div>`).join('');
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const monthsToRender = curMonth
+      ? [[parseInt(curMonth,10)-1, months[parseInt(curMonth,10)-1]]]
+      : months.map((m,i) => [i,m]);
+    document.getElementById('ovMonthBody').innerHTML = monthsToRender.map(([mi, m]) => {
+      const mo = String(mi+1).padStart(2,'0');
+      const rows = filtered.filter(o => o.date && o.date.slice(5,7) === mo);
+      if (!rows.length) return `<tr><td>${m}</td><td style="color:#a08060;">—</td><td style="color:#a08060;">—</td><td style="color:#a08060;">—</td><td style="color:#a08060;">—</td><td style="color:#a08060;">—</td><td style="color:#a08060;">—</td></tr>`;
+      const rev      = rows.reduce((s,o) => s+(o.total||0), 0);
+      const paid     = rows.filter(o => o.payment==='Paid').reduce((s,o) => s+(o.total||0), 0);
+      const pend     = rows.filter(o => o.payment!=='Paid').reduce((s,o) => s+(o.total||0), 0);
+      const delivered= rows.filter(o => o.status==='Delivered').length;
+      const cancelled= rows.filter(o => o.status==='Cancelled').length;
+      return `<tr>
+        <td style="font-weight:600;">${m}</td>
+        <td>${rows.length}</td>
+        <td class="price-col">${fmt(rev)}</td>
+        <td class="price-col">${fmt(paid)}</td>
+        <td style="color:#b45309; font-weight:700;">${fmt(pend)}</td>
+        <td>${delivered}</td>
+        <td style="color:#b91c1c;">${cancelled}</td>
+      </tr>`;
+    }).join('');
+
+    const prodMap = {};
+    filtered.forEach(o => {
+      const key = o.product + '|' + (o.variation||'');
+      if (!prodMap[key]) prodMap[key] = { product:o.product, variation:o.variation||'—', count:0, qty:0, rev:0 };
+      prodMap[key].count++;
+      prodMap[key].qty += o.qty||0;
+      prodMap[key].rev += o.total||0;
+    });
+    const topProds = Object.values(prodMap).sort((a,b) => b.rev - a.rev);
+    document.getElementById('ovProductBody').innerHTML = topProds.length
+      ? topProds.map(p => `<tr>
+          <td>${p.product}</td>
+          <td>${p.variation}</td>
+          <td>${p.count}</td>
+          <td>${p.qty}</td>
+          <td class="price-col">${fmt(p.rev)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="empty-state">No orders for this year.</td></tr>';
+  }
+
+  function renderOrders() {
+    const totalRev = orders.reduce((s, o) => s + (o.total || 0), 0);
+    document.getElementById('ordersTotal').textContent = fmt(totalRev);
+    document.getElementById('ordersBody').innerHTML = orders.length === 0
+      ? '<tr><td colspan="14" class="empty-state">No orders added yet.</td></tr>'
+      : orders.map((o, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${o.date || '—'}</td>
+            <td>${o.customer}</td>
+            <td>${o.contact || '—'}</td>
+            <td>${o.email || '—'}</td>
+            <td>${o.product}</td>
+            <td>${o.variation || '—'}</td>
+            <td>${o.qty}</td>
+            <td class="price-col">${fmt(o.unitPrice)}</td>
+            <td class="price-col">${fmt(o.total)}</td>
+            <td><span style="padding:3px 8px; border-radius:20px; font-size:0.75rem; font-weight:700; ${paymentColors[o.payment] || ''}">${o.payment}</span></td>
+            <td><span style="padding:3px 8px; border-radius:20px; font-size:0.75rem; font-weight:700; ${statusColors[o.status] || ''}">${o.status}</span></td>
+            <td style="max-width:140px; white-space:normal; font-size:0.78rem;">${o.notes || '—'}</td>
+            <td style="display:flex; gap:6px;">
+              <button class="btn-sm btn-warning" onclick="editOrder(${i})">✏️</button>
+              <button class="btn-sm btn-danger" onclick="deleteOrder(${i})">✕</button>
+            </td>
+          </tr>`).join('');
+  }
+
+  // ── Materials ──────────────────────────────────────────
+  function calcPricePerQty() {
+    const qty   = parseFloat(document.getElementById('matQty').value)        || 0;
+    const total = parseFloat(document.getElementById('matTotalPrice').value) || 0;
+    document.getElementById('matPricePerQty').value = qty > 0 ? (total / qty).toFixed(2) : '';
+  }
+
+  function addMaterial() {
+    const date       = document.getElementById('matDate').value;
+    const shop       = document.getElementById('matShop').value.trim();
+    const name       = document.getElementById('matName').value.trim();
+    const variation  = document.getElementById('matVariation').value.trim();
+    const qty        = parseFloat(document.getElementById('matQty').value)        || 0;
+    const totalPrice = parseFloat(document.getElementById('matTotalPrice').value) || 0;
+    if (!name) return alert('Please enter a product name.');
+    if (qty <= 0 || totalPrice < 0) return alert('Please enter a valid quantity and total price.');
+    const pricePerQty = qty > 0 ? totalPrice / qty : 0;
+    materials.push({ date, shop, name, variation, qty, totalPrice, pricePerQty });
+    ['matDate','matShop','matName','matVariation','matQty','matTotalPrice','matPricePerQty']
+      .forEach(id => document.getElementById(id).value = '');
+    persist();
+    renderMaterials();
+  }
+
+  let editingIndex = -1;
+
+  function editMaterial(i) {
+    const m = materials[i];
+    editingIndex = i;
+    document.getElementById('matDate').value        = m.date || '';
+    document.getElementById('matShop').value        = m.shop || '';
+    document.getElementById('matName').value        = m.name;
+    document.getElementById('matVariation').value   = m.variation || '';
+    document.getElementById('matQty').value         = m.qty;
+    document.getElementById('matTotalPrice').value  = m.totalPrice;
+    document.getElementById('matPricePerQty').value = m.pricePerQty.toFixed(2);
+    document.getElementById('editBanner').style.display    = 'block';
+    document.getElementById('matAddBtn').style.display     = 'none';
+    document.getElementById('matUpdateBtn').style.display  = 'inline-block';
+    document.getElementById('matCancelBtn').style.display  = 'inline-block';
+    document.getElementById('matName').focus();
+  }
+
+  function updateMaterial() {
+    const date       = document.getElementById('matDate').value;
+    const shop       = document.getElementById('matShop').value.trim();
+    const name       = document.getElementById('matName').value.trim();
+    const variation  = document.getElementById('matVariation').value.trim();
+    const qty        = parseFloat(document.getElementById('matQty').value)        || 0;
+    const totalPrice = parseFloat(document.getElementById('matTotalPrice').value) || 0;
+    if (!name) return alert('Please enter a product name.');
+    if (qty <= 0 || totalPrice < 0) return alert('Please enter a valid quantity and total price.');
+    const pricePerQty = qty > 0 ? totalPrice / qty : 0;
+    materials[editingIndex] = { date, shop, name, variation, qty, totalPrice, pricePerQty };
+    persist();
+    cancelEdit();
+    renderMaterials();
+    refreshSelects();
+    updateCost();
+  }
+
+  function cancelEdit() {
+    editingIndex = -1;
+    ['matDate','matShop','matName','matVariation','matQty','matTotalPrice','matPricePerQty']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('editBanner').style.display    = 'none';
+    document.getElementById('matAddBtn').style.display     = 'inline-block';
+    document.getElementById('matUpdateBtn').style.display  = 'none';
+    document.getElementById('matCancelBtn').style.display  = 'none';
+  }
+
+  function duplicateMaterial(i) {
+    const m = { ...materials[i], date: '' };
+    materials.splice(i + 1, 0, m);
+    persist();
+    renderMaterials();
+  }
+
+  function deleteMaterial(i) {
+    materials.splice(i, 1);
+    persist();
+    renderMaterials();
+    refreshSelects();
+    updateCost();
+  }
+
+  function renderMaterials() {
+    const tbody = document.getElementById('materialsBody');
+    tbody.innerHTML = materials.length === 0
+      ? '<tr><td colspan="9" class="empty-state">No supplies added yet.</td></tr>'
+      : materials.map((m, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${m.date || '—'}</td>
+            <td>${m.shop || '—'}</td>
+            <td>${m.name}</td>
+            <td>${m.variation || '—'}</td>
+            <td>${m.qty}</td>
+            <td class="price-col">${fmt(m.totalPrice)}</td>
+            <td class="price-col">${fmt(m.pricePerQty)}</td>
+            <td style="display:flex; gap:6px;">
+              <button class="btn-sm btn-warning" onclick="editMaterial(${i})">✏️</button>
+              <button class="btn-sm btn-secondary" onclick="duplicateMaterial(${i})" title="Duplicate">📋</button>
+              <button class="btn-sm btn-danger" onclick="deleteMaterial(${i})">✕</button>
+            </td>
+          </tr>`).join('');
+  }
+
+  // ── Overhead ──────────────────────────────────────────
+  function calcOhAmount() {
+    const hrQty = parseFloat(document.getElementById('ohHrQty').value) || 0;
+    const rate  = parseFloat(document.getElementById('ohRate').value)  || 0;
+    document.getElementById('ohAmount').value = (hrQty * rate).toFixed(2);
+  }
+
+  function addOverhead() {
+    const desc   = document.getElementById('ohDesc').value.trim();
+    const hrQty  = parseFloat(document.getElementById('ohHrQty').value)  || 0;
+    const rate   = parseFloat(document.getElementById('ohRate').value)   || 0;
+    const amount = hrQty * rate;
+    if (!desc) return alert('Please enter a description.');
+    overhead.push({ desc, hrQty, rate, amount });
+    ['ohDesc','ohHrQty','ohRate','ohAmount'].forEach(id => document.getElementById(id).value = '');
+    persist();
+    renderOverhead();
+  }
+
+  function deleteOverhead(i) {
+    overhead.splice(i, 1);
+    persist();
+    renderOverhead();
+  }
+
+  function renderOverhead() {
+    const total = overhead.reduce((s, o) => s + o.amount, 0);
+    document.getElementById('overheadTotal').textContent = fmt(total);
+    document.getElementById('overheadBody').innerHTML = overhead.length === 0
+      ? '<tr><td colspan="6" class="empty-state">No overhead costs added yet.</td></tr>'
+      : overhead.map((o, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${o.desc}</td>
+            <td>${o.hrQty ?? '—'}</td>
+            <td class="price-col">${fmt(o.rate ?? 0)}</td>
+            <td class="price-col">${fmt(o.amount)}</td>
+            <td><button class="btn-sm btn-danger" onclick="deleteOverhead(${i})">✕</button></td>
+          </tr>`).join('');
+  }
+
+  // ── Equipment ──────────────────────────────────────────
+  function addEquipment() {
+    const date       = document.getElementById('eqDate').value;
+    const shop       = document.getElementById('eqShop').value.trim();
+    const name       = document.getElementById('eqName').value.trim();
+    const variation  = document.getElementById('eqVariation').value.trim();
+    const qty        = parseFloat(document.getElementById('eqQty').value)        || 0;
+    const totalPrice = parseFloat(document.getElementById('eqTotalPrice').value) || 0;
+    if (!name) return alert('Please enter a product name.');
+    if (qty <= 0) return alert('Please enter a valid quantity.');
+    equipment.push({ date, shop, name, variation, qty, totalPrice });
+    ['eqDate','eqShop','eqName','eqVariation','eqQty','eqTotalPrice']
+      .forEach(id => document.getElementById(id).value = '');
+    persist();
+    renderEquipment();
+  }
+
+  function deleteEquipment(i) {
+    equipment.splice(i, 1);
+    persist();
+    renderEquipment();
+  }
+
+  function renderEquipment() {
+    document.getElementById('equipmentBody').innerHTML = equipment.length === 0
+      ? '<tr><td colspan="8" class="empty-state">No equipment added yet.</td></tr>'
+      : equipment.map((e, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${e.date || '—'}</td>
+            <td>${e.shop || '—'}</td>
+            <td>${e.name}</td>
+            <td>${e.variation || '—'}</td>
+            <td>${e.qty}</td>
+            <td class="price-col">${fmt(e.totalPrice)}</td>
+            <td><button class="btn-sm btn-danger" onclick="deleteEquipment(${i})">✕</button></td>
+          </tr>`).join('');
+  }
+
+  // ── Calculator ─────────────────────────────────────────
+  function refreshOverheadChecks() {
+    const container = document.getElementById('overheadCheckRows');
+    if (overhead.length === 0) {
+      container.innerHTML = '<p style="color:#a08060; font-size:0.82rem;">No overhead items found. Add them in the Overhead tab.</p>';
+      document.getElementById('overheadSelectedTotal').textContent = fmt(0);
+      return;
+    }
+    container.innerHTML = overhead.map((o, i) => `
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <input type="checkbox" id="ohCheck${i}" value="${o.amount}" onchange="updateOverheadTotal()" style="width:16px; height:16px; cursor:pointer; accent-color:#4caf50;" />
+        <label for="ohCheck${i}" style="text-transform:none; font-size:0.88rem; color:#3d2e1e; cursor:pointer; margin-bottom:0;">${o.desc} <span style="color:#2e7d32; font-weight:700;">${fmt(o.amount)}</span></label>
+      </div>`).join('');
+    updateOverheadTotal();
+  }
+
+  function updateOverheadTotal() {
+    let total = 0;
+    document.querySelectorAll('#overheadCheckRows input[type="checkbox"]').forEach(cb => {
+      if (cb.checked) total += parseFloat(cb.value) || 0;
+    });
+    document.getElementById('overheadSelectedTotal').textContent = fmt(total);
+    calculate();
+  }
+
+  function getOverheadSelected() {
+    let total = 0;
+    document.querySelectorAll('#overheadCheckRows input[type="checkbox"]').forEach(cb => {
+      if (cb.checked) total += parseFloat(cb.value) || 0;
+    });
+    return total;
+  }
+
+  function matOptions() {
+    const seen = {};
+    materials.forEach(m => {
+      const key = m.name + '|' + (m.variation || '');
+      if (!seen[key] || m.pricePerQty > seen[key].pricePerQty) seen[key] = m;
+    });
+    return '<option value="">-- Select supply --</option>' +
+      Object.values(seen).map(m => `<option value="${m.pricePerQty}">${m.name}${m.variation ? ' – ' + m.variation : ''} (${fmt(m.pricePerQty)}/qty)</option>`).join('');
+  }
+
+  function refreshSelects() {
+    document.querySelectorAll('#ingredientRows select').forEach(sel => {
+      const cur = sel.value;
+      sel.innerHTML = matOptions();
+      sel.value = cur;
+    });
+    updateCost();
+  }
+
+  function addIngredientRow() {
+    const row = document.createElement('div');
+    row.className = 'ingredient-row';
+    row.innerHTML = `
+      <select onchange="updateCost()">
+        ${matOptions()}
+      </select>
+      <div class="qty-wrap"><input type="number" placeholder="Qty" min="1" step="1" value="1" oninput="updateCost()" /></div>
+      <span class="row-cost">₱0.00</span>
+      <button class="btn-sm btn-danger" onclick="removeRow(this)">✕</button>`;
+    document.getElementById('ingredientRows').appendChild(row);
+  }
+
+  function removeRow(btn) {
+    const rows = document.querySelectorAll('#ingredientRows .ingredient-row');
+    if (rows.length > 1) { btn.closest('.ingredient-row').remove(); updateCost(); }
+  }
+
+  function updateCost() {
+    let total = 0;
+    document.querySelectorAll('#ingredientRows .ingredient-row').forEach(row => {
+      const unit = parseFloat(row.querySelector('select').value) || 0;
+      const qty  = parseFloat(row.querySelector('input').value)  || 0;
+      const sub  = unit * qty;
+      row.querySelector('.row-cost').textContent = fmt(sub);
+      total += sub;
+    });
+    document.getElementById('costDisplay').textContent = fmt(total);
+    calculate();
+  }
+
+  function getCalcValues() {
+    let suppliesCost = 0;
+    document.querySelectorAll('#ingredientRows .ingredient-row').forEach(row => {
+      suppliesCost += (parseFloat(row.querySelector('select').value) || 0) *
+                      (parseFloat(row.querySelector('input').value)  || 0);
+    });
+    const overheadCost  = getOverheadSelected();
+    const cost          = suppliesCost + overheadCost;
+    const markup        = parseFloat(document.getElementById('markup').value)   || 0;
+    const discount      = parseFloat(document.getElementById('discount').value) || 0;
+    const tax           = parseFloat(document.getElementById('tax').value)      || 0;
+    const afterMarkup   = cost * (1 + markup / 100);
+    const afterDiscount = afterMarkup * (1 - discount / 100);
+    const taxAmt        = afterDiscount * (tax / 100);
+    const final         = afterDiscount + taxAmt;
+    const profit        = final - cost;
+    const margin        = final > 0 ? (profit / final) * 100 : 0;
+    return { cost, suppliesCost, overheadCost, markup, discount, tax, afterDiscount, taxAmt, final, profit, margin };
+  }
+
+  function calculate() {
+    const { cost, afterDiscount, taxAmt, final, profit, margin } = getCalcValues();
+    document.getElementById('totalCostDisplay').textContent  = fmt(cost);
+    document.getElementById('sellingPrice').textContent      = fmt(final);
+    document.getElementById('priceBeforeTax').textContent    = fmt(afterDiscount);
+    document.getElementById('taxAmount').textContent         = fmt(taxAmt);
+
+    const profitEl = document.getElementById('profit');
+    profitEl.textContent = fmt(profit);
+    profitEl.className = 'value ' + (profit >= 0 ? 'positive' : 'negative');
+
+    const marginEl = document.getElementById('margin');
+    marginEl.textContent = margin.toFixed(2) + '%';
+    marginEl.className = 'value ' + (margin >= 0 ? 'positive' : 'negative');
+  }
+
+  function saveProduct() {
+    const name = document.getElementById('productName').value.trim();
+    if (!name) return alert('Please enter a product name before saving.');
+    const v = getCalcValues();
+    if (v.final === 0) return alert('Please configure the calculator before saving.');
+    products.push({ name, ...v });
+    persist();
+    renderProducts();
+    alert(`"${name}" saved to Products!`);
+  }
+
+  function deleteProduct(i) {
+    products.splice(i, 1);
+    persist();
+    renderProducts();
+  }
+
+  function renderProducts() {
+    document.getElementById('productsList').innerHTML = products.length === 0
+      ? '<tr><td colspan="12" class="empty-state">No products saved yet. Use the Calculator tab to save a product.</td></tr>'
+      : products.map((p, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${p.name}</td>
+            <td class="price-col">${fmt(p.cost)}</td>
+            <td>${p.markup}%</td>
+            <td>${p.discount}%</td>
+            <td>${p.tax}%</td>
+            <td class="price-col">${fmt(p.afterDiscount)}</td>
+            <td class="price-col">${fmt(p.taxAmt)}</td>
+            <td class="price-col">${fmt(p.final)}</td>
+            <td><span class="${p.profit >= 0 ? 'positive' : 'negative'}">${fmt(p.profit)}</span></td>
+            <td><span class="${p.margin >= 0 ? 'positive' : 'negative'}">${p.margin.toFixed(2)}%</span></td>
+            <td><button class="btn-sm btn-danger" onclick="deleteProduct(${i})">✕</button></td>
+          </tr>`).join('');
+  }
+
+  function resetCalc() {
+    ['productName','markup','discount','tax'].forEach(id => document.getElementById(id).value = '');
+    const rows = document.querySelectorAll('#ingredientRows .ingredient-row');
+    rows.forEach((r, i) => {
+      if (i > 0) r.remove();
+      else { r.querySelector('select').value = ''; r.querySelector('input').value = 1; r.querySelector('.row-cost').textContent = '₱0.00'; }
+    });
+    document.querySelectorAll('#overheadCheckRows input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateOverheadTotal();
+    updateCost();
+  }
+</script>
+</div>
+</body>
+</html>

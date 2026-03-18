@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WanderCrafts PH - Pricing Calculator</title>
+  <script src="gsheets-config.js"></script>
+  <script src="gsheets-api.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f0e8; color: #3d2e1e; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1 { color: #2e7d32; margin-bottom: 30px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0d5c5; }
+    .tab { padding: 10px 20px; background: transparent; border: none; cursor: pointer; font-size: 16px; color: #7a6248; }
+    .tab.active { background: #e8f5e9; color: #2e7d32; border-bottom: 3px solid #4caf50; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: 600; margin-bottom: 5px; color: #7a6248; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #d9cfc0; border-radius: 5px; font-size: 14px; }
+    button { padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 10px; }
+    button:hover { background: #388e3c; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0d5c5; }
+    th { background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+    .btn-delete { background: #f44336; padding: 5px 10px; font-size: 12px; }
+    .btn-delete:hover { background: #d32f2f; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏷️ WanderCrafts PH - Pricing Calculator</h1>
+    <button id="gsheetsBtn" style="padding:10px 20px; background:#4285f4; color:#fff; border:none; border-radius:5px; cursor:pointer; margin-bottom:20px;" onclick="connectGoogleSheets()">📊 Connect Google Sheets</button>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('materials')">📦 Supplies</button>
+      <button class="tab" onclick="showTab('products')">🛍️ Products</button>
+      <button class="tab" onclick="showTab('orders')">📋 Orders</button>
+    </div>
+
+    <!-- SUPPLIES TAB -->
+    <div id="materials" class="tab-content active">
+      <h2>Supplies</h2>
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="matName" placeholder="e.g. Fabric">
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" id="matQty" placeholder="1" min="1">
+      </div>
+      <div class="form-group">
+        <label>Total Price (₱)</label>
+        <input type="number" id="matPrice" placeholder="0.00" step="0.01">
+      </div>
+      <button onclick="addMaterial()">+ Add Supply</button>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Total Price</th>
+            <th>Price/Qty</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="materialsBody">
+          <tr><td colspan="6" style="text-align:center; color:#999;">No supplies added yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PRODUCTS TAB -->
+    <div id="products" class="tab-content">
+      <h2>Products</h2>
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="prodName" placeholder="e.g. Handmade Bag">
+      </div>
+      <div class="form-group">
+        <label>Cost Price (₱)</label>
+        <input type="number" id="prodCost" placeholder="0.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Markup (%)</label>
+        <input type="number" id="prodMarkup" placeholder="0" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Selling Price (₱)</label>
+        <input type="number" id="prodSelling" readonly style="background:#f5f0e8;">
+      </div>
+      <button onclick="calculatePrice()">Calculate Price</button>
+      <button onclick="addProduct()">+ Save Product</button>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Product</th>
+            <th>Cost</th>
+            <th>Markup</th>
+            <th>Selling Price</th>
+            <th>Profit</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="productsBody">
+          <tr><td colspan="7" style="text-align:center; color:#999;">No products saved yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <div id="orders" class="tab-content">
+      <h2>Orders</h2>
+      <div class="form-group">
+        <label>Customer Name</label>
+        <input type="text" id="ordCustomer" placeholder="e.g. Maria Santos">
+      </div>
+      <div class="form-group">
+        <label>Product</label>
+        <input type="text" id="ordProduct" placeholder="e.g. Handmade Bag">
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" id="ordQty" placeholder="1" min="1">
+      </div>
+      <div class="form-group">
+        <label>Unit Price (₱)</label>
+        <input type="number" id="ordPrice" placeholder="0.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Total (₱)</label>
+        <input type="number" id="ordTotal" readonly style="background:#f5f0e8;">
+      </div>
+      <button onclick="calculateOrder()">Calculate Total</button>
+      <button onclick="addOrder()">+ Add Order</button>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr><td colspan="7" style="text-align:center; color:#999;">No orders added yet</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Revenue: <span id="totalRevenue" style="color:#2e7d32;">₱0.00</span></p>
+    </div>
+  </div>
+
+  <script>
+    let materials = JSON.parse(localStorage.getItem('materials') || '[]');
+    let products = JSON.parse(localStorage.getItem('products') || '[]');
+    let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+
+    async function syncToSheets() {
+      if (window.gsheets && window.gsheets.isAuthorized()) {
+        await window.gsheets.save('materials', materials);
+        await window.gsheets.save('products', products);
+        await window.gsheets.save('orders', orders);
+      }
+    }
+
+    async function loadFromSheets() {
+      if (window.gsheets && window.gsheets.isAuthorized()) {
+        const mat = await window.gsheets.loadData('materials');
+        const prod = await window.gsheets.loadData('products');
+        const ord = await window.gsheets.loadData('orders');
+        if (mat && mat.length > 0) materials = mat;
+        if (prod && prod.length > 0) products = prod;
+        if (ord && ord.length > 0) orders = ord;
+        renderMaterials();
+        renderProducts();
+        renderOrders();
+      }
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function fmt(v) {
+      return '₱' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    async function addMaterial() {
+      const name = document.getElementById('matName').value.trim();
+      const qty = parseFloat(document.getElementById('matQty').value) || 0;
+      const price = parseFloat(document.getElementById('matPrice').value) || 0;
+      
+      if (!name || qty <= 0 || price <= 0) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      materials.push({ name, qty, price, pricePerQty: price / qty });
+      localStorage.setItem('materials', JSON.stringify(materials));
+      await syncToSheets();
+      
+      document.getElementById('matName').value = '';
+      document.getElementById('matQty').value = '';
+      document.getElementById('matPrice').value = '';
+      
+      renderMaterials();
+    }
+
+    async function deleteMaterial(i) {
+      materials.splice(i, 1);
+      localStorage.setItem('materials', JSON.stringify(materials));
+      await syncToSheets();
+      renderMaterials();
+    }
+
+    function renderMaterials() {
+      const tbody = document.getElementById('materialsBody');
+      if (materials.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No supplies added yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = materials.map((m, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${m.name}</td>
+          <td>${m.qty}</td>
+          <td>${fmt(m.price)}</td>
+          <td>${fmt(m.pricePerQty)}</td>
+          <td><button class="btn-delete" onclick="deleteMaterial(${i})">Delete</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function calculatePrice() {
+      const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+      const markup = parseFloat(document.getElementById('prodMarkup').value) || 0;
+      const selling = cost * (1 + markup / 100);
+      document.getElementById('prodSelling').value = selling.toFixed(2);
+    }
+
+    async function addProduct() {
+      const name = document.getElementById('prodName').value.trim();
+      const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+      const markup = parseFloat(document.getElementById('prodMarkup').value) || 0;
+      const selling = parseFloat(document.getElementById('prodSelling').value) || 0;
+      
+      if (!name || cost <= 0) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      const profit = selling - cost;
+      products.push({ name, cost, markup, selling, profit });
+      localStorage.setItem('products', JSON.stringify(products));
+      await syncToSheets();
+      
+      document.getElementById('prodName').value = '';
+      document.getElementById('prodCost').value = '';
+      document.getElementById('prodMarkup').value = '';
+      document.getElementById('prodSelling').value = '';
+      
+      renderProducts();
+    }
+
+    async function deleteProduct(i) {
+      products.splice(i, 1);
+      localStorage.setItem('products', JSON.stringify(products));
+      await syncToSheets();
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const tbody = document.getElementById('productsBody');
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">No products saved yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = products.map((p, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${p.name}</td>
+          <td>${fmt(p.cost)}</td>
+          <td>${p.markup}%</td>
+          <td>${fmt(p.selling)}</td>
+          <td style="color:#2e7d32; font-weight:600;">${fmt(p.profit)}</td>
+          <td><button class="btn-delete" onclick="deleteProduct(${i})">Delete</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function calculateOrder() {
+      const qty = parseFloat(document.getElementById('ordQty').value) || 0;
+      const price = parseFloat(document.getElementById('ordPrice').value) || 0;
+      document.getElementById('ordTotal').value = (qty * price).toFixed(2);
+    }
+
+    async function addOrder() {
+      const customer = document.getElementById('ordCustomer').value.trim();
+      const product = document.getElementById('ordProduct').value.trim();
+      const qty = parseFloat(document.getElementById('ordQty').value) || 0;
+      const price = parseFloat(document.getElementById('ordPrice').value) || 0;
+      const total = parseFloat(document.getElementById('ordTotal').value) || 0;
+      
+      if (!customer || !product || qty <= 0 || price <= 0) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      orders.push({ customer, product, qty, price, total });
+      localStorage.setItem('orders', JSON.stringify(orders));
+      await syncToSheets();
+      
+      document.getElementById('ordCustomer').value = '';
+      document.getElementById('ordProduct').value = '';
+      document.getElementById('ordQty').value = '';
+      document.getElementById('ordPrice').value = '';
+      document.getElementById('ordTotal').value = '';
+      
+      renderOrders();
+    }
+
+    async function deleteOrder(i) {
+      orders.splice(i, 1);
+      localStorage.setItem('orders', JSON.stringify(orders));
+      await syncToSheets();
+      renderOrders();
+    }
+
+    function renderOrders() {
+      const tbody = document.getElementById('ordersBody');
+      if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">No orders added yet</td></tr>';
+        document.getElementById('totalRevenue').textContent = '₱0.00';
+        return;
+      }
+      tbody.innerHTML = orders.map((o, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${o.customer}</td>
+          <td>${o.product}</td>
+          <td>${o.qty}</td>
+          <td>${fmt(o.price)}</td>
+          <td style="color:#2e7d32; font-weight:600;">${fmt(o.total)}</td>
+          <td><button class="btn-delete" onclick="deleteOrder(${i})">Delete</button></td>
+        </tr>
+      `).join('');
+      
+      const totalRev = orders.reduce((sum, o) => sum + o.total, 0);
+      document.getElementById('totalRevenue').textContent = fmt(totalRev);
+    }
+
+    renderMaterials();
+    renderProducts();
+    renderOrders();
+
+    // Initialize Google Sheets on page load
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (window.gsheets) {
+        await window.gsheets.load();
+      }
+    });
+
+    // Connect to Google Sheets
+    async function connectGoogleSheets() {
+      const btn = document.getElementById('gsheetsBtn');
+      btn.textContent = '⏳ Connecting...';
+      btn.disabled = true;
+      
+      window.gsheets.authorize();
+      
+      // Wait for authorization
+      setTimeout(async () => {
+        if (window.gsheets.isAuthorized()) {
+          btn.textContent = '✅ Connected to Google Sheets';
+          btn.style.background = '#34a853';
+          await window.gsheets.setupHeaders();
+          await loadFromSheets();
+          alert('✅ Connected! Your data will now sync to Google Sheets automatically.');
+        } else {
+          btn.textContent = '📊 Connect Google Sheets';
+          btn.disabled = false;
+          alert('Authorization cancelled or failed. Please try again.');
+        }
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

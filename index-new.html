@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WanderCrafts PH - Pricing Calculator</title>
+  <script src="gsheets-config.js"></script>
+  <script src="gsheets-api.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f0e8; color: #3d2e1e; display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #fff8f0;
+      border-right: 1px solid #e0d5c5;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar h1 { font-size: 20px; color: #2e7d32; margin-bottom: 30px; }
+    .tabs { display: flex; flex-direction: column; gap: 5px; }
+    .tab { 
+      padding: 12px 15px; 
+      background: transparent; 
+      border: none; 
+      cursor: pointer; 
+      font-size: 15px; 
+      color: #7a6248;
+      text-align: left;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .tab:hover { background: #f0ebe0; }
+    .tab.active { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+    .gsheets-btn-sidebar {
+      margin-top: auto;
+      padding: 12px;
+      background: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .gsheets-btn-sidebar:hover { background: #3367d6; }
+    
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    h2 { color: #2e7d32; margin-bottom: 20px; }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: 600; margin-bottom: 5px; color: #7a6248; font-size: 13px; text-transform: uppercase; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #d9cfc0; border-radius: 5px; font-size: 14px; }
+    input:focus { border-color: #4caf50; outline: none; }
+    button { padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 10px; }
+    button:hover { background: #388e3c; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0d5c5; font-size: 13px; }
+    th { background: #dbeafe; color: #1d4ed8; font-weight: 600; text-transform: uppercase; }
+    .btn-delete { background: #fdecea; border: 1px solid #f5c6c2; color: #c0392b; padding: 5px 10px; font-size: 12px; }
+    .btn-delete:hover { background: #fad4d0; }
+    .price-col { color: #2e7d32; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h1>🏷️ WanderCrafts PH</h1>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('materials')">📦 Supplies</button>
+      <button class="tab" onclick="showTab('products')">🛍️ Products</button>
+      <button class="tab" onclick="showTab('equipment')">🔧 Equipment</button>
+      <button class="tab" onclick="showTab('overhead')">💡 Overhead</button>
+      <button class="tab" onclick="showTab('orders')">📋 Orders</button>
+      <button class="tab" onclick="showTab('calculator')">🧮 Calculator</button>
+    </div>
+    <button class="gsheets-btn-sidebar" id="gsheetsBtn" onclick="connectGoogleSheets()">📊 Connect Google Sheets</button>
+  </div>
+  
+  <div class="main-content">
+
+    <!-- SUPPLIES TAB -->
+    <div id="materials" class="tab-content active">
+      <h2>Supplies</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Order Date</label>
+          <input type="date" id="matDate">
+        </div>
+        <div class="form-group">
+          <label>Shop Name</label>
+          <input type="text" id="matShop" placeholder="e.g. Shopee">
+        </div>
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="matName" placeholder="e.g. Fabric">
+        </div>
+        <div class="form-group">
+          <label>Variation</label>
+          <input type="text" id="matVariation" placeholder="e.g. Red, 1m">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="matQty" placeholder="1" min="0.01" step="any" oninput="calcPricePerQty()">
+        </div>
+        <div class="form-group">
+          <label>Total Price (₱)</label>
+          <input type="number" id="matPrice" placeholder="0.00" step="0.01" oninput="calcPricePerQty()">
+        </div>
+        <div class="form-group">
+          <label>Price per QTY (₱)</label>
+          <input type="number" id="matPricePerQty" placeholder="auto" readonly style="background:#f5f0e8; cursor:not-allowed;">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button id="matAddBtn" onclick="addMaterial()">+ Add Supply</button>
+        <button id="matUpdateBtn" onclick="updateMaterial()" style="display:none; background:#ff9800;">✔ Update</button>
+        <button id="matCancelBtn" onclick="cancelEditMaterial()" style="display:none; background:#757575;">Cancel</button>
+        <span id="matEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing supply</span>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Order Date</th>
+            <th>Shop</th>
+            <th>Product</th>
+            <th>Variation</th>
+            <th>Qty</th>
+            <th>Total Price</th>
+            <th>Price/QTY</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="materialsBody">
+          <tr><td colspan="10" style="text-align:center; color:#999;">No supplies added yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PRODUCTS TAB -->
+    <div id="products" class="tab-content">
+      <h2>Products</h2>
+      <p style="font-size:13px; color:#7a6248; margin-bottom:15px;">Products are saved here from the 🧮 Calculator tab.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Product</th>
+            <th>Cost Price</th>
+            <th>Markup</th>
+            <th>Discount</th>
+            <th>Tax</th>
+            <th>Price Before Tax</th>
+            <th>Tax Amt</th>
+            <th>Selling Price</th>
+            <th>Profit</th>
+            <th>Margin</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="productsBody">
+          <tr><td colspan="12" style="text-align:center; color:#999;">No products saved yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- EQUIPMENT TAB -->
+    <div id="equipment" class="tab-content">
+      <h2>Equipment</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Order Date</label>
+          <input type="date" id="eqDate">
+        </div>
+        <div class="form-group">
+          <label>Shop Name</label>
+          <input type="text" id="eqShop" placeholder="e.g. Lazada">
+        </div>
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="eqName" placeholder="e.g. Sewing Machine">
+        </div>
+        <div class="form-group">
+          <label>Variation</label>
+          <input type="text" id="eqVariation" placeholder="e.g. White">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="eqQty" placeholder="1" min="0.01" step="any">
+        </div>
+        <div class="form-group">
+          <label>Total Price (₱)</label>
+          <input type="number" id="eqPrice" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button id="eqAddBtn" onclick="addEquipment()">+ Add Equipment</button>
+        <button id="eqUpdateBtn" onclick="updateEquipment()" style="display:none; background:#ff9800;">✔ Update</button>
+        <button id="eqCancelBtn" onclick="cancelEditEquipment()" style="display:none; background:#757575;">Cancel</button>
+        <span id="eqEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing equipment</span>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Order Date</th>
+            <th>Shop</th>
+            <th>Product</th>
+            <th>Variation</th>
+            <th>Qty</th>
+            <th>Total Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="equipmentBody">
+          <tr><td colspan="9" style="text-align:center; color:#999;">No equipment added yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- OVERHEAD TAB -->
+    <div id="overhead" class="tab-content">
+      <h2>Overhead Costs</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="ohDate">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="ohDesc" placeholder="e.g. Electricity, Manpower">
+        </div>
+        <div class="form-group">
+          <label>HR / QTY</label>
+          <input type="number" id="ohQty" placeholder="1" min="0.01" step="any" oninput="calcAmountPerQty()">
+        </div>
+        <div class="form-group">
+          <label>Total Amount (₱)</label>
+          <input type="number" id="ohAmount" placeholder="0.00" step="0.01" oninput="calcAmountPerQty()">
+        </div>
+        <div class="form-group">
+          <label>Amount per HR/QTY (₱)</label>
+          <input type="number" id="ohAmountPerQty" placeholder="auto" readonly style="background:#f5f0e8; cursor:not-allowed;">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button id="ohAddBtn" onclick="addOverhead()">+ Add Overhead</button>
+        <button id="ohUpdateBtn" onclick="updateOverhead()" style="display:none; background:#ff9800;">✔ Update</button>
+        <button id="ohCancelBtn" onclick="cancelEditOverhead()" style="display:none; background:#757575;">Cancel</button>
+        <span id="ohEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing overhead</span>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th>HR/QTY</th>
+            <th>Total Amount</th>
+            <th>Amount/HR/QTY</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="overheadBody">
+          <tr><td colspan="7" style="text-align:center; color:#999;">No overhead costs added yet</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Overhead: <span id="totalOverhead" style="color:#2e7d32;">₱0.00</span></p>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <div id="orders" class="tab-content">
+      <h2>Orders</h2>
+      <div class="form-group">
+        <label>Customer Name</label>
+        <input type="text" id="ordCustomer" placeholder="e.g. Maria Santos">
+      </div>
+      <div class="form-group">
+        <label>Product</label>
+        <input type="text" id="ordProduct" placeholder="e.g. Handmade Bag">
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" id="ordQty" placeholder="1" min="1">
+      </div>
+      <div class="form-group">
+        <label>Unit Price (₱)</label>
+        <input type="number" id="ordPrice" placeholder="0.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Total (₱)</label>
+        <input type="number" id="ordTotal" readonly style="background:#f5f0e8;">
+      </div>
+      <button onclick="calculateOrder()">Calculate Total</button>
+      <button onclick="addOrder()">+ Add Order</button>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr><td colspan="7" style="text-align:center; color:#999;">No orders added yet</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:20px; font-size:18px; font-weight:600;">Total Revenue: <span id="totalRevenue" style="color:#2e7d32;">₱0.00</span></p>
+    </div>
+    <!-- CALCULATOR TAB -->
+    <div id="calculator" class="tab-content">
+      <h2>Pricing Calculator</h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px;">
+
+        <!-- Inputs -->
+        <div>
+          <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" id="calcName" placeholder="e.g. Handmade Bag" oninput="runCalculator()">
+          </div>
+
+          <!-- Supplies Cost -->
+          <div class="form-group">
+            <label>Cost Price — Supplies</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcSuppliesTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Supply</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcSuppliesBody"></tbody>
+              </table>
+              <button onclick="addCalcSupplyRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Supplies Cost: <span id="calcSuppliesTotal" style="color:#2e7d32;">₱0.00</span></p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Overhead Costs</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;" id="calcOverheadList">
+              <p style="color:#999; font-size:13px;">No overhead costs added yet</p>
+            </div>
+            <p style="margin-top:8px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Overhead Selected: <span id="calcOverheadTotal" style="color:#2e7d32;">₱0.00</span></p>
+          </div>
+          <div class="form-group">
+            <label>Markup (%)</label>
+            <input type="number" id="calcMarkup" placeholder="0" step="0.1" oninput="runCalculator()">
+          </div>
+          <div class="form-group">
+            <label>Discount (%)</label>
+            <input type="number" id="calcDiscount" placeholder="0" step="0.1" oninput="runCalculator()">
+          </div>
+          <div class="form-group">
+            <label>Tax / VAT (%)</label>
+            <input type="number" id="calcTax" placeholder="0" step="0.1" oninput="runCalculator()">
+          </div>
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="runCalculator()">Calculate</button>
+            <button onclick="saveCalculatorToProducts()" style="background:#1d4ed8;">💾 Save to Products</button>
+            <button onclick="resetCalculator()" style="background:#757575;">Reset</button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div>
+          <div style="background:white; border-radius:12px; padding:24px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+            <p style="font-size:13px; font-weight:600; color:#7a6248; text-transform:uppercase; margin-bottom:16px;">Summary</p>
+            <table style="margin-top:0; box-shadow:none;">
+              <tbody>
+                <tr><td style="color:#7a6248;">Product</td><td id="rCalcName" style="font-weight:600;">—</td></tr>
+                <tr><td style="color:#7a6248;">Supplies Cost</td><td id="rCalcSupplies" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Overhead Cost</td><td id="rCalcOverheadAmt" class="price-col">₱0.00</td></tr>
+                <tr style="border-top:1px solid #e0d5c5;"><td style="color:#7a6248;">Total Cost Price</td><td id="rCalcCost" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Markup Amount</td><td id="rCalcMarkupAmt" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Price Before Discount</td><td id="rCalcBeforeDiscount" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Discount Amount</td><td id="rCalcDiscountAmt" style="color:#c0392b; font-weight:700;">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Price Before Tax</td><td id="rCalcBeforeTax" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Tax Amount</td><td id="rCalcTaxAmt" class="price-col">₱0.00</td></tr>
+                <tr style="border-top:2px solid #e0d5c5;">
+                  <td style="color:#2e7d32; font-weight:700; font-size:15px;">Selling Price (per unit)</td>
+                  <td id="rCalcSelling" style="color:#2e7d32; font-weight:700; font-size:15px;">₱0.00</td>
+                </tr>
+                <tr><td style="color:#7a6248;">Profit (per unit)</td><td id="rCalcProfit" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Profit Margin</td><td id="rCalcMargin" class="price-col">0.00%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let materials = JSON.parse(localStorage.getItem('materials') || '[]');
+    let products = JSON.parse(localStorage.getItem('products') || '[]');
+    let equipment = JSON.parse(localStorage.getItem('equipment') || '[]');
+    let overhead = JSON.parse(localStorage.getItem('overhead') || '[]');
+    let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+
+    function calcPricePerQty() {
+      const qty = parseFloat(document.getElementById('matQty').value) || 0;
+      const price = parseFloat(document.getElementById('matPrice').value) || 0;
+      const pricePerQty = qty > 0 ? (price / qty).toFixed(2) : '';
+      document.getElementById('matPricePerQty').value = pricePerQty;
+    }
+
+    function calcAmountPerQty() {
+      const qty = parseFloat(document.getElementById('ohQty').value) || 0;
+      const amount = parseFloat(document.getElementById('ohAmount').value) || 0;
+      const amountPerQty = qty > 0 ? (amount / qty).toFixed(2) : '';
+      document.getElementById('ohAmountPerQty').value = amountPerQty;
+    }
+
+    async function syncToSheets() {
+      if (window.gsheets && window.gsheets.isAuthorized()) {
+        await window.gsheets.save('materials', materials);
+        await window.gsheets.save('products', products);
+        await window.gsheets.save('equipment', equipment);
+        await window.gsheets.save('overhead', overhead);
+        await window.gsheets.save('orders', orders);
+      }
+    }
+
+    async function loadFromSheets() {
+      if (window.gsheets && window.gsheets.isAuthorized()) {
+        const mat = await window.gsheets.loadData('materials');
+        const prod = await window.gsheets.loadData('products');
+        const eq = await window.gsheets.loadData('equipment');
+        const oh = await window.gsheets.loadData('overhead');
+        const ord = await window.gsheets.loadData('orders');
+        if (mat && mat.length > 0) {
+          materials = mat.map(m => ({
+            ...m,
+            qty: parseFloat(m.qty) || 0,
+            price: parseFloat(m.price) || 0,
+            pricePerQty: parseFloat(m.pricePerQty) || 0
+          }));
+          localStorage.setItem('materials', JSON.stringify(materials));
+        }
+        if (prod && prod.length > 0) {
+          products = prod.map(p => ({
+            ...p,
+            cost: parseFloat(p.cost) || 0,
+            markup: parseFloat(p.markup) || 0,
+            discount: parseFloat(p.discount) || 0,
+            tax: parseFloat(p.tax) || 0,
+            priceBeforeTax: parseFloat(p.priceBeforeTax) || 0,
+            taxAmt: parseFloat(p.taxAmt) || 0,
+            selling: parseFloat(p.selling) || 0,
+            profit: parseFloat(p.profit) || 0,
+            margin: parseFloat(p.margin) || 0
+          }));
+          localStorage.setItem('products', JSON.stringify(products));
+        }
+        if (eq && eq.length > 0) {
+          equipment = eq.map(e => ({
+            ...e,
+            qty: parseFloat(e.qty) || 0,
+            price: parseFloat(e.price) || 0
+          }));
+          localStorage.setItem('equipment', JSON.stringify(equipment));
+        }
+        if (oh && oh.length > 0) {
+          overhead = oh.map(o => ({
+            ...o,
+            qty: parseFloat(o.qty) || 0,
+            amount: parseFloat(o.amount) || 0,
+            amountPerQty: parseFloat(o.qty) > 0 ? (parseFloat(o.amount) / parseFloat(o.qty)) : (parseFloat(o.amountPerQty) || 0)
+          }));
+          localStorage.setItem('overhead', JSON.stringify(overhead));
+        }
+        if (ord && ord.length > 0) {
+          orders = ord.map(o => ({
+            ...o,
+            qty: parseFloat(o.qty) || 0,
+            price: parseFloat(o.price) || 0,
+            total: parseFloat(o.total) || 0
+          }));
+          localStorage.setItem('orders', JSON.stringify(orders));
+        }
+        renderMaterials();
+        renderProducts();
+        renderEquipment();
+        renderOverhead();
+        renderOrders();
+      }
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function fmt(v) {
+      if (v === undefined || v === null || isNaN(v)) return '₱0.00';
+      return '₱' + parseFloat(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    async function addMaterial() {
+      const date = document.getElementById('matDate').value;
+      const shop = document.getElementById('matShop').value.trim();
+      const name = document.getElementById('matName').value.trim();
+      const variation = document.getElementById('matVariation').value.trim();
+      const qty = parseFloat(document.getElementById('matQty').value) || 0;
+      const price = parseFloat(document.getElementById('matPrice').value) || 0;
+      
+      if (!name || qty <= 0 || price <= 0) {
+        alert('Please fill required fields (Product Name, Quantity, Total Price)');
+        return;
+      }
+
+      const pricePerQty = price / qty;
+      materials.push({ date, shop, name, variation, qty, price, pricePerQty });
+      localStorage.setItem('materials', JSON.stringify(materials));
+      await syncToSheets();
+      
+      document.getElementById('matDate').value = '';
+      document.getElementById('matShop').value = '';
+      document.getElementById('matName').value = '';
+      document.getElementById('matVariation').value = '';
+      document.getElementById('matQty').value = '';
+      document.getElementById('matPrice').value = '';
+      document.getElementById('matPricePerQty').value = '';
+      
+      renderMaterials();
+    }
+
+    async function deleteMaterial(i) {
+      materials.splice(i, 1);
+      localStorage.setItem('materials', JSON.stringify(materials));
+      await syncToSheets();
+      renderMaterials();
+    }
+
+    function renderMaterials() {
+      const tbody = document.getElementById('materialsBody');
+      if (materials.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999;">No supplies added yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = materials.map((m, i) => {
+        // Always parse as numbers (Sheets returns strings)
+        const qty = parseFloat(m.qty) || 0;
+        const price = parseFloat(m.price) || 0;
+        const pricePerQty = qty > 0 ? price / qty : (parseFloat(m.pricePerQty) || 0);
+        return `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${m.date || '—'}</td>
+          <td>${m.shop || '—'}</td>
+          <td>${m.name}</td>
+          <td>${m.variation || '—'}</td>
+          <td>${qty}</td>
+          <td class="price-col">${fmt(price)}</td>
+          <td class="price-col">${fmt(pricePerQty)}</td>
+          <td>
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editMaterial(${i})">✏️ Edit</button>
+            <button class="btn-delete" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; margin-right:5px;" onclick="duplicateMaterial(${i})">⧉ Copy</button>
+            <button class="btn-delete" onclick="deleteMaterial(${i})">Delete</button>
+          </td>
+        </tr>
+        `;
+      }).join('');
+    }
+
+    let editingMaterialIndex = -1;
+
+    function editMaterial(i) {
+      const m = materials[i];
+      editingMaterialIndex = i;
+      
+      document.getElementById('matDate').value = m.date || '';
+      document.getElementById('matShop').value = m.shop || '';
+      document.getElementById('matName').value = m.name;
+      document.getElementById('matVariation').value = m.variation || '';
+      document.getElementById('matQty').value = m.qty;
+      document.getElementById('matPrice').value = m.price;
+      document.getElementById('matPricePerQty').value = m.pricePerQty ? parseFloat(m.pricePerQty).toFixed(2) : (m.price && m.qty ? (m.price / m.qty).toFixed(2) : '');
+      
+      document.getElementById('matAddBtn').style.display = 'none';
+      document.getElementById('matUpdateBtn').style.display = 'inline-block';
+      document.getElementById('matCancelBtn').style.display = 'inline-block';
+      document.getElementById('matEditBanner').style.display = 'inline';
+      
+      document.getElementById('matName').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function updateMaterial() {
+      const date = document.getElementById('matDate').value;
+      const shop = document.getElementById('matShop').value.trim();
+      const name = document.getElementById('matName').value.trim();
+      const variation = document.getElementById('matVariation').value.trim();
+      const qty = parseFloat(document.getElementById('matQty').value) || 0;
+      const price = parseFloat(document.getElementById('matPrice').value) || 0;
+      
+      if (!name || qty <= 0 || price <= 0) {
+        alert('Please fill required fields (Product Name, Quantity, Total Price)');
+        return;
+      }
+
+      const pricePerQty = price / qty;
+      materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty };
+      localStorage.setItem('materials', JSON.stringify(materials));
+      await syncToSheets();
+      
+      cancelEditMaterial();
+      renderMaterials();
+    }
+
+    function cancelEditMaterial() {
+      editingMaterialIndex = -1;
+      
+      document.getElementById('matDate').value = '';
+      document.getElementById('matShop').value = '';
+      document.getElementById('matName').value = '';
+      document.getElementById('matVariation').value = '';
+      document.getElementById('matQty').value = '';
+      document.getElementById('matPrice').value = '';
+      document.getElementById('matPricePerQty').value = '';
+      
+      document.getElementById('matAddBtn').style.display = 'inline-block';
+      document.getElementById('matUpdateBtn').style.display = 'none';
+      document.getElementById('matCancelBtn').style.display = 'none';
+      document.getElementById('matEditBanner').style.display = 'none';
+    }
+
+    async function duplicateMaterial(i) {
+      const m = { ...materials[i] };
+      materials.push(m);
+      localStorage.setItem('materials', JSON.stringify(materials));
+      await syncToSheets();
+      renderMaterials();
+    }
+
+    async function addEquipment() {
+      const date = document.getElementById('eqDate').value;
+      const shop = document.getElementById('eqShop').value.trim();
+      const name = document.getElementById('eqName').value.trim();
+      const variation = document.getElementById('eqVariation').value.trim();
+      const qty = parseFloat(document.getElementById('eqQty').value) || 0;
+      const price = parseFloat(document.getElementById('eqPrice').value) || 0;
+      
+      if (!name || qty <= 0 || price <= 0) {
+        alert('Please fill required fields (Product Name, Quantity, Total Price)');
+        return;
+      }
+
+      equipment.push({ date, shop, name, variation, qty, price });
+      localStorage.setItem('equipment', JSON.stringify(equipment));
+      await syncToSheets();
+      
+      document.getElementById('eqDate').value = '';
+      document.getElementById('eqShop').value = '';
+      document.getElementById('eqName').value = '';
+      document.getElementById('eqVariation').value = '';
+      document.getElementById('eqQty').value = '';
+      document.getElementById('eqPrice').value = '';
+      
+      renderEquipment();
+    }
+
+    async function deleteEquipment(i) {
+      equipment.splice(i, 1);
+      localStorage.setItem('equipment', JSON.stringify(equipment));
+      await syncToSheets();
+      renderEquipment();
+    }
+
+    function renderEquipment() {
+      const tbody = document.getElementById('equipmentBody');
+      if (equipment.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No equipment added yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = equipment.map((e, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${e.date || '—'}</td>
+          <td>${e.shop || '—'}</td>
+          <td>${e.name}</td>
+          <td>${e.variation || '—'}</td>
+          <td>${parseFloat(e.qty) || 0}</td>
+          <td class="price-col">${fmt(parseFloat(e.price) || 0)}</td>
+          <td>
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editEquipment(${i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteEquipment(${i})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    let editingEquipmentIndex = -1;
+
+    function editEquipment(i) {
+      const e = equipment[i];
+      editingEquipmentIndex = i;
+      
+      document.getElementById('eqDate').value = e.date || '';
+      document.getElementById('eqShop').value = e.shop || '';
+      document.getElementById('eqName').value = e.name;
+      document.getElementById('eqVariation').value = e.variation || '';
+      document.getElementById('eqQty').value = e.qty;
+      document.getElementById('eqPrice').value = e.price;
+      
+      document.getElementById('eqAddBtn').style.display = 'none';
+      document.getElementById('eqUpdateBtn').style.display = 'inline-block';
+      document.getElementById('eqCancelBtn').style.display = 'inline-block';
+      document.getElementById('eqEditBanner').style.display = 'inline';
+      
+      document.getElementById('eqName').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function updateEquipment() {
+      const date = document.getElementById('eqDate').value;
+      const shop = document.getElementById('eqShop').value.trim();
+      const name = document.getElementById('eqName').value.trim();
+      const variation = document.getElementById('eqVariation').value.trim();
+      const qty = parseFloat(document.getElementById('eqQty').value) || 0;
+      const price = parseFloat(document.getElementById('eqPrice').value) || 0;
+      
+      if (!name || qty <= 0 || price <= 0) {
+        alert('Please fill required fields (Product Name, Quantity, Total Price)');
+        return;
+      }
+
+      equipment[editingEquipmentIndex] = { date, shop, name, variation, qty, price };
+      localStorage.setItem('equipment', JSON.stringify(equipment));
+      await syncToSheets();
+      
+      cancelEditEquipment();
+      renderEquipment();
+    }
+
+    function cancelEditEquipment() {
+      editingEquipmentIndex = -1;
+      
+      document.getElementById('eqDate').value = '';
+      document.getElementById('eqShop').value = '';
+      document.getElementById('eqName').value = '';
+      document.getElementById('eqVariation').value = '';
+      document.getElementById('eqQty').value = '';
+      document.getElementById('eqPrice').value = '';
+      
+      document.getElementById('eqAddBtn').style.display = 'inline-block';
+      document.getElementById('eqUpdateBtn').style.display = 'none';
+      document.getElementById('eqCancelBtn').style.display = 'none';
+      document.getElementById('eqEditBanner').style.display = 'none';
+    }
+
+    let editingOverheadIndex = -1;
+
+    function editOverhead(i) {
+      const o = overhead[i];
+      editingOverheadIndex = i;
+      const qty = parseFloat(o.qty) || 0;
+      const amount = parseFloat(o.amount) || 0;
+      const amountPerQty = qty > 0 ? amount / qty : 0;
+
+      document.getElementById('ohDate').value = o.date || '';
+      document.getElementById('ohDesc').value = o.desc;
+      document.getElementById('ohQty').value = qty;
+      document.getElementById('ohAmount').value = amount;
+      document.getElementById('ohAmountPerQty').value = amountPerQty.toFixed(2);
+
+      document.getElementById('ohAddBtn').style.display = 'none';
+      document.getElementById('ohUpdateBtn').style.display = 'inline-block';
+      document.getElementById('ohCancelBtn').style.display = 'inline-block';
+      document.getElementById('ohEditBanner').style.display = 'inline';
+
+      document.getElementById('ohDesc').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function updateOverhead() {
+      const date = document.getElementById('ohDate').value;
+      const desc = document.getElementById('ohDesc').value.trim();
+      const qty = parseFloat(document.getElementById('ohQty').value) || 0;
+      const amount = parseFloat(document.getElementById('ohAmount').value) || 0;
+      
+      if (!desc || qty <= 0 || amount <= 0) {
+        alert('Please fill required fields (Description, HR/QTY, Total Amount)');
+        return;
+      }
+
+      const amountPerQty = amount / qty;
+      overhead[editingOverheadIndex] = { date, desc, qty, amount, amountPerQty };
+      localStorage.setItem('overhead', JSON.stringify(overhead));
+      await syncToSheets();
+      
+      cancelEditOverhead();
+      renderOverhead();
+    }
+
+    function cancelEditOverhead() {
+      editingOverheadIndex = -1;
+      
+      document.getElementById('ohDate').value = '';
+      document.getElementById('ohDesc').value = '';
+      document.getElementById('ohQty').value = '';
+      document.getElementById('ohAmount').value = '';
+      document.getElementById('ohAmountPerQty').value = '';
+      
+      document.getElementById('ohAddBtn').style.display = 'inline-block';
+      document.getElementById('ohUpdateBtn').style.display = 'none';
+      document.getElementById('ohCancelBtn').style.display = 'none';
+      document.getElementById('ohEditBanner').style.display = 'none';
+    }
+
+    async function addOverhead() {
+      const date = document.getElementById('ohDate').value;
+      const desc = document.getElementById('ohDesc').value.trim();
+      const qty = parseFloat(document.getElementById('ohQty').value) || 0;
+      const amount = parseFloat(document.getElementById('ohAmount').value) || 0;
+      
+      if (!desc || qty <= 0 || amount <= 0) {
+        alert('Please fill required fields (Description, HR/QTY, Total Amount)');
+        return;
+      }
+
+      const amountPerQty = amount / qty;
+      overhead.push({ date, desc, qty, amount, amountPerQty });
+      localStorage.setItem('overhead', JSON.stringify(overhead));
+      await syncToSheets();
+      
+      document.getElementById('ohDate').value = '';
+      document.getElementById('ohDesc').value = '';
+      document.getElementById('ohQty').value = '';
+      document.getElementById('ohAmount').value = '';
+      document.getElementById('ohAmountPerQty').value = '';
+      
+      renderOverhead();
+    }
+
+    async function deleteOverhead(i) {
+      overhead.splice(i, 1);
+      localStorage.setItem('overhead', JSON.stringify(overhead));
+      await syncToSheets();
+      renderOverhead();
+    }
+
+    function renderOverhead() {
+      const tbody = document.getElementById('overheadBody');
+      if (overhead.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">No overhead costs added yet</td></tr>';
+        document.getElementById('totalOverhead').textContent = '₱0.00';
+        return;
+      }
+      tbody.innerHTML = overhead.map((o, i) => {
+        // Always parse as numbers (Sheets returns strings)
+        const qty = parseFloat(o.qty) || 0;
+        const amount = parseFloat(o.amount) || 0;
+        const amountPerQty = qty > 0 ? amount / qty : (parseFloat(o.amountPerQty) || 0);
+        return `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${o.date || '—'}</td>
+          <td>${o.desc}</td>
+          <td>${qty}</td>
+          <td class="price-col">${fmt(amount)}</td>
+          <td class="price-col">${fmt(amountPerQty)}</td>
+          <td>
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editOverhead(${i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteOverhead(${i})">Delete</button>
+          </td>
+        </tr>
+        `;
+      }).join('');
+      
+      const totalOh = overhead.reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+      document.getElementById('totalOverhead').textContent = fmt(totalOh);
+      renderCalcOverheadList();
+    }
+
+    function calculateProductPrice() {
+      const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+      const markup = parseFloat(document.getElementById('prodMarkup').value) || 0;
+      const discount = parseFloat(document.getElementById('prodDiscount').value) || 0;
+      const tax = parseFloat(document.getElementById('prodTax').value) || 0;
+      
+      // Calculate price after markup
+      const priceAfterMarkup = cost * (1 + markup / 100);
+      
+      // Calculate price after discount
+      const priceBeforeTax = priceAfterMarkup * (1 - discount / 100);
+      
+      // Calculate tax amount
+      const taxAmt = priceBeforeTax * (tax / 100);
+      
+      // Calculate final selling price
+      const selling = priceBeforeTax + taxAmt;
+      
+      // Calculate profit and margin
+      const profit = selling - cost;
+      const margin = selling > 0 ? (profit / selling * 100) : 0;
+      
+      document.getElementById('prodPriceBeforeTax').value = priceBeforeTax.toFixed(2);
+      document.getElementById('prodTaxAmt').value = taxAmt.toFixed(2);
+      document.getElementById('prodSelling').value = selling.toFixed(2);
+      document.getElementById('prodProfit').value = profit.toFixed(2);
+      document.getElementById('prodMargin').value = margin.toFixed(2);
+    }
+
+    async function addProduct() {
+      const name = document.getElementById('prodName').value.trim();
+      const cost = parseFloat(document.getElementById('prodCost').value) || 0;
+      const markup = parseFloat(document.getElementById('prodMarkup').value) || 0;
+      const discount = parseFloat(document.getElementById('prodDiscount').value) || 0;
+      const tax = parseFloat(document.getElementById('prodTax').value) || 0;
+      const priceBeforeTax = parseFloat(document.getElementById('prodPriceBeforeTax').value) || 0;
+      const taxAmt = parseFloat(document.getElementById('prodTaxAmt').value) || 0;
+      const selling = parseFloat(document.getElementById('prodSelling').value) || 0;
+      const profit = parseFloat(document.getElementById('prodProfit').value) || 0;
+      const margin = parseFloat(document.getElementById('prodMargin').value) || 0;
+      
+      if (!name || cost <= 0) {
+        alert('Please fill required fields (Product Name, Cost Price)');
+        return;
+      }
+
+      products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin });
+      localStorage.setItem('products', JSON.stringify(products));
+      await syncToSheets();
+      
+      document.getElementById('prodName').value = '';
+      document.getElementById('prodCost').value = '';
+      document.getElementById('prodMarkup').value = '';
+      document.getElementById('prodDiscount').value = '';
+      document.getElementById('prodTax').value = '';
+      document.getElementById('prodPriceBeforeTax').value = '';
+      document.getElementById('prodTaxAmt').value = '';
+      document.getElementById('prodSelling').value = '';
+      document.getElementById('prodProfit').value = '';
+      document.getElementById('prodMargin').value = '';
+      
+      renderProducts();
+    }
+
+    async function deleteProduct(i) {
+      products.splice(i, 1);
+      localStorage.setItem('products', JSON.stringify(products));
+      await syncToSheets();
+      renderProducts();
+    }
+
+    let editingProductIndex = -1;
+
+    function editProduct(i) {
+      const p = products[i];
+      const cost = parseFloat(p.cost) || 0;
+
+      // Build a simple modal overlay
+      const existing = document.getElementById('prodEditModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'prodEditModal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:28px;width:420px;box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+          <h3 style="color:#2e7d32;margin-bottom:18px;">✏️ Edit Product</h3>
+          <div class="form-group"><label>Product Name</label>
+            <input type="text" id="peditName" value="${p.name}" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+          </div>
+          <div class="form-group"><label>Cost Price (₱) — fixed</label>
+            <input type="number" id="peditCost" value="${cost.toFixed(2)}" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;background:#f5f0e8;" readonly>
+          </div>
+          <div class="form-group"><label>Markup (%)</label>
+            <input type="number" id="peditMarkup" value="${parseFloat(p.markup)||0}" step="0.1" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+          </div>
+          <div class="form-group"><label>Discount (%)</label>
+            <input type="number" id="peditDiscount" value="${parseFloat(p.discount)||0}" step="0.1" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+          </div>
+          <div class="form-group"><label>Tax / VAT (%)</label>
+            <input type="number" id="peditTax" value="${parseFloat(p.tax)||0}" step="0.1" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <button onclick="saveProductEdit(${i})" style="background:#2e7d32;">💾 Save Changes</button>
+            <button onclick="document.getElementById('prodEditModal').remove()" style="background:#757575;">Cancel</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    async function saveProductEdit(i) {
+      const name     = document.getElementById('peditName').value.trim();
+      const cost     = parseFloat(document.getElementById('peditCost').value) || 0;
+      const markup   = parseFloat(document.getElementById('peditMarkup').value) || 0;
+      const discount = parseFloat(document.getElementById('peditDiscount').value) || 0;
+      const tax      = parseFloat(document.getElementById('peditTax').value) || 0;
+
+      if (!name) { alert('Please enter a product name.'); return; }
+
+      const markupAmt           = cost * (markup / 100);
+      const priceBeforeDiscount = cost + markupAmt;
+      const discountAmt         = priceBeforeDiscount * (discount / 100);
+      const priceBeforeTax      = priceBeforeDiscount - discountAmt;
+      const taxAmt              = priceBeforeTax * (tax / 100);
+      const selling             = priceBeforeTax + taxAmt;
+      const profit              = selling - cost;
+      const margin              = selling > 0 ? (profit / selling * 100) : 0;
+
+      products[i] = { name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
+      localStorage.setItem('products', JSON.stringify(products));
+      await syncToSheets();
+      renderProducts();
+      document.getElementById('prodEditModal').remove();
+    }
+
+    async function updateProductFromCalculator(i) {
+      const name = document.getElementById('calcName').value.trim();
+      if (!name) { alert('Please enter a Product Name.'); return; }
+
+      const suppliesCost   = getCalcSuppliesTotal();
+      const overheadCost   = getCalcOverheadTotal();
+      const cost           = suppliesCost + overheadCost;
+      const markup         = parseFloat(document.getElementById('calcMarkup').value) || 0;
+      const discount       = parseFloat(document.getElementById('calcDiscount').value) || 0;
+      const tax            = parseFloat(document.getElementById('calcTax').value) || 0;
+
+      const markupAmt           = cost * (markup / 100);
+      const priceBeforeDiscount = cost + markupAmt;
+      const discountAmt         = priceBeforeDiscount * (discount / 100);
+      const priceBeforeTax      = priceBeforeDiscount - discountAmt;
+      const taxAmt              = priceBeforeTax * (tax / 100);
+      const selling             = priceBeforeTax + taxAmt;
+      const profit              = selling - cost;
+      const margin              = selling > 0 ? (profit / selling * 100) : 0;
+
+      products[i] = { name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
+      localStorage.setItem('products', JSON.stringify(products));
+      await syncToSheets();
+      renderProducts();
+
+      // Reset save button
+      document.querySelectorAll('#calculator button').forEach(btn => {
+        if (btn.textContent.includes('Update Product')) {
+          btn.textContent = '💾 Save to Products';
+          btn.setAttribute('onclick', 'saveCalculatorToProducts()');
+        }
+      });
+
+      alert(`✅ "${name}" updated!`);
+    }
+
+    function renderProducts() {
+      const tbody = document.getElementById('productsBody');
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:#999;">No products saved yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = products.map((p, i) => {
+        // Always parse as numbers and recalculate
+        const cost     = parseFloat(p.cost) || 0;
+        const markup   = parseFloat(p.markup) || 0;
+        const discount = parseFloat(p.discount) || 0;
+        const tax      = parseFloat(p.tax) || 0;
+        const markupAmt           = cost * (markup / 100);
+        const priceBeforeDiscount = cost + markupAmt;
+        const discountAmt         = priceBeforeDiscount * (discount / 100);
+        const priceBeforeTax      = priceBeforeDiscount - discountAmt;
+        const taxAmt              = priceBeforeTax * (tax / 100);
+        const selling             = priceBeforeTax + taxAmt;
+        const profit              = selling - cost;
+        const margin              = selling > 0 ? (profit / selling * 100) : 0;
+        return `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${p.name}</td>
+          <td class="price-col">${fmt(cost)}</td>
+          <td>${markup.toFixed(1)}%</td>
+          <td>${discount.toFixed(1)}%</td>
+          <td>${tax.toFixed(1)}%</td>
+          <td class="price-col">${fmt(priceBeforeTax)}</td>
+          <td class="price-col">${fmt(taxAmt)}</td>
+          <td class="price-col">${fmt(selling)}</td>
+          <td class="price-col">${fmt(profit)}</td>
+          <td>${margin.toFixed(1)}%</td>
+          <td>
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${i})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deleteProduct(${i})">Delete</button>
+          </td>
+        </tr>
+        `;
+      }).join('');
+    }
+
+    function calculateOrder() {
+      const qty = parseFloat(document.getElementById('ordQty').value) || 0;
+      const price = parseFloat(document.getElementById('ordPrice').value) || 0;
+      document.getElementById('ordTotal').value = (qty * price).toFixed(2);
+    }
+
+    async function addOrder() {
+      const customer = document.getElementById('ordCustomer').value.trim();
+      const product = document.getElementById('ordProduct').value.trim();
+      const qty = parseFloat(document.getElementById('ordQty').value) || 0;
+      const price = parseFloat(document.getElementById('ordPrice').value) || 0;
+      const total = parseFloat(document.getElementById('ordTotal').value) || 0;
+      
+      if (!customer || !product || qty <= 0 || price <= 0) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      orders.push({ customer, product, qty, price, total });
+      localStorage.setItem('orders', JSON.stringify(orders));
+      await syncToSheets();
+      
+      document.getElementById('ordCustomer').value = '';
+      document.getElementById('ordProduct').value = '';
+      document.getElementById('ordQty').value = '';
+      document.getElementById('ordPrice').value = '';
+      document.getElementById('ordTotal').value = '';
+      
+      renderOrders();
+    }
+
+    async function deleteOrder(i) {
+      orders.splice(i, 1);
+      localStorage.setItem('orders', JSON.stringify(orders));
+      await syncToSheets();
+      renderOrders();
+    }
+
+    function renderOrders() {
+      const tbody = document.getElementById('ordersBody');
+      if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">No orders added yet</td></tr>';
+        document.getElementById('totalRevenue').textContent = '₱0.00';
+        return;
+      }
+      tbody.innerHTML = orders.map((o, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${o.customer}</td>
+          <td>${o.product}</td>
+          <td>${o.qty}</td>
+          <td>${fmt(o.price)}</td>
+          <td style="color:#2e7d32; font-weight:600;">${fmt(o.total)}</td>
+          <td><button class="btn-delete" onclick="deleteOrder(${i})">Delete</button></td>
+        </tr>
+      `).join('');
+      
+      const totalRev = orders.reduce((sum, o) => sum + o.total, 0);
+      document.getElementById('totalRevenue').textContent = fmt(totalRev);
+    }
+
+    // Initialize Google Sheets on page load and auto-connect
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (window.gsheets) {
+        await window.gsheets.load();
+        // Auto-connect silently on load
+        autoConnectGoogleSheets();
+      }
+    });
+
+    async function autoConnectGoogleSheets() {
+      const btn = document.getElementById('gsheetsBtn');
+      btn.textContent = '⏳ Connecting...';
+      btn.disabled = true;
+
+      window.addEventListener('gsheetsConnected', async function handler() {
+        btn.textContent = '✅ Connected';
+        btn.style.background = '#34a853';
+        btn.disabled = true;
+        await window.gsheets.setupHeaders();
+        await loadFromSheets();
+        renderCalcOverheadList();
+        window.removeEventListener('gsheetsConnected', handler);
+      }, { once: true });
+
+      window.addEventListener('gsheetsError', function errHandler(e) {
+        // Silent fail on auto-connect — just reset button so user can try manually
+        btn.textContent = '📊 Connect Google Sheets';
+        btn.style.background = '';
+        btn.disabled = false;
+        window.removeEventListener('gsheetsError', errHandler);
+      }, { once: true });
+
+      window.gsheets.authorize();
+    }
+
+    // Connect to Google Sheets
+    async function connectGoogleSheets() {
+      const btn = document.getElementById('gsheetsBtn');
+      btn.textContent = '⏳ Connecting...';
+      btn.disabled = true;
+
+      window.addEventListener('gsheetsConnected', async function handler() {
+        btn.textContent = '✅ Connected';
+        btn.style.background = '#34a853';
+        btn.disabled = true;
+        await window.gsheets.setupHeaders();
+        await loadFromSheets();
+        window.removeEventListener('gsheetsConnected', handler);
+      }, { once: true });
+
+      window.addEventListener('gsheetsError', function errHandler(e) {
+        console.error('Google Sheets connection failed:', e.detail);
+        btn.textContent = '❌ Failed – Retry';
+        btn.style.background = '#d93025';
+        btn.disabled = false;
+        alert('Google Sheets connection failed: ' + (e.detail || 'unknown error') + '\n\nMake sure:\n1. Popups are not blocked\n2. Your Client ID is correct\n3. http://localhost:8080 is in Authorized JavaScript Origins in Google Cloud Console');
+        window.removeEventListener('gsheetsError', errHandler);
+      }, { once: true });
+
+      window.gsheets.authorize();
+    }
+    function renderCalcOverheadList() {
+      const container = document.getElementById('calcOverheadList');
+      if (!container) return;
+      if (overhead.length === 0) {
+        container.innerHTML = '<p style="color:#999; font-size:13px;">No overhead costs added yet</p>';
+        return;
+      }
+      container.innerHTML = overhead.map((o, i) => `
+        <label style="display:flex; align-items:center; gap:10px; padding:7px 4px; border-bottom:1px solid #f0ebe0; cursor:pointer; font-size:13px;">
+          <input type="checkbox" onchange="updateCalcOverheadTotal()" style="width:16px; height:16px; cursor:pointer;">
+          <span style="flex:1;">${o.desc}</span>
+          <span style="color:#2e7d32; font-weight:700;">${fmt(o.amount)}</span>
+        </label>
+      `).join('');
+      updateCalcOverheadTotal();
+    }
+
+    function updateCalcOverheadTotal() {
+      let total = 0;
+      const container = document.getElementById('calcOverheadList');
+      container.querySelectorAll('label').forEach((label, i) => {
+        if (label.querySelector('input[type=checkbox]').checked) {
+          total += parseFloat(overhead[i].amount) || 0;
+        }
+      });
+      document.getElementById('calcOverheadTotal').textContent = fmt(total);
+      runCalculator();
+    }
+
+    function getCalcOverheadTotal() {
+      let total = 0;
+      const container = document.getElementById('calcOverheadList');
+      if (!container) return 0;
+      container.querySelectorAll('label').forEach((label, i) => {
+        if (label.querySelector('input[type=checkbox]').checked) {
+          total += parseFloat(overhead[i].amount) || 0;
+        }
+      });
+      return total;
+    }
+
+    function buildSupplyOptions(selectedName) {
+      // Deduplicate by name + variation — keep highest pricePerQty
+      const seen = {};
+      materials.forEach(m => {
+        const key = m.name + '|' + (m.variation || '');
+        const price = parseFloat(m.pricePerQty) || 0;
+        if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) {
+          seen[key] = m;
+        }
+      });
+      const unique = Object.values(seen);
+
+      let opts = `<option value="">— Select supply —</option>`;
+      unique.forEach(m => {
+        const label = `${m.name}${m.variation ? ' – ' + m.variation : ''} (₱${parseFloat(m.pricePerQty).toFixed(2)}/qty)`;
+        const sel = selectedName === m.name + '|' + (m.variation || '') ? 'selected' : '';
+        opts += `<option value="${m.name}|${m.variation || ''}|${m.pricePerQty}" ${sel}>${label}</option>`;
+      });
+      return opts;
+    }
+
+    function addCalcSupplyRow() {
+      const tbody = document.getElementById('calcSuppliesBody');
+      const rowId = 'sr_' + Date.now();
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      tr.innerHTML = `
+        <td><select onchange="updateCalcSupplyRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptions('')}</select></td>
+        <td><input type="number" value="1" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcSupplyRow('${rowId}')"></td>
+        <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
+        <td><button onclick="removeCalcSupplyRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      updateCalcSuppliesTotal();
+    }
+
+    function updateCalcSupplyRow(rowId) {
+      const tr = document.getElementById(rowId);
+      const select = tr.querySelector('select');
+      const qtyInput = tr.querySelector('input');
+      const costCell = tr.querySelector('.row-cost');
+      const parts = select.value.split('|');
+      const pricePerQty = parseFloat(parts[2]) || 0;
+      const qty = parseFloat(qtyInput.value) || 0;
+      costCell.textContent = fmt(pricePerQty * qty);
+      updateCalcSuppliesTotal();
+    }
+
+    function removeCalcSupplyRow(rowId) {
+      document.getElementById(rowId).remove();
+      updateCalcSuppliesTotal();
+    }
+
+    function updateCalcSuppliesTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
+        const select = tr.querySelector('select');
+        const qtyInput = tr.querySelector('input');
+        if (!select || !select.value) return;
+        const parts = select.value.split('|');
+        const pricePerQty = parseFloat(parts[2]) || 0;
+        const qty = parseFloat(qtyInput.value) || 0;
+        total += pricePerQty * qty;
+      });
+      document.getElementById('calcSuppliesTotal').textContent = fmt(total);
+      runCalculator();
+    }
+
+    function getCalcSuppliesTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
+        const select = tr.querySelector('select');
+        const qtyInput = tr.querySelector('input');
+        if (!select || !select.value) return;
+        const parts = select.value.split('|');
+        const pricePerQty = parseFloat(parts[2]) || 0;
+        const qty = parseFloat(qtyInput.value) || 0;
+        total += pricePerQty * qty;
+      });
+      return total;
+    }
+
+    function runCalculator() {
+      const name = document.getElementById('calcName').value.trim();
+      const suppliesCost = getCalcSuppliesTotal();
+      const overheadCost = getCalcOverheadTotal();
+      const markup = parseFloat(document.getElementById('calcMarkup').value) || 0;
+      const discount = parseFloat(document.getElementById('calcDiscount').value) || 0;
+      const tax      = parseFloat(document.getElementById('calcTax').value) || 0;
+
+      const totalCost = suppliesCost + overheadCost;
+      const markupAmt = totalCost * (markup / 100);
+      const priceBeforeDiscount = totalCost + markupAmt;
+      const discountAmt = priceBeforeDiscount * (discount / 100);
+      const priceBeforeTax = priceBeforeDiscount - discountAmt;
+      const taxAmt = priceBeforeTax * (tax / 100);
+      const sellingPrice = priceBeforeTax + taxAmt;
+      const profit = sellingPrice - totalCost;
+      const margin = sellingPrice > 0 ? (profit / sellingPrice * 100) : 0;
+
+      document.getElementById('rCalcName').textContent = name || '—';
+      document.getElementById('rCalcSupplies').textContent = fmt(suppliesCost);
+      document.getElementById('rCalcOverheadAmt').textContent = fmt(overheadCost);
+      document.getElementById('rCalcCost').textContent = fmt(totalCost);
+      document.getElementById('rCalcMarkupAmt').textContent = fmt(markupAmt);
+      document.getElementById('rCalcBeforeDiscount').textContent = fmt(priceBeforeDiscount);
+      document.getElementById('rCalcDiscountAmt').textContent = fmt(discountAmt);
+      document.getElementById('rCalcBeforeTax').textContent = fmt(priceBeforeTax);
+      document.getElementById('rCalcTaxAmt').textContent = fmt(taxAmt);
+      document.getElementById('rCalcSelling').textContent = fmt(sellingPrice);
+      document.getElementById('rCalcProfit').textContent = fmt(profit);
+      document.getElementById('rCalcMargin').textContent = margin.toFixed(2) + '%';
+    }
+
+    function resetCalculator() {
+      ['calcName','calcMarkup','calcDiscount','calcTax'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('calcSuppliesBody').innerHTML = '';
+      document.getElementById('calcSuppliesTotal').textContent = '₱0.00';
+      document.querySelectorAll('#calcOverheadList input[type=checkbox]').forEach(cb => cb.checked = false);
+      document.getElementById('calcOverheadTotal').textContent = '₱0.00';
+      runCalculator();
+      document.getElementById('rCalcName').textContent = '—';
+    }
+
+    async function saveCalculatorToProducts() {
+      const name = document.getElementById('calcName').value.trim();
+      if (!name) { alert('Please enter a Product Name before saving.'); return; }
+
+      const suppliesCost   = getCalcSuppliesTotal();
+      const overheadCost   = getCalcOverheadTotal();
+      const cost           = suppliesCost + overheadCost;
+      if (cost <= 0) { alert('Please add supplies or overhead before saving.'); return; }
+
+      const markup         = parseFloat(document.getElementById('calcMarkup').value) || 0;
+      const discount       = parseFloat(document.getElementById('calcDiscount').value) || 0;
+      const tax            = parseFloat(document.getElementById('calcTax').value) || 0;
+
+      const markupAmt      = cost * (markup / 100);
+      const priceBeforeDiscount = cost + markupAmt;
+      const discountAmt    = priceBeforeDiscount * (discount / 100);
+      const priceBeforeTax = priceBeforeDiscount - discountAmt;
+      const taxAmt         = priceBeforeTax * (tax / 100);
+      const selling        = priceBeforeTax + taxAmt;
+      const profit         = selling - cost;
+      const margin         = selling > 0 ? (profit / selling * 100) : 0;
+
+      products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin });
+      localStorage.setItem('products', JSON.stringify(products));
+      await syncToSheets();
+      renderProducts();
+      alert(`✅ "${name}" saved to Products!`);
+    }
+
+    window.addEventListener('load', () => {
+      renderMaterials();
+      renderProducts();
+      renderEquipment();
+      renderOverhead();
+      renderOrders();
+      renderCalcOverheadList();
+    });
+  </script>
+</body>
+</html>
