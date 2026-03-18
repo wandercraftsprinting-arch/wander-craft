@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WanderCrafts PH - Pricing Calculator</title>
-  <script src="gsheets-config.js"></script>
-  <script src="gsheets-api.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-api.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #f5f0e8; color: #3d2e1e; display: flex; min-height: 100vh; }
@@ -92,7 +92,7 @@
       <button class="tab" onclick="showTab('orders')">📋 Orders</button>
       <button class="tab" onclick="showTab('salesoverview')">📈 Sales Overview</button>
     </div>
-    <button class="gsheets-btn-sidebar" id="gsheetsBtn" onclick="connectGoogleSheets()">📊 Connect Google Sheets</button>
+    <button class="gsheets-btn-sidebar" id="gsheetsBtn" onclick="connectSupabase()">🗄️ Sync Supabase</button>
   </div>
   
   <div class="main-content">
@@ -653,82 +653,50 @@
     }
 
     async function syncToSheets() {
-      if (window.gsheets && window.gsheets.isAuthorized()) {
-        await window.gsheets.save('materials', materials);
-        await window.gsheets.save('products', products);
-        await window.gsheets.save('equipment', equipment);
-        await window.gsheets.save('overhead', overhead);
-        await window.gsheets.save('orders', orders);
-      }
+      await window.supabase.save('materials', materials);
+      await window.supabase.save('products', products);
+      await window.supabase.save('equipment', equipment);
+      await window.supabase.save('overhead', overhead);
+      await window.supabase.save('orders', orders);
     }
 
     async function loadFromSheets() {
-      if (window.gsheets && window.gsheets.isAuthorized()) {
-        const mat = await window.gsheets.loadData('materials');
-        const prod = await window.gsheets.loadData('products');
-        const eq = await window.gsheets.loadData('equipment');
-        const oh = await window.gsheets.loadData('overhead');
-        const ord = await window.gsheets.loadData('orders');
-        if (mat && mat.length > 0) {
-          materials = mat.map(m => ({
-            ...m,
-            qty: parseFloat(m.qty) || 0,
-            price: parseFloat(m.price) || 0,
-            pricePerQty: parseFloat(m.pricePerQty) || 0
-          }));
-          localStorage.setItem('materials', JSON.stringify(materials));
-        }
-        if (prod && prod.length > 0) {
-          products = prod.map(p => ({
-            ...p,
-            cost: parseFloat(p.cost) || 0,
-            markup: parseFloat(p.markup) || 0,
-            discount: parseFloat(p.discount) || 0,
-            tax: parseFloat(p.tax) || 0,
-            priceBeforeTax: parseFloat(p.priceBeforeTax) || 0,
-            taxAmt: parseFloat(p.taxAmt) || 0,
-            selling: parseFloat(p.selling) || 0,
-            profit: parseFloat(p.profit) || 0,
-            margin: parseFloat(p.margin) || 0
-          }));
-          localStorage.setItem('products', JSON.stringify(products));
-        }
-        if (eq && eq.length > 0) {
-          equipment = eq.map(e => ({
-            ...e,
-            qty: parseFloat(e.qty) || 0,
-            price: parseFloat(e.price) || 0
-          }));
-          localStorage.setItem('equipment', JSON.stringify(equipment));
-        }
-        if (oh && oh.length > 0) {
-          overhead = oh.map(o => ({
-            ...o,
-            qty: parseFloat(o.qty) || 0,
-            amount: parseFloat(o.amount) || 0,
-            amountPerQty: parseFloat(o.qty) > 0 ? (parseFloat(o.amount) / parseFloat(o.qty)) : (parseFloat(o.amountPerQty) || 0)
-          }));
-          localStorage.setItem('overhead', JSON.stringify(overhead));
-        }
-        if (ord && ord.length > 0) {
-          orders = ord.map(o => ({
-            ...o,
-            qty: parseFloat(o.qty) || 0,
-            price: parseFloat(o.price) || 0,
-            total: parseFloat(o.total) || 0
-          }));
-          localStorage.setItem('orders', JSON.stringify(orders));
-        }
-        renderMaterials();
-        renderProducts();
-        renderEquipment();
-        renderOverhead();
-        renderOrders();
-        buildYearOptions();
-        renderExpenseView();
-        buildSalesYearOptions();
-        renderSalesOverview();
+      const mat  = await window.supabase.loadData('materials');
+      const prod = await window.supabase.loadData('products');
+      const eq   = await window.supabase.loadData('equipment');
+      const oh   = await window.supabase.loadData('overhead');
+      const ord  = await window.supabase.loadData('orders');
+
+      if (mat && mat.length > 0) {
+        materials = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0 }));
+        localStorage.setItem('materials', JSON.stringify(materials));
       }
+      if (prod && prod.length > 0) {
+        products = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
+        localStorage.setItem('products', JSON.stringify(products));
+      }
+      if (eq && eq.length > 0) {
+        equipment = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
+        localStorage.setItem('equipment', JSON.stringify(equipment));
+      }
+      if (oh && oh.length > 0) {
+        overhead = oh.map(o => ({ ...o, qty: +o.qty||0, amount: +o.amount||0, amountPerQty: +o.qty > 0 ? +o.amount / +o.qty : (+o.amountPerQty||0) }));
+        localStorage.setItem('overhead', JSON.stringify(overhead));
+      }
+      if (ord && ord.length > 0) {
+        orders = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
+        localStorage.setItem('orders', JSON.stringify(orders));
+      }
+
+      renderMaterials();
+      renderProducts();
+      renderEquipment();
+      renderOverhead();
+      renderOrders();
+      buildYearOptions();
+      renderExpenseView();
+      buildSalesYearOptions();
+      renderSalesOverview();
     }
 
     function showTab(tabName) {
@@ -1445,66 +1413,26 @@
       document.getElementById('totalRevenue').textContent = fmt(totalRev);
     }
 
-    // Initialize Google Sheets on page load and auto-connect
+    // Auto-load from Supabase on page load
     window.addEventListener('DOMContentLoaded', async () => {
-      if (window.gsheets) {
-        await window.gsheets.load();
-        // Auto-connect silently on load
-        autoConnectGoogleSheets();
-      }
+      connectSupabase();
     });
 
-    async function autoConnectGoogleSheets() {
+    async function connectSupabase() {
       const btn = document.getElementById('gsheetsBtn');
-      btn.textContent = '⏳ Connecting...';
+      btn.textContent = '⏳ Syncing...';
       btn.disabled = true;
-
-      window.addEventListener('gsheetsConnected', async function handler() {
-        btn.textContent = '✅ Connected';
-        btn.style.background = '#34a853';
-        btn.disabled = true;
-        await window.gsheets.setupHeaders();
+      try {
         await loadFromSheets();
         renderCalcOverheadList();
-        window.removeEventListener('gsheetsConnected', handler);
-      }, { once: true });
-
-      window.addEventListener('gsheetsError', function errHandler(e) {
-        // Silent fail on auto-connect — just reset button so user can try manually
-        btn.textContent = '📊 Connect Google Sheets';
-        btn.style.background = '';
-        btn.disabled = false;
-        window.removeEventListener('gsheetsError', errHandler);
-      }, { once: true });
-
-      window.gsheets.authorize();
-    }
-
-    // Connect to Google Sheets
-    async function connectGoogleSheets() {
-      const btn = document.getElementById('gsheetsBtn');
-      btn.textContent = '⏳ Connecting...';
-      btn.disabled = true;
-
-      window.addEventListener('gsheetsConnected', async function handler() {
-        btn.textContent = '✅ Connected';
+        btn.textContent = '✅ Synced';
         btn.style.background = '#34a853';
-        btn.disabled = true;
-        await window.gsheets.setupHeaders();
-        await loadFromSheets();
-        window.removeEventListener('gsheetsConnected', handler);
-      }, { once: true });
-
-      window.addEventListener('gsheetsError', function errHandler(e) {
-        console.error('Google Sheets connection failed:', e.detail);
-        btn.textContent = '❌ Failed – Retry';
+      } catch(e) {
+        console.error('Supabase sync failed:', e);
+        btn.textContent = '❌ Retry Sync';
         btn.style.background = '#d93025';
         btn.disabled = false;
-        alert('Google Sheets connection failed: ' + (e.detail || 'unknown error') + '\n\nMake sure:\n1. Popups are not blocked\n2. Your Client ID is correct\n3. http://localhost:8080 is in Authorized JavaScript Origins in Google Cloud Console');
-        window.removeEventListener('gsheetsError', errHandler);
-      }, { once: true });
-
-      window.gsheets.authorize();
+      }
     }
     function renderCalcOverheadList() {
       const container = document.getElementById('calcOverheadList');
