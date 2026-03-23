@@ -780,33 +780,99 @@
     let products = JSON.parse(localStorage.getItem('products') || '[]');
     let equipment = JSON.parse(localStorage.getItem('equipment') || '[]');
 
-    // Logo & brand name persistence
-    function uploadLogo(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        const dataUrl = ev.target.result;
-        localStorage.setItem('brandLogo', dataUrl);
-        applyLogo(dataUrl);
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function applyLogo(dataUrl) {
+    // Logo & brand name persistence — synced via Supabase
+    function applyLogo(url) {
       const img = document.getElementById('logoImg');
       const placeholder = document.getElementById('logoPlaceholder');
-      img.src = dataUrl;
+      img.src = url;
       img.style.display = 'block';
       placeholder.style.display = 'none';
     }
 
-    function saveBrandName() {
-      localStorage.setItem('brandName', document.getElementById('brandName').value);
+    async function uploadLogo(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      // Upload to Supabase Storage bucket "logos"
+      const fileName = 'brand-logo.' + file.name.split('.').pop();
+      const uploadRes = await fetch(
+        `${SUPABASE_CONFIG.URL}/storage/v1/object/logos/${fileName}`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_CONFIG.ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_CONFIG.ANON_KEY,
+            'Content-Type': file.type,
+            'x-upsert': 'true'
+          },
+          body: file
+        }
+      );
+      if (!uploadRes.ok) {
+        console.warn('Logo upload failed:', await uploadRes.text());
+        return;
+      }
+      const logoUrl = `${SUPABASE_CONFIG.URL}/storage/v1/object/public/logos/${fileName}?t=${Date.now()}`;
+      applyLogo(logoUrl);
+      localStorage.setItem('brandLogo', logoUrl);
+      await saveSettings();
+    }
+
+    async function saveBrandName() {
+      const name = document.getElementById('brandName').value;
+      localStorage.setItem('brandName', name);
+      await saveSettings();
+    }
+
+    async function saveSettings() {
+      const brand_name = document.getElementById('brandName').value;
+      const logo_url   = localStorage.getItem('brandLogo') || '';
+      // Delete existing row then insert fresh
+      await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?id=gte.0`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_CONFIG.ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_CONFIG.ANON_KEY }
+      });
+      await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_CONFIG.ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_CONFIG.ANON_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify([{ brand_name, logo_url }])
+      });
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?select=*&limit=1`, {
+          headers: { 'apikey': SUPABASE_CONFIG.ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_CONFIG.ANON_KEY }
+        });
+        const rows = await res.json();
+        if (rows && rows.length > 0) {
+          const s = rows[0];
+          if (s.brand_name) {
+            document.getElementById('brandName').value = s.brand_name;
+            localStorage.setItem('brandName', s.brand_name);
+          }
+          if (s.logo_url) {
+            applyLogo(s.logo_url + (s.logo_url.includes('?') ? '' : '?t=' + Date.now()));
+            localStorage.setItem('brandLogo', s.logo_url);
+          }
+        }
+      } catch(e) {
+        console.warn('loadSettings failed:', e);
+        // Fallback to localStorage
+        const logo = localStorage.getItem('brandLogo');
+        if (logo) applyLogo(logo);
+        const name = localStorage.getItem('brandName');
+        if (name) document.getElementById('brandName').value = name;
+      }
     }
 
     // Restore logo & brand name on load
     window.addEventListener('load', () => {
+      // Show localStorage values instantly while Supabase loads
       const logo = localStorage.getItem('brandLogo');
       if (logo) applyLogo(logo);
       const name = localStorage.getItem('brandName');
@@ -1758,6 +1824,7 @@
       btn.textContent = '⏳ Syncing...';
       btn.disabled = true;
       try {
+        await loadSettings();
         await loadFromSheets();
         btn.textContent = '✅ Synced';
         btn.style.background = '#34a853';
