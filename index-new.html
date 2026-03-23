@@ -169,6 +169,13 @@
           <label>Price per QTY (₱)</label>
           <input type="number" id="matPricePerQty" placeholder="auto" readonly style="background:#f5f0e8; cursor:not-allowed;">
         </div>
+        <div class="form-group">
+          <label>Stock Status</label>
+          <select id="matStock" style="width:100%; padding:10px; border:1px solid #d9cfc0; border-radius:5px; font-size:14px;">
+            <option value="In Stock">In Stock</option>
+            <option value="Out of Stock">Out of Stock</option>
+          </select>
+        </div>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <button id="matAddBtn" onclick="addMaterial()">+ Add Material</button>
@@ -188,6 +195,7 @@
             <th style="text-align:center;">Qty</th>
             <th style="text-align:right; padding-right:16px;">Total Price</th>
             <th style="text-align:right; padding-right:16px;">Price/QTY</th>
+            <th style="text-align:center;">Stock Status</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -965,12 +973,13 @@
     }
 
     async function addMaterial() {
-      const date = document.getElementById('matDate').value;
-      const shop = document.getElementById('matShop').value.trim();
-      const name = document.getElementById('matName').value.trim();
+      const date      = document.getElementById('matDate').value;
+      const shop      = document.getElementById('matShop').value.trim();
+      const name      = document.getElementById('matName').value.trim();
       const variation = document.getElementById('matVariation').value.trim();
-      const qty = parseFloat(document.getElementById('matQty').value) || 0;
-      const price = parseFloat(document.getElementById('matPrice').value) || 0;
+      const qty       = parseFloat(document.getElementById('matQty').value) || 0;
+      const price     = parseFloat(document.getElementById('matPrice').value) || 0;
+      const stock     = document.getElementById('matStock').value;
       
       if (!name || qty <= 0 || price <= 0) {
         alert('Please fill required fields (Product Name, Quantity, Total Price)');
@@ -978,7 +987,7 @@
       }
 
       const pricePerQty = price / qty;
-      materials.push({ date, shop, name, variation, qty, price, pricePerQty });
+      materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock });
       localStorage.setItem('materials', JSON.stringify(materials));
       await syncToSheets();
       
@@ -989,6 +998,7 @@
       document.getElementById('matQty').value = '';
       document.getElementById('matPrice').value = '';
       document.getElementById('matPricePerQty').value = '';
+      document.getElementById('matStock').value = 'In Stock';
       
       renderMaterials();
     }
@@ -1022,6 +1032,9 @@
           <td class="price-col">${fmt(price)}</td>
           <td class="price-col">${fmt(pricePerQty)}</td>
           <td style="text-align:center;">
+            <span style="background:${m.stock==='Out of Stock'?'#fee2e2':'#dcfce7'};color:${m.stock==='Out of Stock'?'#dc2626':'#16a34a'};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${m.stock||'In Stock'}</span>
+          </td>
+          <td style="text-align:center;">
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editMaterial(${m._i})">✏️ Edit</button>
             <button class="btn-delete" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; margin-right:5px;" onclick="duplicateMaterial(${m._i})">⧉ Copy</button>
             <button class="btn-delete" onclick="deleteMaterial(${m._i})">✕ Delete</button>
@@ -1037,15 +1050,16 @@
       const m = materials[i];
       editingMaterialIndex = i;
       
-      document.getElementById('matDate').value = m.date || '';
-      document.getElementById('matShop').value = m.shop || '';
-      document.getElementById('matName').value = m.name;
+      document.getElementById('matDate').value      = m.date || '';
+      document.getElementById('matShop').value      = m.shop || '';
+      document.getElementById('matName').value      = m.name;
       document.getElementById('matVariation').value = m.variation || '';
-      document.getElementById('matQty').value = m.qty;
-      document.getElementById('matPrice').value = m.price;
+      document.getElementById('matQty').value       = m.qty;
+      document.getElementById('matPrice').value     = m.price;
       document.getElementById('matPricePerQty').value = m.pricePerQty ? parseFloat(m.pricePerQty).toFixed(2) : (m.price && m.qty ? (m.price / m.qty).toFixed(2) : '');
+      document.getElementById('matStock').value     = m.stock || 'In Stock';
       
-      document.getElementById('matAddBtn').style.display = 'none';
+      document.getElementById('matAddBtn').style.display    = 'none';
       document.getElementById('matUpdateBtn').style.display = 'inline-block';
       document.getElementById('matCancelBtn').style.display = 'inline-block';
       document.getElementById('matEditBanner').style.display = 'inline';
@@ -1055,12 +1069,13 @@
     }
 
     async function updateMaterial() {
-      const date = document.getElementById('matDate').value;
-      const shop = document.getElementById('matShop').value.trim();
-      const name = document.getElementById('matName').value.trim();
+      const date      = document.getElementById('matDate').value;
+      const shop      = document.getElementById('matShop').value.trim();
+      const name      = document.getElementById('matName').value.trim();
       const variation = document.getElementById('matVariation').value.trim();
-      const qty = parseFloat(document.getElementById('matQty').value) || 0;
-      const price = parseFloat(document.getElementById('matPrice').value) || 0;
+      const qty       = parseFloat(document.getElementById('matQty').value) || 0;
+      const price     = parseFloat(document.getElementById('matPrice').value) || 0;
+      const stock     = document.getElementById('matStock').value;
       
       if (!name || qty <= 0 || price <= 0) {
         alert('Please fill required fields (Product Name, Quantity, Total Price)');
@@ -1068,7 +1083,7 @@
       }
 
       const pricePerQty = price / qty;
-      materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty };
+      materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty, stock };
       localStorage.setItem('materials', JSON.stringify(materials));
       await syncToSheets();
       
@@ -1079,13 +1094,14 @@
     function cancelEditMaterial() {
       editingMaterialIndex = -1;
       
-      document.getElementById('matDate').value = '';
-      document.getElementById('matShop').value = '';
-      document.getElementById('matName').value = '';
+      document.getElementById('matDate').value      = '';
+      document.getElementById('matShop').value      = '';
+      document.getElementById('matName').value      = '';
       document.getElementById('matVariation').value = '';
-      document.getElementById('matQty').value = '';
-      document.getElementById('matPrice').value = '';
+      document.getElementById('matQty').value       = '';
+      document.getElementById('matPrice').value     = '';
       document.getElementById('matPricePerQty').value = '';
+      document.getElementById('matStock').value     = 'In Stock';
       
       document.getElementById('matAddBtn').style.display = 'inline-block';
       document.getElementById('matUpdateBtn').style.display = 'none';
