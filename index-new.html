@@ -826,21 +826,23 @@
     async function saveSettings() {
       const brand_name = document.getElementById('brandName').value;
       const logo_url   = localStorage.getItem('brandLogo') || '';
-      // Delete existing row then insert fresh
-      await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?id=gte.0`, {
-        method: 'DELETE',
-        headers: { 'apikey': SUPABASE_CONFIG.ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_CONFIG.ANON_KEY }
-      });
-      await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_CONFIG.ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_CONFIG.ANON_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify([{ brand_name, logo_url }])
-      });
+      try {
+        // Use upsert with fixed id=1 to avoid delete issues
+        const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_CONFIG.ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_CONFIG.ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify([{ id: 1, brand_name, logo_url }])
+        });
+        const txt = await res.text();
+        console.log('saveSettings status:', res.status, txt);
+      } catch(e) {
+        console.error('saveSettings error:', e);
+      }
     }
 
     async function loadSettings() {
