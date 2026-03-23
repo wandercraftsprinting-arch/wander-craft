@@ -795,7 +795,7 @@
       // Upload to Supabase Storage bucket "logos"
       const fileName = 'brand-logo.' + file.name.split('.').pop();
       const uploadRes = await fetch(
-        `${SUPABASE_CONFIG.URL}/storage/v1/object/logos/${fileName}`,
+        `${SUPABASE_CONFIG.URL}/storage/v1/object/Logos/${fileName}`,
         {
           method: 'POST',
           headers: {
@@ -811,7 +811,7 @@
         console.warn('Logo upload failed:', await uploadRes.text());
         return;
       }
-      const logoUrl = `${SUPABASE_CONFIG.URL}/storage/v1/object/public/logos/${fileName}?t=${Date.now()}`;
+      const logoUrl = `${SUPABASE_CONFIG.URL}/storage/v1/object/public/Logos/${fileName}?t=${Date.now()}`;
       applyLogo(logoUrl);
       localStorage.setItem('brandLogo', logoUrl);
       await saveSettings();
