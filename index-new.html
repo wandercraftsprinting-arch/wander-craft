@@ -96,6 +96,10 @@
     table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e0d5c5; font-size: 13px; }
     th { background: #dbeafe; color: #1d4ed8; font-weight: 600; text-transform: uppercase; text-align: center; }
+    th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    th.sortable:hover { background: #bfdbfe; }
+    th.sort-asc::after { content: ' ▲'; font-size: 10px; }
+    th.sort-desc::after { content: ' ▼'; font-size: 10px; }
     .price-col { color: #2e7d32; font-weight: 700; text-align: right; padding-right: 16px; }
     .num-col { text-align: right; padding-right: 16px; }
     th.right, td.right { text-align: right; padding-right: 16px; }
@@ -184,18 +188,18 @@
         <span id="matEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing material</span>
       </div>
       
-      <table>
+      <table id="materialsTable">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
-            <th style="text-align:center;">Order Date</th>
-            <th>Shop</th>
-            <th>Product</th>
-            <th>Variation</th>
-            <th style="text-align:center;">Qty</th>
-            <th style="text-align:right; padding-right:16px;">Total Price</th>
-            <th style="text-align:right; padding-right:16px;">Price/QTY</th>
-            <th style="text-align:center;">Stock Status</th>
+            <th class="sortable" onclick="sortTable('materialsTable','date','str')">Order Date</th>
+            <th class="sortable" onclick="sortTable('materialsTable','shop','str')">Shop</th>
+            <th class="sortable" onclick="sortTable('materialsTable','name','str')">Product</th>
+            <th class="sortable" onclick="sortTable('materialsTable','variation','str')">Variation</th>
+            <th class="sortable" onclick="sortTable('materialsTable','qty','num')" style="text-align:center;">Qty</th>
+            <th class="sortable" onclick="sortTable('materialsTable','price','num')" style="text-align:right; padding-right:16px;">Total Price</th>
+            <th class="sortable" onclick="sortTable('materialsTable','pricePerQty','num')" style="text-align:right; padding-right:16px;">Price/QTY</th>
+            <th class="sortable" onclick="sortTable('materialsTable','stock','str')" style="text-align:center;">Stock Status</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -209,20 +213,20 @@
     <div id="products" class="tab-content active">
       <h2>Product</h2>
       <p style="font-size:13px; color:#7a6248; margin-bottom:15px;">Products are saved here from the 🧮 Pricing Calculator tab.</p>
-      <table>
+      <table id="productsTable">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
-            <th>Product</th>
-            <th style="text-align:right; padding-right:16px;">Cost Price</th>
-            <th style="text-align:center;">Markup</th>
-            <th style="text-align:center;">Discount</th>
-            <th style="text-align:center;">Tax</th>
-            <th style="text-align:right; padding-right:16px;">Price Before Tax</th>
-            <th style="text-align:right; padding-right:16px;">Tax Amt</th>
-            <th style="text-align:right; padding-right:16px;">Selling Price</th>
-            <th style="text-align:right; padding-right:16px;">Profit</th>
-            <th style="text-align:center;">Margin</th>
+            <th class="sortable" onclick="sortTable('productsTable','name','str')">Product</th>
+            <th class="sortable" onclick="sortTable('productsTable','cost','num')" style="text-align:right; padding-right:16px;">Cost Price</th>
+            <th class="sortable" onclick="sortTable('productsTable','markup','num')" style="text-align:center;">Markup</th>
+            <th class="sortable" onclick="sortTable('productsTable','discount','num')" style="text-align:center;">Discount</th>
+            <th class="sortable" onclick="sortTable('productsTable','tax','num')" style="text-align:center;">Tax</th>
+            <th class="sortable" onclick="sortTable('productsTable','priceBeforeTax','num')" style="text-align:right; padding-right:16px;">Price Before Tax</th>
+            <th class="sortable" onclick="sortTable('productsTable','taxAmt','num')" style="text-align:right; padding-right:16px;">Tax Amt</th>
+            <th class="sortable" onclick="sortTable('productsTable','selling','num')" style="text-align:right; padding-right:16px;">Selling Price</th>
+            <th class="sortable" onclick="sortTable('productsTable','profit','num')" style="text-align:right; padding-right:16px;">Profit</th>
+            <th class="sortable" onclick="sortTable('productsTable','margin','num')" style="text-align:center;">Margin</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -268,16 +272,16 @@
         <span id="eqEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing equipment</span>
       </div>
       
-      <table>
+      <table id="equipmentTable">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
-            <th style="text-align:center;">Order Date</th>
-            <th>Shop</th>
-            <th>Product</th>
-            <th>Variation</th>
-            <th style="text-align:center;">Qty</th>
-            <th style="text-align:right; padding-right:16px;">Total Price</th>
+            <th class="sortable" onclick="sortTable('equipmentTable','date','str')">Order Date</th>
+            <th class="sortable" onclick="sortTable('equipmentTable','shop','str')">Shop</th>
+            <th class="sortable" onclick="sortTable('equipmentTable','name','str')">Product</th>
+            <th class="sortable" onclick="sortTable('equipmentTable','variation','str')">Variation</th>
+            <th class="sortable" onclick="sortTable('equipmentTable','qty','num')" style="text-align:center;">Qty</th>
+            <th class="sortable" onclick="sortTable('equipmentTable','price','num')" style="text-align:right; padding-right:16px;">Total Price</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -315,14 +319,14 @@
         <span id="ohEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing electricity cost</span>
       </div>
       
-      <table>
+      <table id="overheadTable">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
-            <th>Equipment</th>
-            <th style="text-align:right; padding-right:16px;">Rate per kWh</th>
-            <th style="text-align:center;">No. of Hours</th>
-            <th style="text-align:right; padding-right:16px;">Total Amount</th>
+            <th class="sortable" onclick="sortTable('overheadTable','desc','str')">Equipment</th>
+            <th class="sortable" onclick="sortTable('overheadTable','rate','num')" style="text-align:right; padding-right:16px;">Rate per kWh</th>
+            <th class="sortable" onclick="sortTable('overheadTable','qty','num')" style="text-align:center;">No. of Hours</th>
+            <th class="sortable" onclick="sortTable('overheadTable','amount','num')" style="text-align:right; padding-right:16px;">Total Amount</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -360,14 +364,14 @@
         <button id="lcCancelBtn" onclick="cancelEditLaborCost()" style="display:none; background:#757575;">Cancel</button>
         <span id="lcEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing labor cost</span>
       </div>
-      <table>
+      <table id="laborTable">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
-            <th>Description</th>
-            <th style="text-align:right; padding-right:16px;">Rate per Hour</th>
-            <th style="text-align:center;">No. of Hours</th>
-            <th style="text-align:right; padding-right:16px;">Total Amount</th>
+            <th class="sortable" onclick="sortTable('laborTable','desc','str')">Description</th>
+            <th class="sortable" onclick="sortTable('laborTable','rate','num')" style="text-align:right; padding-right:16px;">Rate per Hour</th>
+            <th class="sortable" onclick="sortTable('laborTable','hours','num')" style="text-align:center;">No. of Hours</th>
+            <th class="sortable" onclick="sortTable('laborTable','total','num')" style="text-align:right; padding-right:16px;">Total Amount</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -445,21 +449,21 @@
       <button id="ordUpdateBtn" onclick="updateOrder()" style="display:none; background:#ff9800; margin-left:8px;">✔ Update</button>
       <button id="ordCancelBtn" onclick="cancelEditOrder()" style="display:none; background:#757575; margin-left:8px;">Cancel</button>
 
-      <table style="margin-top:20px;">
+      <table id="ordersTable" style="margin-top:20px;">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
-            <th style="text-align:center;">Order Date</th>
-            <th>Customer</th>
-            <th>Contact</th>
-            <th>Email</th>
-            <th>Product</th>
-            <th>Variation</th>
-            <th style="text-align:center;">Qty</th>
-            <th style="text-align:right; padding-right:16px;">Unit Price</th>
-            <th style="text-align:right; padding-right:16px;">Total</th>
-            <th style="text-align:center;">Payment</th>
-            <th style="text-align:center;">Status</th>
+            <th class="sortable" onclick="sortTable('ordersTable','date','str')">Order Date</th>
+            <th class="sortable" onclick="sortTable('ordersTable','customer','str')">Customer</th>
+            <th class="sortable" onclick="sortTable('ordersTable','contact','str')">Contact</th>
+            <th class="sortable" onclick="sortTable('ordersTable','email','str')">Email</th>
+            <th class="sortable" onclick="sortTable('ordersTable','product','str')">Product</th>
+            <th class="sortable" onclick="sortTable('ordersTable','variation','str')">Variation</th>
+            <th class="sortable" onclick="sortTable('ordersTable','qty','num')" style="text-align:center;">Qty</th>
+            <th class="sortable" onclick="sortTable('ordersTable','price','num')" style="text-align:right; padding-right:16px;">Unit Price</th>
+            <th class="sortable" onclick="sortTable('ordersTable','total','num')" style="text-align:right; padding-right:16px;">Total</th>
+            <th class="sortable" onclick="sortTable('ordersTable','payment','str')" style="text-align:center;">Payment</th>
+            <th class="sortable" onclick="sortTable('ordersTable','status','str')" style="text-align:center;">Status</th>
             <th>Notes</th>
             <th></th>
           </tr>
@@ -972,6 +976,103 @@
       return '₱' + parseFloat(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
+    // ── SORTABLE TABLES ──────────────────────────────────────
+    const _sortState = {};
+
+    function makeTableSortable(tbodyId) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      const table = tbody.closest('table');
+      if (!table) return;
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+
+      // Remove old listeners by cloning each th
+      thead.querySelectorAll('th').forEach((th, colIdx) => {
+        const text = th.textContent.replace(/ [▲▼]$/, '').trim();
+        if (!text || text === 'Action') return;
+        const newTh = th.cloneNode(true);
+        newTh.style.cursor = 'pointer';
+        newTh.style.userSelect = 'none';
+        newTh.title = 'Click to sort';
+        newTh.addEventListener('click', () => {
+          const key = tbodyId + '_' + colIdx;
+          const asc = _sortState[key] !== true;
+          _sortState[key] = asc;
+
+          // Reset all arrows in this thead
+          thead.querySelectorAll('th').forEach(h => {
+            h.textContent = h.textContent.replace(/ [▲▼]$/, '');
+          });
+          newTh.textContent = newTh.textContent.replace(/ [▲▼]$/, '') + (asc ? ' ▲' : ' ▼');
+
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          if (rows.length <= 1) return;
+          rows.sort((a, b) => {
+            const aCell = a.querySelectorAll('td')[colIdx];
+            const bCell = b.querySelectorAll('td')[colIdx];
+            if (!aCell || !bCell) return 0;
+            let aVal = aCell.textContent.trim();
+            let bVal = bCell.textContent.trim();
+            const aNum = parseFloat(aVal.replace(/[₱,%]/g, '').replace(/,/g, ''));
+            const bNum = parseFloat(bVal.replace(/[₱,%]/g, '').replace(/,/g, ''));
+            if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum - bNum : bNum - aNum;
+            return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+          });
+          rows.forEach(r => tbody.appendChild(r));
+        });
+        th.parentNode.replaceChild(newTh, th);
+      });
+    }
+    // ── END SORTABLE TABLES ──────────────────────────────────
+
+    // ── SORT ENGINE ──────────────────────────────────────────
+    const sortState = {};
+
+    function sortTable(tableId, key, type) {
+      const state = sortState[tableId] || { key: null, dir: 'desc' };
+      const dir = (state.key === key && state.dir === 'asc') ? 'desc' : 'asc';
+      sortState[tableId] = { key, dir };
+
+      // Update header indicators
+      document.querySelectorAll(`#${tableId} th`).forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+      });
+      event.target.closest('th').classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+      // Re-render the relevant table
+      const renders = {
+        'materialsTable': renderMaterials,
+        'equipmentTable': renderEquipment,
+        'overheadTable':  renderOverhead,
+        'laborTable':     renderLaborCosts,
+        'ordersTable':    renderOrders,
+        'productsTable':  renderProducts
+      };
+      if (renders[tableId]) renders[tableId]();
+    }
+
+    function applySortToRows(tableId, rows, defaultKey, defaultDir) {
+      const state = sortState[tableId];
+      const key = state ? state.key : defaultKey;
+      const dir = state ? state.dir : defaultDir;
+      if (!key) return rows;
+      return [...rows].sort((a, b) => {
+        let av = a[key], bv = b[key];
+        // numeric
+        if (!isNaN(parseFloat(av)) && !isNaN(parseFloat(bv))) {
+          av = parseFloat(av); bv = parseFloat(bv);
+        } else {
+          av = (av || '').toString().toLowerCase();
+          bv = (bv || '').toString().toLowerCase();
+        }
+        if (av < bv) return dir === 'asc' ? -1 : 1;
+        if (av > bv) return dir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    // ── END SORT ENGINE ──────────────────────────────────────
+
     async function addMaterial() {
       const date      = document.getElementById('matDate').value;
       const shop      = document.getElementById('matShop').value.trim();
@@ -1042,6 +1143,7 @@
         </tr>
         `;
       }).join('');
+      makeTableSortable('materialsBody');
     }
 
     let editingMaterialIndex = -1;
@@ -1173,6 +1275,7 @@
           </td>
         </tr>
       `).join('');
+      makeTableSortable('equipmentBody');
     }
 
     let editingEquipmentIndex = -1;
@@ -1353,6 +1456,7 @@
       }, 0);
       document.getElementById('totalOverhead').textContent = fmt(totalOh);
       renderCalcElecList();
+      makeTableSortable('overheadBody');
     }
 
     // ── LABOR COST ──────────────────────────────────────────
@@ -1454,6 +1558,7 @@
         sel.innerHTML = buildLaborOptions('');
         sel.value = cur;
       });
+      makeTableSortable('laborBody');
     }
 
     function renderCalcLaborList() { /* no-op: now uses dropdown rows */ }
@@ -1670,6 +1775,7 @@
         </tr>
         `;
       }).join('');
+      makeTableSortable('productsBody');
     }
 
     function calculateOrder() {
@@ -1830,6 +1936,7 @@
 
       const totalRev = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
       document.getElementById('totalRevenue').textContent = fmt(totalRev);
+      makeTableSortable('ordersBody');
     }
 
     // Auto-load from Supabase on page load
@@ -2306,6 +2413,7 @@
           <td class="price-col">${fmt(r.price)}</td>
         </tr>
       `).join('');
+      makeTableSortable('evBody');
     }
 
     function exportExpenseExcel() {
