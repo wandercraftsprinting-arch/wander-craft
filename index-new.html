@@ -788,9 +788,9 @@
   </div>
 
   <script>
-    let materials = JSON.parse(localStorage.getItem('materials') || '[]');
-    let products = JSON.parse(localStorage.getItem('products') || '[]');
-    let equipment = JSON.parse(localStorage.getItem('equipment') || '[]');
+    let materials = [];
+    let products = [];
+    let equipment = [];
 
     // Logo & brand name persistence — synced via Supabase
     function applyLogo(url) {
@@ -892,9 +892,9 @@
       const name = localStorage.getItem('brandName');
       if (name) document.getElementById('brandName').value = name;
     });
-    let overhead = JSON.parse(localStorage.getItem('overhead') || '[]');
-    let laborCosts = JSON.parse(localStorage.getItem('laborCosts') || '[]');
-    let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    let overhead = [];
+    let laborCosts = [];
+    let orders = [];
 
     function calcPricePerQty() {
       const qty = parseFloat(document.getElementById('matQty').value) || 0;
@@ -926,30 +926,12 @@
       const lc   = await window.supabase.loadData('laborcosts');
       const ord  = await window.supabase.loadData('orders');
 
-      if (mat && mat.length > 0) {
-        materials = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0 }));
-        localStorage.setItem('materials', JSON.stringify(materials));
-      }
-      if (prod && prod.length > 0) {
-        products = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
-        localStorage.setItem('products', JSON.stringify(products));
-      }
-      if (eq && eq.length > 0) {
-        equipment = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
-        localStorage.setItem('equipment', JSON.stringify(equipment));
-      }
-      if (oh && oh.length > 0) {
-        overhead = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
-        localStorage.setItem('overhead', JSON.stringify(overhead));
-      }
-      if (lc && lc.length > 0) {
-        laborCosts = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
-        localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
-      }
-      if (ord && ord.length > 0) {
-        orders = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
-        localStorage.setItem('orders', JSON.stringify(orders));
-      }
+      if (mat)  materials  = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0 }));
+      if (prod) products   = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
+      if (eq)   equipment  = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
+      if (oh)   overhead   = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
+      if (lc)   laborCosts = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
+      if (ord)  orders     = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
 
       renderMaterials();
       renderProducts();
@@ -1089,7 +1071,6 @@
 
       const pricePerQty = price / qty;
       materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock });
-      localStorage.setItem('materials', JSON.stringify(materials));
       await syncToSheets();
       
       document.getElementById('matDate').value = '';
@@ -1106,7 +1087,6 @@
 
     async function deleteMaterial(i) {
       materials.splice(i, 1);
-      localStorage.setItem('materials', JSON.stringify(materials));
       await syncToSheets();
       renderMaterials();
     }
@@ -1186,7 +1166,6 @@
 
       const pricePerQty = price / qty;
       materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty, stock };
-      localStorage.setItem('materials', JSON.stringify(materials));
       await syncToSheets();
       
       cancelEditMaterial();
@@ -1214,7 +1193,6 @@
     async function duplicateMaterial(i) {
       const m = { ...materials[i] };
       materials.push(m);
-      localStorage.setItem('materials', JSON.stringify(materials));
       await syncToSheets();
       renderMaterials();
     }
@@ -1233,7 +1211,6 @@
       }
 
       equipment.push({ date, shop, name, variation, qty, price });
-      localStorage.setItem('equipment', JSON.stringify(equipment));
       await syncToSheets();
       
       document.getElementById('eqDate').value = '';
@@ -1248,7 +1225,6 @@
 
     async function deleteEquipment(i) {
       equipment.splice(i, 1);
-      localStorage.setItem('equipment', JSON.stringify(equipment));
       await syncToSheets();
       renderEquipment();
     }
@@ -1314,7 +1290,6 @@
       }
 
       equipment[editingEquipmentIndex] = { date, shop, name, variation, qty, price };
-      localStorage.setItem('equipment', JSON.stringify(equipment));
       await syncToSheets();
       
       cancelEditEquipment();
@@ -1372,7 +1347,6 @@
 
       const amount = rate * hours;
       overhead[editingOverheadIndex] = { desc, rate, qty: hours, amount, amountPerQty: rate };
-      localStorage.setItem('overhead', JSON.stringify(overhead));
       await syncToSheets();
       
       cancelEditOverhead();
@@ -1405,7 +1379,6 @@
 
       const amount = rate * hours;
       overhead.push({ desc, rate, qty: hours, amount, amountPerQty: rate });
-      localStorage.setItem('overhead', JSON.stringify(overhead));
       await syncToSheets();
       
       document.getElementById('ohDesc').value   = '';
@@ -1418,7 +1391,6 @@
 
     async function deleteOverhead(i) {
       overhead.splice(i, 1);
-      localStorage.setItem('overhead', JSON.stringify(overhead));
       await syncToSheets();
       renderOverhead();
     }
@@ -1475,7 +1447,6 @@
       if (!desc || rate <= 0 || hours <= 0) { alert('Please fill all fields (Description, Rate, Hours)'); return; }
       const total = rate * hours;
       laborCosts.push({ desc, rate, hours, total });
-      localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
       await syncToSheets();
       clearLaborForm();
       renderLaborCosts();
@@ -1502,7 +1473,6 @@
       if (!desc || rate <= 0 || hours <= 0) { alert('Please fill all fields'); return; }
       const total = rate * hours;
       laborCosts[editingLaborIndex] = { desc, rate, hours, total };
-      localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
       await syncToSheets();
       cancelEditLaborCost();
       renderLaborCosts();
@@ -1523,7 +1493,6 @@
 
     async function deleteLaborCost(i) {
       laborCosts.splice(i, 1);
-      localStorage.setItem('laborCosts', JSON.stringify(laborCosts));
       await syncToSheets();
       renderLaborCosts();
     }
@@ -1610,7 +1579,6 @@
       }
 
       products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin });
-      localStorage.setItem('products', JSON.stringify(products));
       await syncToSheets();
       
       document.getElementById('prodName').value = '';
@@ -1629,7 +1597,6 @@
 
     async function deleteProduct(i) {
       products.splice(i, 1);
-      localStorage.setItem('products', JSON.stringify(products));
       await syncToSheets();
       renderProducts();
     }
@@ -1693,7 +1660,6 @@
       const margin              = selling > 0 ? (profit / selling * 100) : 0;
 
       products[i] = { name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
-      localStorage.setItem('products', JSON.stringify(products));
       await syncToSheets();
       renderProducts();
       document.getElementById('prodEditModal').remove();
@@ -1720,7 +1686,6 @@
       const margin              = selling > 0 ? (profit / selling * 100) : 0;
 
       products[i] = { name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
-      localStorage.setItem('products', JSON.stringify(products));
       await syncToSheets();
       renderProducts();
 
@@ -1804,7 +1769,6 @@
       }
 
       orders.push({ date, customer, contact, email, product, variation, qty, price, total, payment, status, notes });
-      localStorage.setItem('orders', JSON.stringify(orders));
       await syncToSheets();
 
       ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordNotes'].forEach(id => document.getElementById(id).value = '');
@@ -1818,7 +1782,6 @@
 
     async function deleteOrder(i) {
       orders.splice(i, 1);
-      localStorage.setItem('orders', JSON.stringify(orders));
       await syncToSheets();
       renderOrders();
       renderSalesOverview();
@@ -1861,7 +1824,6 @@
       const notes    = document.getElementById('ordNotes').value.trim();
       if (!customer || !product || qty <= 0 || price <= 0) { alert('Please fill required fields'); return; }
       orders[editingOrderIndex] = { date, customer, contact, email, product, variation, qty, price, total, payment, status, notes };
-      localStorage.setItem('orders', JSON.stringify(orders));
       await syncToSheets();
       cancelEditOrder();
       renderOrders();
@@ -1882,7 +1844,6 @@
     async function copyOrder(i) {
       const o = { ...orders[i] };
       orders.push(o);
-      localStorage.setItem('orders', JSON.stringify(orders));
       await syncToSheets();
       renderOrders();
       buildSalesYearOptions();
@@ -2339,7 +2300,6 @@
       const margin         = selling > 0 ? (profit / selling * 100) : 0;
 
       products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin });
-      localStorage.setItem('products', JSON.stringify(products));
       await syncToSheets();
       renderProducts();
       alert(`✅ "${name}" saved to Products!`);
