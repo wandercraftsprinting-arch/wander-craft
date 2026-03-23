@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WanderCrafts PH — Setup Guide</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; font-size: 12pt; color: #222; max-width: 750px; margin: 40px auto; line-height: 1.6; }
+    h1 { font-size: 22pt; color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 6px; }
+    h2 { font-size: 15pt; color: #1d4ed8; margin-top: 30px; }
+    h3 { font-size: 12pt; color: #444; margin-top: 18px; }
+    p  { margin: 6px 0; }
+    ul, ol { margin: 8px 0 8px 24px; }
+    li { margin-bottom: 4px; }
+    code, pre { background: #f4f4f4; border: 1px solid #ddd; border-radius: 4px; font-family: Consolas, monospace; font-size: 10.5pt; }
+    code { padding: 1px 6px; }
+    pre  { padding: 12px 16px; overflow-x: auto; white-space: pre-wrap; }
+    .note { background: #fff8e1; border-left: 4px solid #f9a825; padding: 8px 14px; margin: 12px 0; border-radius: 4px; }
+    .step { background: #e8f5e9; border-left: 4px solid #2e7d32; padding: 8px 14px; margin: 12px 0; border-radius: 4px; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 11pt; }
+    th { background: #dbeafe; color: #1d4ed8; padding: 8px 10px; border: 1px solid #bcd; text-align: left; }
+    td { padding: 7px 10px; border: 1px solid #ccc; }
+    tr:nth-child(even) td { background: #f9f9f9; }
+    @media print { body { margin: 20px; } }
+  </style>
+</head>
+<body>
+
+<h1>WanderCrafts PH — Pricing Calculator<br><span style="font-size:13pt; color:#555;">Setup Guide for New Store Owners</span></h1>
+
+<p>This guide walks you through setting up your own copy of the WanderCrafts PH Pricing Calculator. You will need a <strong>GitHub account</strong> (for hosting) and a <strong>Supabase account</strong> (for data storage). Both are free.</p>
+
+<div class="note">
+  <strong>Note:</strong> All your data (materials, products, orders, etc.) is stored in your own Supabase database — completely separate from other stores. Changes sync across all devices and browsers automatically.
+</div>
+
+<hr>
+
+<h2>Step 1 — Copy the App Files (GitHub)</h2>
+
+<ol>
+  <li>Go to <strong>github.com</strong> and create a free account if you don't have one.</li>
+  <li>Create a new repository:
+    <ul>
+      <li>Click the <strong>+</strong> icon → <em>New repository</em></li>
+      <li>Give it a name, e.g. <code>my-store-calculator</code></li>
+      <li>Set it to <strong>Public</strong></li>
+      <li>Click <em>Create repository</em></li>
+    </ul>
+  </li>
+  <li>Upload these files to your new repository:
+    <ul>
+      <li><code>index.html</code></li>
+      <li><code>supabase-api.js</code></li>
+      <li><code>supabase-config.js</code></li>
+    </ul>
+  </li>
+  <li>Enable GitHub Pages:
+    <ul>
+      <li>Go to your repo → <em>Settings</em> → <em>Pages</em></li>
+      <li>Under <em>Source</em>, select <strong>Deploy from a branch</strong></li>
+      <li>Choose <strong>main</strong> branch → <strong>/ (root)</strong> → click <em>Save</em></li>
+    </ul>
+  </li>
+  <li>Your site URL will be:<br>
+    <code>https://your-github-username.github.io/my-store-calculator/</code>
+  </li>
+</ol>
+
+<div class="note">
+  <strong>Tip:</strong> It may take 1–2 minutes after saving for GitHub Pages to go live.
+</div>
+
+<hr>
+
+<h2>Step 2 — Create Your Supabase Database</h2>
+
+<ol>
+  <li>Go to <strong>supabase.com</strong> and sign up for a free account.</li>
+  <li>Click <em>New Project</em>:
+    <ul>
+      <li>Enter a project name (e.g. <em>my-store</em>)</li>
+      <li>Set a database password (save this somewhere safe)</li>
+      <li>Choose the region closest to you</li>
+      <li>Click <em>Create new project</em> — wait about 1 minute for it to set up</li>
+    </ul>
+  </li>
+</ol>
+
+<h3>Run the Setup SQL Script</h3>
+<ol start="3">
+  <li>In your Supabase project, go to the left sidebar → <strong>SQL Editor</strong></li>
+  <li>Click <em>New query</em></li>
+  <li>Copy and paste the entire contents of the file <code>supabase-setup.sql</code> into the editor</li>
+  <li>Click <strong>Run</strong> (or press Ctrl+Enter)</li>
+  <li>You should see <em>"Success. No rows returned"</em> — this means all tables were created successfully</li>
+</ol>
+
+<h3>Create the Logo Storage Bucket</h3>
+<ol start="8">
+  <li>In the left sidebar → <strong>Storage</strong></li>
+  <li>Click <em>New bucket</em></li>
+  <li>Name it exactly: <code>Logos</code> (capital L)</li>
+  <li>Check <strong>Public bucket</strong> → click <em>Save</em></li>
+</ol>
+
+<hr>
+
+<h2>Step 3 — Get Your Supabase Credentials</h2>
+
+<ol>
+  <li>In your Supabase project, go to <strong>Project Settings</strong> (gear icon, bottom left)</li>
+  <li>Click <strong>API</strong></li>
+  <li>Copy two values:
+    <ul>
+      <li><strong>Project URL</strong> — looks like <code>https://abcdefgh.supabase.co</code></li>
+      <li><strong>anon / public key</strong> — a long string starting with <code>sb_publishable_...</code></li>
+    </ul>
+  </li>
+</ol>
+
+<hr>
+
+<h2>Step 4 — Update the Config File</h2>
+
+<ol>
+  <li>Open the file <code>supabase-config.js</code> in a text editor (Notepad is fine)</li>
+  <li>Replace the values with your own credentials:</li>
+</ol>
+
+<pre>const SUPABASE_CONFIG = {
+  URL: 'https://your-project-id.supabase.co',
+  ANON_KEY: 'your-anon-public-key'
+};</pre>
+
+<ol start="3">
+  <li>Save the file</li>
+  <li>Upload the updated <code>supabase-config.js</code> to your GitHub repository (replace the old one)</li>
+</ol>
+
+<div class="note">
+  <strong>Important:</strong> Never share your <em>service_role</em> key — only use the <em>anon / public</em> key in this file.
+</div>
+
+<hr>
+
+<h2>Step 5 — Open Your App</h2>
+
+<ol>
+  <li>Go to your GitHub Pages URL:<br>
+    <code>https://your-github-username.github.io/my-store-calculator/</code>
+  </li>
+  <li>Click the logo placeholder (top left) to upload your store logo</li>
+  <li>Click the store name to edit it</li>
+  <li>Click <strong>🗄️ Sync Supabase</strong> to confirm everything is connected</li>
+  <li>You should see <strong>✅ Synced</strong> — you're ready to go!</li>
+</ol>
+
+<hr>
+
+<h2>Summary of Files</h2>
+
+<table>
+  <tr><th>File</th><th>Purpose</th><th>Needs editing?</th></tr>
+  <tr><td><code>index.html</code></td><td>The main app (all tabs, calculator, etc.)</td><td>No</td></tr>
+  <tr><td><code>supabase-config.js</code></td><td>Your Supabase URL and API key</td><td>Yes — replace with your own credentials</td></tr>
+  <tr><td><code>supabase-api.js</code></td><td>Handles all database read/write logic</td><td>No</td></tr>
+  <tr><td><code>supabase-setup.sql</code></td><td>SQL script to create all database tables</td><td>No — just run it once in Supabase</td></tr>
+</table>
+
+<hr>
+
+<h2>Troubleshooting</h2>
+
+<table>
+  <tr><th>Problem</th><th>Solution</th></tr>
+  <tr><td>Button shows ❌ Retry Sync</td><td>Check that your URL and ANON_KEY in <code>supabase-config.js</code> are correct</td></tr>
+  <tr><td>Data not showing after refresh</td><td>Click 🗄️ Sync Supabase to force a reload</td></tr>
+  <tr><td>Logo not saving</td><td>Make sure the Storage bucket is named exactly <code>Logos</code> (capital L) and is set to Public</td></tr>
+  <tr><td>GitHub Pages not loading</td><td>Wait 2–3 minutes after enabling Pages, then hard refresh (Ctrl+Shift+R)</td></tr>
+  <tr><td>Data not syncing across devices</td><td>All devices must use the same GitHub Pages URL — data is tied to your Supabase project</td></tr>
+</table>
+
+<hr>
+
+<p style="font-size:10pt; color:#888; margin-top:30px;">WanderCrafts PH Pricing Calculator — Setup Guide &nbsp;|&nbsp; For assistance, contact the original developer.</p>
+
+</body>
+</html>
