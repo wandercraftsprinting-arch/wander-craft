@@ -2564,7 +2564,7 @@
         stock:     headers.findIndex(h => h.includes('stock'))
       };
 
-      let added = 0, skipped = 0;
+      let added = 0, skipped = 0, dupes = 0;
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
         const name = idx.name >= 0 ? cols[idx.name] : '';
@@ -2579,14 +2579,28 @@
         const stock = idx.stock >= 0 && cols[idx.stock] ? cols[idx.stock] : 'In Stock';
         const pricePerQty = qty > 0 ? price / qty : 0;
 
+        // Duplicate check: all key fields match an existing entry
+        const isDupe = materials.some(m =>
+          m.date === date &&
+          (m.shop || '').toLowerCase() === shop.toLowerCase() &&
+          m.name.toLowerCase() === name.toLowerCase() &&
+          (m.variation || '').toLowerCase() === variation.toLowerCase() &&
+          parseFloat(m.qty) === qty &&
+          parseFloat(m.price) === price
+        );
+        if (isDupe) { dupes++; continue; }
+
         materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock });
         added++;
       }
 
-      if (added === 0) { alert('No valid rows found. Check your file format.'); return; }
+      if (added === 0) {
+        alert(`No new rows uploaded.${dupes ? ` ${dupes} duplicate(s) detected and skipped.` : ''}`);
+        return;
+      }
       await syncToSheets();
       renderMaterials();
-      alert(`✅ Uploaded ${added} material(s)${skipped ? ` (${skipped} skipped)` : ''}.`);
+      alert(`✅ Uploaded ${added} material(s).${dupes ? ` ${dupes} duplicate(s) skipped.` : ''}${skipped ? ` ${skipped} empty row(s) ignored.` : ''}`);
     }
 
     // ── BULK UPLOAD: EQUIPMENT ───────────────────────────────
@@ -2621,7 +2635,7 @@
         price:     headers.findIndex(h => h.includes('price') || h.includes('total'))
       };
 
-      let added = 0, skipped = 0;
+      let added = 0, skipped = 0, dupes = 0;
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
         const name = idx.name >= 0 ? cols[idx.name] : '';
@@ -2634,14 +2648,28 @@
         const qty = parseFloat(idx.qty >= 0 ? cols[idx.qty] : '') || 0;
         const price = parseFloat(idx.price >= 0 ? cols[idx.price] : '') || 0;
 
+        // Duplicate check: all key fields match an existing entry
+        const isDupe = equipment.some(e =>
+          e.date === date &&
+          (e.shop || '').toLowerCase() === shop.toLowerCase() &&
+          e.name.toLowerCase() === name.toLowerCase() &&
+          (e.variation || '').toLowerCase() === variation.toLowerCase() &&
+          parseFloat(e.qty) === qty &&
+          parseFloat(e.price) === price
+        );
+        if (isDupe) { dupes++; continue; }
+
         equipment.push({ date, shop, name, variation, qty, price });
         added++;
       }
 
-      if (added === 0) { alert('No valid rows found. Check your file format.'); return; }
+      if (added === 0) {
+        alert(`No new rows uploaded.${dupes ? ` ${dupes} duplicate(s) detected and skipped.` : ''}`);
+        return;
+      }
       await syncToSheets();
       renderEquipment();
-      alert(`✅ Uploaded ${added} equipment item(s)${skipped ? ` (${skipped} skipped)` : ''}.`);
+      alert(`✅ Uploaded ${added} equipment item(s).${dupes ? ` ${dupes} duplicate(s) skipped.` : ''}${skipped ? ` ${skipped} empty row(s) ignored.` : ''}`);
     }
 
     // ── DATE PARSER (handles YYYY-MM-DD, MM/DD/YYYY, Excel serial) ──
