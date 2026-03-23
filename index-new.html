@@ -186,6 +186,13 @@
         <button id="matUpdateBtn" onclick="updateMaterial()" style="display:none; background:#ff9800;">✔ Update</button>
         <button id="matCancelBtn" onclick="cancelEditMaterial()" style="display:none; background:#757575;">Cancel</button>
         <span id="matEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing material</span>
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button onclick="downloadMatTemplate()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin:0;">📥 Download Template</button>
+          <label style="background:#1d4ed8; color:white; border-radius:5px; padding:8px 14px; font-size:13px; cursor:pointer; margin:0; font-weight:normal; text-transform:none;">
+            📤 Bulk Upload
+            <input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="bulkUploadMaterial(event)">
+          </label>
+        </div>
       </div>
       
       <table id="materialsTable">
@@ -270,6 +277,13 @@
         <button id="eqUpdateBtn" onclick="updateEquipment()" style="display:none; background:#ff9800;">✔ Update</button>
         <button id="eqCancelBtn" onclick="cancelEditEquipment()" style="display:none; background:#757575;">Cancel</button>
         <span id="eqEditBanner" style="display:none; font-size:13px; color:#ff9800; margin-left:10px;">✏️ Editing equipment</span>
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button onclick="downloadEqTemplate()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin:0;">📥 Download Template</button>
+          <label style="background:#1d4ed8; color:white; border-radius:5px; padding:8px 14px; font-size:13px; cursor:pointer; margin:0; font-weight:normal; text-transform:none;">
+            📤 Bulk Upload
+            <input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="bulkUploadEquipment(event)">
+          </label>
+        </div>
       </div>
       
       <table id="equipmentTable">
@@ -2514,6 +2528,140 @@
       buildSalesYearOptions();
       renderSalesOverview();
     });
+
+    // ── BULK UPLOAD: MATERIAL ────────────────────────────────
+    function downloadMatTemplate() {
+      const header = 'Order Date,Shop Name,Product Name,Variation,Quantity,Total Price,Stock Status';
+      const sample = '2025-01-15,Shopee,Fabric,Red 1m,10,250.00,In Stock';
+      const blob = new Blob([header + '\n' + sample], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'material_template.csv';
+      a.click();
+    }
+
+    async function bulkUploadMaterial(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      event.target.value = '';
+
+      const text = await file.text();
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+      if (lines.length < 2) { alert('File is empty or has no data rows.'); return; }
+
+      // Detect delimiter (tab for .tsv / Excel copy-paste, comma for .csv)
+      const delim = lines[0].includes('\t') ? '\t' : ',';
+      const headers = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+      // Map header names to expected fields
+      const idx = {
+        date:      headers.findIndex(h => h.includes('date')),
+        shop:      headers.findIndex(h => h.includes('shop')),
+        name:      headers.findIndex(h => h.includes('product') || h.includes('name')),
+        variation: headers.findIndex(h => h.includes('variation')),
+        qty:       headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
+        price:     headers.findIndex(h => h.includes('price') || h.includes('total')),
+        stock:     headers.findIndex(h => h.includes('stock'))
+      };
+
+      let added = 0, skipped = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
+        const name = idx.name >= 0 ? cols[idx.name] : '';
+        if (!name) { skipped++; continue; }
+
+        const rawDate = idx.date >= 0 ? cols[idx.date] : '';
+        const date = parseUploadDate(rawDate);
+        const shop = idx.shop >= 0 ? cols[idx.shop] : '';
+        const variation = idx.variation >= 0 ? cols[idx.variation] : '';
+        const qty = parseFloat(idx.qty >= 0 ? cols[idx.qty] : '') || 0;
+        const price = parseFloat(idx.price >= 0 ? cols[idx.price] : '') || 0;
+        const stock = idx.stock >= 0 && cols[idx.stock] ? cols[idx.stock] : 'In Stock';
+        const pricePerQty = qty > 0 ? price / qty : 0;
+
+        materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock });
+        added++;
+      }
+
+      if (added === 0) { alert('No valid rows found. Check your file format.'); return; }
+      await syncToSheets();
+      renderMaterials();
+      alert(`✅ Uploaded ${added} material(s)${skipped ? ` (${skipped} skipped)` : ''}.`);
+    }
+
+    // ── BULK UPLOAD: EQUIPMENT ───────────────────────────────
+    function downloadEqTemplate() {
+      const header = 'Order Date,Shop Name,Product Name,Variation,Quantity,Total Price';
+      const sample = '2025-01-15,Lazada,Sewing Machine,White,1,3500.00';
+      const blob = new Blob([header + '\n' + sample], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'equipment_template.csv';
+      a.click();
+    }
+
+    async function bulkUploadEquipment(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      event.target.value = '';
+
+      const text = await file.text();
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+      if (lines.length < 2) { alert('File is empty or has no data rows.'); return; }
+
+      const delim = lines[0].includes('\t') ? '\t' : ',';
+      const headers = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+      const idx = {
+        date:      headers.findIndex(h => h.includes('date')),
+        shop:      headers.findIndex(h => h.includes('shop')),
+        name:      headers.findIndex(h => h.includes('product') || h.includes('name')),
+        variation: headers.findIndex(h => h.includes('variation')),
+        qty:       headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
+        price:     headers.findIndex(h => h.includes('price') || h.includes('total'))
+      };
+
+      let added = 0, skipped = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
+        const name = idx.name >= 0 ? cols[idx.name] : '';
+        if (!name) { skipped++; continue; }
+
+        const rawDate = idx.date >= 0 ? cols[idx.date] : '';
+        const date = parseUploadDate(rawDate);
+        const shop = idx.shop >= 0 ? cols[idx.shop] : '';
+        const variation = idx.variation >= 0 ? cols[idx.variation] : '';
+        const qty = parseFloat(idx.qty >= 0 ? cols[idx.qty] : '') || 0;
+        const price = parseFloat(idx.price >= 0 ? cols[idx.price] : '') || 0;
+
+        equipment.push({ date, shop, name, variation, qty, price });
+        added++;
+      }
+
+      if (added === 0) { alert('No valid rows found. Check your file format.'); return; }
+      await syncToSheets();
+      renderEquipment();
+      alert(`✅ Uploaded ${added} equipment item(s)${skipped ? ` (${skipped} skipped)` : ''}.`);
+    }
+
+    // ── DATE PARSER (handles YYYY-MM-DD, MM/DD/YYYY, Excel serial) ──
+    function parseUploadDate(raw) {
+      if (!raw) return '';
+      raw = raw.toString().trim();
+      // Already YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.substring(0, 10);
+      // MM/DD/YYYY or M/D/YYYY
+      const mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+      // Excel serial number (days since 1899-12-30)
+      const serial = parseFloat(raw);
+      if (!isNaN(serial) && serial > 1000) {
+        const d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+        return d.toISOString().substring(0, 10);
+      }
+      return raw;
+    }
+    // ── END BULK UPLOAD ──────────────────────────────────────
   </script>
 </body>
 </html>
