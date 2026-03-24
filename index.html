@@ -866,7 +866,7 @@
       <h2>Ink Calculator</h2>
       <p style="font-size:13px; color:#7a6248; margin-bottom:20px;">Calculate your cost per page based on cartridge cost and page yield. Cartridge costs are pulled from your Materials list.</p>
 
-      <div style="background:white; border-radius:12px; padding:24px; box-shadow:0 1px 6px rgba(0,0,0,0.08); max-width:700px;">
+      <div style="background:white; border-radius:12px; padding:28px 32px; box-shadow:0 1px 6px rgba(0,0,0,0.08); max-width:900px; margin:0 auto;">
 
         <!-- Printer Selection -->
         <div class="form-group">
@@ -880,7 +880,7 @@
         </div>
 
         <!-- Cartridge rows -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
           <div class="form-group" style="margin:0;"><label>Cartridge Cost — Black (₱)</label>
             <select id="inkBlack" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
           </div>
@@ -893,7 +893,7 @@
         </div>
 
         <!-- Pigment Black — Canon only -->
-        <div id="inkPigmentRow" style="display:none; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+        <div id="inkPigmentRow" style="display:none; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
           <div class="form-group" style="margin:0;"><label>Cartridge Cost — Pigment Black (₱)</label>
             <select id="inkPigBlack" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
           </div>
@@ -905,7 +905,7 @@
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
           <div class="form-group" style="margin:0;"><label>Cartridge Cost — Magenta (₱)</label>
             <select id="inkMagenta" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
           </div>
@@ -917,7 +917,7 @@
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
           <div class="form-group" style="margin:0;"><label>Cartridge Cost — Cyan (₱)</label>
             <select id="inkCyan" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
           </div>
@@ -929,7 +929,7 @@
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:20px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:24px;">
           <div class="form-group" style="margin:0;"><label>Cartridge Cost — Yellow (₱)</label>
             <select id="inkYellow" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
           </div>
@@ -942,14 +942,14 @@
         </div>
 
         <!-- Summary -->
-        <div style="background:#f5f0e8; border-radius:8px; padding:14px 18px; margin-bottom:20px; display:flex; gap:40px; flex-wrap:wrap;">
+        <div style="background:#f5f0e8; border-radius:8px; padding:16px 20px; margin-bottom:20px; display:flex; gap:60px; flex-wrap:wrap;">
           <div>
             <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Black/White Cost Per Page</p>
-            <p id="inkBWResult" style="font-size:20px; font-weight:700; color:#3d2e1e;">₱0.0000</p>
+            <p id="inkBWResult" style="font-size:22px; font-weight:700; color:#3d2e1e;">₱0.00</p>
           </div>
           <div>
             <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Colour Cost Per Page</p>
-            <p id="inkColourResult" style="font-size:20px; font-weight:700; color:#7c3aed;">₱0.0000</p>
+            <p id="inkColourResult" style="font-size:22px; font-weight:700; color:#7c3aed;">₱0.00</p>
           </div>
         </div>
 
@@ -957,7 +957,7 @@
       </div>
 
       <!-- Saved Ink Entries Table -->
-      <table id="inkTable" style="margin-top:24px; max-width:900px;">
+      <table id="inkTable" style="margin-top:24px;">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
@@ -2609,7 +2609,7 @@
       const costPerPage = (cartId, yieldId, costId) => {
         const cart = getVal(cartId), yld = getVal(yieldId);
         const cpp = yld > 0 ? cart / yld : 0;
-        document.getElementById(costId).value = cpp > 0 ? '₱' + cpp.toFixed(4) : '';
+        document.getElementById(costId).value = cpp > 0 ? '₱' + cpp.toFixed(2) : '';
         return cpp;
       };
       const bCpp  = costPerPage('inkBlack',   'inkBlackYield',   'inkBlackCost');
@@ -2624,8 +2624,8 @@
         bwCpp = pbCpp; // Canon uses Pigment Black for B&W
       }
 
-      document.getElementById('inkBWResult').textContent     = '₱' + bwCpp.toFixed(4);
-      document.getElementById('inkColourResult').textContent = '₱' + (bCpp + mCpp + cCpp + yCpp).toFixed(4);
+      document.getElementById('inkBWResult').textContent     = '₱' + bwCpp.toFixed(2);
+      document.getElementById('inkColourResult').textContent = '₱' + (bCpp + mCpp + cCpp + yCpp).toFixed(2);
     }
 
     function saveInkEntry() {
