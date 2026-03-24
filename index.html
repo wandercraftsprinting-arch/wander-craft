@@ -2608,10 +2608,39 @@
       });
     }
 
+    const INK_YIELDS = {
+      'Canon IX6770':  { black: 1645, pigBlack: 333, magenta: 327, cyan: 334, yellow: 300 },
+      'Brother T930DW':{ black: 6500, pigBlack: null, magenta: 5000, cyan: 5000, yellow: 5000 }
+    };
+
     function onInkPrinterChange() {
       const printer = document.getElementById('inkPrinter').value;
       const pigRow = document.getElementById('inkPigmentRow');
       pigRow.style.display = printer === 'Canon IX6770' ? 'grid' : 'none';
+
+      const yields = INK_YIELDS[printer] || null;
+      const yieldFields = [
+        { id: 'inkBlackYield',    key: 'black' },
+        { id: 'inkPigBlackYield', key: 'pigBlack' },
+        { id: 'inkMagentaYield',  key: 'magenta' },
+        { id: 'inkCyanYield',     key: 'cyan' },
+        { id: 'inkYellowYield',   key: 'yellow' },
+      ];
+      yieldFields.forEach(({ id, key }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (yields && yields[key] != null) {
+          el.value = yields[key];
+          el.readOnly = true;
+          el.style.background = '#f5f0e8';
+          el.style.cursor = 'not-allowed';
+        } else {
+          el.value = '';
+          el.readOnly = false;
+          el.style.background = '';
+          el.style.cursor = '';
+        }
+      });
       calcInkCosts();
     }
 
@@ -2680,7 +2709,7 @@
     function renderInkTable() {
       const tbody = document.getElementById('inkTableBody');
       if (inkEntries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">No entries yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">No entries yet</td></tr>';
         return;
       }
       tbody.innerHTML = inkEntries.map((e, i) => `
