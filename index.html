@@ -464,7 +464,41 @@
       <button id="ordUpdateBtn" onclick="updateOrder()" style="display:none; background:#ff9800; margin-left:8px;">✔ Update</button>
       <button id="ordCancelBtn" onclick="cancelEditOrder()" style="display:none; background:#757575; margin-left:8px;">Cancel</button>
 
-      <table id="ordersTable" style="margin-top:20px;">
+      <!-- Order Filters -->
+      <div style="background:white; border-radius:10px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-top:16px; display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+        <div class="form-group" style="margin:0;">
+          <label>Year</label>
+          <select id="ordFilterYear" onchange="renderOrders()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All Years</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Payment</label>
+          <select id="ordFilterPayment" onchange="renderOrders()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All</option>
+            <option value="Paid">Paid</option>
+            <option value="Partial">Partial</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Order Status</label>
+          <select id="ordFilterStatus" onchange="renderOrders()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All</option>
+            <option value="New">New</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Ready">Ready</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:8px; align-items:flex-end;">
+          <button onclick="exportOrdersExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin:0;">📥 Export Excel</button>
+          <button onclick="exportOrdersPDF()" style="background:#c0392b; font-size:13px; padding:8px 14px; margin:0;">🖨 Export PDF</button>
+        </div>
+      </div>
+
+      <table id="ordersTable" style="margin-top:12px;">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
@@ -968,6 +1002,7 @@
       buildYearOptions();
       renderExpenseView();
       buildSalesYearOptions();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1811,6 +1846,7 @@
 
       renderOrders();
       buildSalesYearOptions();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1818,6 +1854,7 @@
       orders.splice(i, 1);
       await syncTable('orders', orders);
       renderOrders();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1862,6 +1899,7 @@
       cancelEditOrder();
       renderOrders();
       buildSalesYearOptions();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1881,6 +1919,7 @@
       await syncTable('orders', orders);
       renderOrders();
       buildSalesYearOptions();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1898,14 +1937,35 @@
 
     let editingOrderIndex = -1;
 
+    function buildOrderYearOptions() {
+      const sel = document.getElementById('ordFilterYear');
+      if (!sel) return;
+      const current = sel.value;
+      const years = [...new Set(orders.map(o => (o.date || '').substring(0, 4)).filter(Boolean))].sort().reverse();
+      sel.innerHTML = '<option value="">All Years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (years.includes(current)) sel.value = current;
+    }
+
     function renderOrders() {
       const tbody = document.getElementById('ordersBody');
-      if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#999;">No orders added yet</td></tr>';
+      const filterYear    = (document.getElementById('ordFilterYear')    || {}).value || '';
+      const filterPayment = (document.getElementById('ordFilterPayment') || {}).value || '';
+      const filterStatus  = (document.getElementById('ordFilterStatus')  || {}).value || '';
+
+      let filtered = orders.map((o, i) => ({ ...o, _i: i })).filter(o => {
+        if (filterYear    && !(o.date || '').startsWith(filterYear)) return false;
+        if (filterPayment && o.payment !== filterPayment) return false;
+        if (filterStatus  && o.status  !== filterStatus)  return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:#999;">${orders.length === 0 ? 'No orders added yet' : 'No orders match the selected filters'}</td></tr>`;
         document.getElementById('totalRevenue').textContent = '₱0.00';
         return;
       }
-      const sorted = [...orders].map((o, i) => ({ ...o, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+      const sorted = filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       tbody.innerHTML = sorted.map((o, idx) => `
         <tr>
           <td style="text-align:center;">${idx + 1}</td>
@@ -1929,7 +1989,7 @@
         </tr>
       `).join('');
 
-      const totalRev = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+      const totalRev = filtered.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
       document.getElementById('totalRevenue').textContent = fmt(totalRev);
       makeTableSortable('ordersBody');
     }
@@ -2546,6 +2606,58 @@
             <td style="text-align:center;">${p.qty}</td>
             <td class="price-col">${fmt(p.revenue)}</td>
           </tr>`).join('');
+    }
+
+    function exportOrdersExcel() {
+      const wb = XLSX.utils.book_new();
+      const rows = [...document.querySelectorAll('#ordersBody tr')].map(tr => {
+        const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
+        if (tds.length < 13) return null; // skip empty/placeholder row
+        return [tds[1], tds[2], tds[3], tds[4], tds[5], tds[6], +tds[7]||0,
+                parseFloat((tds[8]||'0').replace(/[₱,]/g,''))||0,
+                parseFloat((tds[9]||'0').replace(/[₱,]/g,''))||0,
+                tds[10], tds[11], tds[12]];
+      }).filter(Boolean);
+
+      const totalRev = rows.reduce((s, r) => s + (r[8] || 0), 0);
+
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Order Date','Customer','Contact','Email','Product','Variation','Qty','Unit Price','Total','Payment','Status','Notes'],
+        ...rows,
+        ['','','','','','','','Total', totalRev,'','','']
+      ]);
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = 1; R <= range.e.r; R++) {
+        [7, 8].forEach(c => {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c })];
+          if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+        });
+      }
+      ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:22},{wch:20},{wch:16},{wch:6},{wch:12},{wch:12},{wch:10},{wch:12},{wch:20}];
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+      XLSX.writeFile(wb, 'orders.xlsx');
+    }
+
+    function exportOrdersPDF() {
+      const win = window.open('', '_blank');
+      const rows = [...document.querySelectorAll('#ordersBody tr')].map(tr =>
+        `<tr>${[...tr.querySelectorAll('td')].slice(1, -1).map(td => `<td style="padding:5px 8px;border:1px solid #ddd;">${td.innerText}</td>`).join('')}</tr>`
+      ).join('');
+      const total = document.getElementById('totalRevenue').textContent;
+      win.document.write(`<html><head><title>Orders</title><style>
+        body{font-family:sans-serif;font-size:12px;}
+        table{border-collapse:collapse;width:100%;}
+        th{background:#dbeafe;padding:7px 8px;border:1px solid #ddd;font-size:12px;}
+      </style></head><body>
+        <h2>Orders</h2>
+        <p style="margin-bottom:10px;">Total Revenue: <strong>${total}</strong></p>
+        <table><thead><tr>
+          <th>Order Date</th><th>Customer</th><th>Contact</th><th>Email</th>
+          <th>Product</th><th>Variation</th><th>Qty</th>
+          <th>Unit Price</th><th>Total</th><th>Payment</th><th>Status</th><th>Notes</th>
+        </tr></thead><tbody>${rows}</tbody></table>
+      </body></html>`);
+      win.document.close(); win.print();
     }
 
     function exportSalesExcel() {
