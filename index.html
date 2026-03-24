@@ -718,7 +718,7 @@
                   <tr>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Print</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:70px;">Qty</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Price/Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost/Page</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
                   </tr>
@@ -965,8 +965,8 @@
           <tr>
             <th style="text-align:center;">No.</th>
             <th>Printer</th>
-            <th style="text-align:right; padding-right:12px;">B&W per Page</th>
-            <th style="text-align:right; padding-right:12px;">Colour per Page</th>
+            <th>Print Type</th>
+            <th style="text-align:right; padding-right:12px;">Cost per Page</th>
             <th></th>
           </tr>
         </thead>
@@ -2388,14 +2388,14 @@
       const rowId = 'ink_' + Date.now();
       const tr = document.createElement('tr');
       tr.id = rowId;
+      const opts = '<option value="">-- Select --</option>' +
+        inkEntries.map((e, i) =>
+          `<option value="${e.costPerPage.toFixed(4)}">${e.printer} — ${e.type}</option>`
+        ).join('');
       tr.innerHTML = `
-        <td><select onchange="updateCalcInkRow('${rowId}', true)" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">
-          <option value="">-- Select --</option>
-          <option value="Black/White Document">Black/White Document</option>
-          <option value="Colour Document">Colour Document</option>
-        </select></td>
+        <td><select onchange="updateCalcInkRow('${rowId}', true)" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${opts}</select></td>
         <td><input type="number" value="1" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcInkRow('${rowId}')"></td>
-        <td><input type="number" value="0" min="0" step="0.01" style="width:80px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcInkRow('${rowId}')"></td>
+        <td><input type="number" value="0" min="0" step="0.0001" style="width:80px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly></td>
         <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
         <td><button onclick="removeCalcInkRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
       `;
@@ -2403,15 +2403,15 @@
       updateCalcInkTotal();
     }
 
-    const INK_DEFAULTS = { 'Black/White Document': 2.00, 'Colour Document': 8.00 };
+    const INK_DEFAULTS = {};
 
     function updateCalcInkRow(rowId, fromSelect) {
       const tr = document.getElementById(rowId);
       const sel = tr.querySelector('select');
       const inputs = tr.querySelectorAll('input');
-      // Auto-fill price when print type is selected
-      if (fromSelect && sel.value && INK_DEFAULTS[sel.value] !== undefined) {
-        inputs[1].value = INK_DEFAULTS[sel.value].toFixed(2);
+      // Auto-fill price/qty from selected ink entry (read-only)
+      if (fromSelect && sel.value) {
+        inputs[1].value = parseFloat(sel.value).toFixed(4);
       }
       const qty = parseFloat(inputs[0].value) || 0;
       const pricePerQty = parseFloat(inputs[1].value) || 0;
@@ -2689,21 +2689,16 @@
         bwCpp = pbCpp;
       }
 
-      inkEntries.push({
-        printer,
-        bw: bwCpp,
-        colour: bCpp + mCpp + cCpp + yCpp,
-        blackCart: getMatName('inkBlack'),
-        magentaCart: getMatName('inkMagenta'),
-        cyanCart: getMatName('inkCyan'),
-        yellowCart: getMatName('inkYellow'),
-      });
+      inkEntries.push({ printer, type: 'Black/White', costPerPage: bwCpp });
+      inkEntries.push({ printer, type: 'Colour', costPerPage: bCpp + mCpp + cCpp + yCpp });
       renderInkTable();
+      buildCalcInkOptions();
     }
 
     function deleteInkEntry(i) {
       inkEntries.splice(i, 1);
       renderInkTable();
+      buildCalcInkOptions();
     }
 
     function renderInkTable() {
@@ -2716,11 +2711,23 @@
         <tr>
           <td style="text-align:center;">${i + 1}</td>
           <td>${e.printer}</td>
-          <td style="text-align:right; padding-right:12px; font-weight:600;">₱${e.bw.toFixed(2)}</td>
-          <td style="text-align:right; padding-right:12px; font-weight:600; color:#7c3aed;">₱${e.colour.toFixed(2)}</td>
+          <td>${e.type}</td>
+          <td style="text-align:right; padding-right:12px; font-weight:600; ${e.type==='Colour'?'color:#7c3aed;':''}">₱${e.costPerPage.toFixed(2)}</td>
           <td style="text-align:center;"><button class="btn-delete" onclick="deleteInkEntry(${i})">✕</button></td>
         </tr>
       `).join('');
+    }
+
+    function buildCalcInkOptions() {
+      // Rebuild the Select Print dropdown in every calc ink row from inkEntries
+      const opts = '<option value="">-- Select --</option>' +
+        inkEntries.map((e, i) =>
+          `<option value="${e.costPerPage.toFixed(4)}">${e.printer} — ${e.type}</option>`
+        ).join('');
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        if (sel) sel.innerHTML = opts;
+      });
     }
 
     async function saveCalculatorToProducts() {
