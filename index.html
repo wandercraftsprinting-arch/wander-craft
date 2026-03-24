@@ -1921,6 +1921,7 @@
 
     async function connectSupabase() {
       const btn = document.getElementById('gsheetsBtn');
+      if (btn.disabled) return; // prevent double-trigger
       btn.textContent = '⏳ Syncing...';
       btn.disabled = true;
       try {
@@ -2514,20 +2515,6 @@
       </body></html>`);
       win.document.close(); win.print();
     }
-
-    window.addEventListener('load', () => {
-      renderMaterials();
-      renderProducts();
-      renderEquipment();
-      renderOverhead();
-      renderLaborCosts();
-      renderCalcLaborList();
-      renderOrders();
-      buildYearOptions();
-      renderExpenseView();
-      buildSalesYearOptions();
-      renderSalesOverview();
-    });
 
     // ── BULK UPLOAD: MATERIAL ────────────────────────────────
     function downloadMatTemplate() {
