@@ -866,7 +866,9 @@
       <h2>Ink Calculator</h2>
       <p style="font-size:13px; color:#7a6248; margin-bottom:20px;">Calculate your cost per page based on cartridge cost and page yield. Cartridge costs are pulled from your Materials list.</p>
 
-      <div style="background:white; border-radius:12px; padding:28px 32px; box-shadow:0 1px 6px rgba(0,0,0,0.08); max-width:900px; margin:0 auto;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:start;">
+
+      <div style="background:white; border-radius:12px; padding:28px 32px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
 
         <!-- Printer Selection -->
         <div class="form-group">
@@ -953,28 +955,28 @@
           </div>
         </div>
 
-        <button onclick="saveInkEntry()" style="background:#4caf50; margin:0;">+ Add to Table</button>
+        <button onclick="saveInkEntry()" style="background:#4caf50; margin:0;">+ Add Ink Cost</button>
       </div>
 
       <!-- Saved Ink Entries Table -->
-      <table id="inkTable" style="margin-top:24px;">
+      <div>
+      <table id="inkTable" style="margin-top:0;">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
             <th>Printer</th>
-            <th style="text-align:right; padding-right:12px;">B&W / Page</th>
-            <th style="text-align:right; padding-right:12px;">Colour / Page</th>
-            <th>Black Cart.</th>
-            <th>Magenta Cart.</th>
-            <th>Cyan Cart.</th>
-            <th>Yellow Cart.</th>
+            <th style="text-align:right; padding-right:12px;">B&W per Page</th>
+            <th style="text-align:right; padding-right:12px;">Colour per Page</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="inkTableBody">
-          <tr><td colspan="9" style="text-align:center; color:#999;">No entries yet</td></tr>
+          <tr><td colspan="5" style="text-align:center; color:#999;">No entries yet</td></tr>
         </tbody>
       </table>
+      </div>
+
+      </div><!-- end grid -->
     </div>
 
   </div>
@@ -2585,8 +2587,17 @@
     let inkEntries = [];
 
     function buildInkMaterialOptions() {
+      // Filter to items containing "ink" (case-insensitive), dedup by name+variation keeping highest pricePerQty
+      const seen = {};
+      materials
+        .filter(m => (m.name || '').toLowerCase().includes('ink'))
+        .forEach(m => {
+          const key = m.name + '|' + (m.variation || '');
+          const price = parseFloat(m.pricePerQty) || 0;
+          if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) seen[key] = m;
+        });
       const opts = '<option value="0">-- Select --</option>' +
-        materials.map(m => {
+        Object.values(seen).map(m => {
           const label = m.name + (m.variation ? ' (' + m.variation + ')' : '');
           const price = parseFloat(m.pricePerQty) || 0;
           return `<option value="${price}">${label} — ₱${price.toFixed(2)}</option>`;
@@ -2669,19 +2680,15 @@
     function renderInkTable() {
       const tbody = document.getElementById('inkTableBody');
       if (inkEntries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No entries yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">No entries yet</td></tr>';
         return;
       }
       tbody.innerHTML = inkEntries.map((e, i) => `
         <tr>
           <td style="text-align:center;">${i + 1}</td>
           <td>${e.printer}</td>
-          <td style="text-align:right; padding-right:12px; font-weight:600;">₱${e.bw.toFixed(4)}</td>
-          <td style="text-align:right; padding-right:12px; font-weight:600; color:#7c3aed;">₱${e.colour.toFixed(4)}</td>
-          <td>${e.blackCart}</td>
-          <td>${e.magentaCart}</td>
-          <td>${e.cyanCart}</td>
-          <td>${e.yellowCart}</td>
+          <td style="text-align:right; padding-right:12px; font-weight:600;">₱${e.bw.toFixed(2)}</td>
+          <td style="text-align:right; padding-right:12px; font-weight:600; color:#7c3aed;">₱${e.colour.toFixed(2)}</td>
           <td style="text-align:center;"><button class="btn-delete" onclick="deleteInkEntry(${i})">✕</button></td>
         </tr>
       `).join('');
