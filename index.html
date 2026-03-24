@@ -182,6 +182,10 @@
             <option value="Out of Stock">Out of Stock</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Stock Qty</label>
+          <input type="number" id="matStockQty" placeholder="0" min="0" step="any" oninput="onStockQtyChange()" style="">
+        </div>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <button id="matAddBtn" onclick="addMaterial()">+ Add Material</button>
@@ -209,6 +213,7 @@
             <th class="sortable" onclick="sortTable('materialsTable','price','num')" style="text-align:right; padding-right:16px;">Total Price</th>
             <th class="sortable" onclick="sortTable('materialsTable','pricePerQty','num')" style="text-align:right; padding-right:16px;">Price/QTY</th>
             <th class="sortable" onclick="sortTable('materialsTable','stock','str')" style="text-align:center;">Stock Status</th>
+            <th class="sortable" onclick="sortTable('materialsTable','stockQty','num')" style="text-align:center;">Stock Qty</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -1127,7 +1132,7 @@
       const ord  = await window.supabase.loadData('orders');
       const ink  = await window.supabase.loadData('inkcalculator');
 
-      if (mat)  materials   = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0 }));
+      if (mat)  materials   = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0, stockQty: m.stockQty != null ? +m.stockQty : +m.qty||0 }));
       if (prod) products    = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
       if (eq)   equipment   = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
       if (oh)   overhead    = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
@@ -1270,6 +1275,12 @@
     }
     // ── END SORT ENGINE ──────────────────────────────────────
 
+    function onStockQtyChange() {
+      const val = parseFloat(document.getElementById('matStockQty').value);
+      if (!isNaN(val) && val <= 0) document.getElementById('matStock').value = 'Out of Stock';
+      else if (!isNaN(val) && val > 0) document.getElementById('matStock').value = 'In Stock';
+    }
+
     async function addMaterial() {
       const date      = document.getElementById('matDate').value;
       const shop      = document.getElementById('matShop').value.trim();
@@ -1277,17 +1288,19 @@
       const variation = document.getElementById('matVariation').value.trim();
       const qty       = parseFloat(document.getElementById('matQty').value) || 0;
       const price     = parseFloat(document.getElementById('matPrice').value) || 0;
-      const stock     = document.getElementById('matStock').value;
-      
+      const stockQtyVal = document.getElementById('matStockQty').value;
+      const stockQty  = stockQtyVal !== '' ? parseFloat(stockQtyVal) : qty;
+      const stock     = stockQty <= 0 ? 'Out of Stock' : document.getElementById('matStock').value;
+
       if (!name || qty <= 0 || price <= 0) {
         alert('Please fill required fields (Product Name, Quantity, Total Price)');
         return;
       }
 
       const pricePerQty = price / qty;
-      materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock });
+      materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock, stockQty });
       await syncTable('materials', materials);
-      
+
       document.getElementById('matDate').value = '';
       document.getElementById('matShop').value = '';
       document.getElementById('matName').value = '';
@@ -1296,7 +1309,8 @@
       document.getElementById('matPrice').value = '';
       document.getElementById('matPricePerQty').value = '';
       document.getElementById('matStock').value = 'In Stock';
-      
+      document.getElementById('matStockQty').value = '';
+
       renderMaterials();
       buildInkMaterialOptions();
     }
@@ -1311,7 +1325,7 @@
     function renderMaterials() {
       const tbody = document.getElementById('materialsBody');
       if (materials.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999;">No material added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:#999;">No material added yet</td></tr>';
         return;
       }
       const sorted = [...materials].map((m, i) => ({ ...m, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -1332,6 +1346,7 @@
           <td style="text-align:center;">
             <span style="background:${m.stock==='Out of Stock'?'#fee2e2':'#dcfce7'};color:${m.stock==='Out of Stock'?'#dc2626':'#16a34a'};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${m.stock||'In Stock'}</span>
           </td>
+          <td style="text-align:center;">${m.stockQty != null ? m.stockQty : '—'}</td>
           <td style="text-align:center;">
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editMaterial(${m._i})">✏️ Edit</button>
             <button class="btn-delete" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; margin-right:5px;" onclick="duplicateMaterial(${m._i})">⧉ Copy</button>
@@ -1357,6 +1372,7 @@
       document.getElementById('matPrice').value     = m.price;
       document.getElementById('matPricePerQty').value = m.pricePerQty ? parseFloat(m.pricePerQty).toFixed(2) : (m.price && m.qty ? (m.price / m.qty).toFixed(2) : '');
       document.getElementById('matStock').value     = m.stock || 'In Stock';
+      document.getElementById('matStockQty').value  = m.stockQty != null ? m.stockQty : m.qty;
       
       document.getElementById('matAddBtn').style.display    = 'none';
       document.getElementById('matUpdateBtn').style.display = 'inline-block';
@@ -1374,17 +1390,19 @@
       const variation = document.getElementById('matVariation').value.trim();
       const qty       = parseFloat(document.getElementById('matQty').value) || 0;
       const price     = parseFloat(document.getElementById('matPrice').value) || 0;
-      const stock     = document.getElementById('matStock').value;
-      
+      const stockQtyVal = document.getElementById('matStockQty').value;
+      const stockQty  = stockQtyVal !== '' ? parseFloat(stockQtyVal) : qty;
+      const stock     = stockQty <= 0 ? 'Out of Stock' : document.getElementById('matStock').value;
+
       if (!name || qty <= 0 || price <= 0) {
         alert('Please fill required fields (Product Name, Quantity, Total Price)');
         return;
       }
 
       const pricePerQty = price / qty;
-      materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty, stock };
+      materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty, stock, stockQty };
       await syncTable('materials', materials);
-      
+
       cancelEditMaterial();
       renderMaterials();
     }
@@ -1400,7 +1418,8 @@
       document.getElementById('matPrice').value     = '';
       document.getElementById('matPricePerQty').value = '';
       document.getElementById('matStock').value     = 'In Stock';
-      
+      document.getElementById('matStockQty').value  = '';
+
       document.getElementById('matAddBtn').style.display = 'inline-block';
       document.getElementById('matUpdateBtn').style.display = 'none';
       document.getElementById('matCancelBtn').style.display = 'none';
@@ -2447,9 +2466,9 @@
     }
 
     function buildSupplyOptions(selectedName) {
-      // Deduplicate by name + variation — keep highest pricePerQty
+      // Deduplicate by name + variation — keep highest pricePerQty, exclude Out of Stock
       const seen = {};
-      materials.forEach(m => {
+      materials.filter(m => m.stock !== 'Out of Stock').forEach(m => {
         const key = m.name + '|' + (m.variation || '');
         const price = parseFloat(m.pricePerQty) || 0;
         if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) {
@@ -2593,10 +2612,10 @@
       const keyword = printer === 'Brother T930DW' ? 'brother ink'
                     : printer === 'Canon IX6770'   ? 'canon ink'
                     : 'ink';
-      // Dedup by name+variation keeping highest pricePerQty
+      // Dedup by name+variation keeping highest pricePerQty, exclude Out of Stock
       const seen = {};
       materials
-        .filter(m => (m.name || '').toLowerCase().includes(keyword))
+        .filter(m => m.stock !== 'Out of Stock' && (m.name || '').toLowerCase().includes(keyword))
         .forEach(m => {
           const key = m.name + '|' + (m.variation || '');
           const price = parseFloat(m.pricePerQty) || 0;
