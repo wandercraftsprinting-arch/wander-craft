@@ -2540,7 +2540,7 @@
               const delim = lines[0].includes('\t') ? '\t' : ',';
               resolve(lines.map(l => parseCSVLine(l, delim)));
             } else {
-              const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+              const wb = XLSX.read(e.target.result, { type: 'array', cellDates: false });
               const ws = wb.Sheets[wb.SheetNames[0]];
               const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
               resolve(rows.filter(r => r.some(c => c !== null && c !== '')));
@@ -2713,15 +2713,18 @@
       alert(`✅ Uploaded ${added} equipment item(s).${dupes ? ` ${dupes} duplicate(s) skipped.` : ''}${skipped ? ` ${skipped} empty row(s) ignored.` : ''}`);
     }
 
-    // ── DATE PARSER (handles YYYY-MM-DD, MM/DD/YYYY, Excel serial) ──
+    // ── DATE PARSER (handles YYYY-MM-DD, MM/DD/YYYY, MM/DD/YY, Excel serial) ──
     function parseUploadDate(raw) {
       if (!raw) return '';
       raw = raw.toString().trim();
       // Already YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.substring(0, 10);
-      // MM/DD/YYYY or M/D/YYYY
-      const mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-      if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+      // MM/DD/YYYY
+      const mdy4 = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (mdy4) return `${mdy4[3]}-${mdy4[1].padStart(2,'0')}-${mdy4[2].padStart(2,'0')}`;
+      // MM/DD/YY (2-digit year — assume 2000s)
+      const mdy2 = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+      if (mdy2) return `20${mdy2[3]}-${mdy2[1].padStart(2,'0')}-${mdy2[2].padStart(2,'0')}`;
       // Excel serial number (days since 1899-12-30)
       const serial = parseFloat(raw);
       if (!isNaN(serial) && serial > 1000) {
