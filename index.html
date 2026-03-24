@@ -786,6 +786,30 @@
               <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Packaging Cost: <span id="calcPackagingTotal" style="color:#2e7d32;">₱0.00</span></p>
             </div>
           </div>
+          <!-- Ink Cost in Calculator -->
+          <div class="form-group">
+            <label>Ink Cost</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcInkTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Print</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:70px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Price/Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcInkBody"></tbody>
+              </table>
+              <button onclick="addCalcInkRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:8px; font-size:12px;">
+                🖨 <a href="https://ph.canon/en/consumer/tco-calculator" target="_blank" style="color:#1d4ed8; text-decoration:underline;">Ink Calculator (Canon PH)</a>
+              </p>
+              <p style="margin-top:6px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Ink Cost: <span id="calcInkTotal" style="color:#2e7d32;">₱0.00</span></p>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Markup (%)</label>
             <input type="number" id="calcMarkup" placeholder="0" step="0.1" oninput="runCalculator()">
@@ -816,6 +840,7 @@
                 <tr><td style="color:#7a6248;">Electricity Cost</td><td id="rCalcOverheadAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Labor Cost</td><td id="rCalcLaborAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Packaging Cost</td><td id="rCalcPackagingAmt" class="price-col">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;">Ink Cost</td><td id="rCalcInkAmt" class="price-col">₱0.00</td></tr>
                 <tr style="border-top:1px solid #e0d5c5;"><td style="color:#7a6248;">Total Cost Price</td><td id="rCalcCost" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Markup Amount</td><td id="rCalcMarkupAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Price Before Discount</td><td id="rCalcBeforeDiscount" class="price-col">₱0.00</td></tr>
@@ -2236,6 +2261,68 @@
       return total;
     }
 
+    function addCalcInkRow() {
+      const tbody = document.getElementById('calcInkBody');
+      const rowId = 'ink_' + Date.now();
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      tr.innerHTML = `
+        <td><select onchange="updateCalcInkRow('${rowId}', true)" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">
+          <option value="">-- Select --</option>
+          <option value="Black/White Document">Black/White Document</option>
+          <option value="Colour Document">Colour Document</option>
+        </select></td>
+        <td><input type="number" value="1" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcInkRow('${rowId}')"></td>
+        <td><input type="number" value="0" min="0" step="0.01" style="width:80px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcInkRow('${rowId}')"></td>
+        <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
+        <td><button onclick="removeCalcInkRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      updateCalcInkTotal();
+    }
+
+    const INK_DEFAULTS = { 'Black/White Document': 2.00, 'Colour Document': 8.00 };
+
+    function updateCalcInkRow(rowId, fromSelect) {
+      const tr = document.getElementById(rowId);
+      const sel = tr.querySelector('select');
+      const inputs = tr.querySelectorAll('input');
+      // Auto-fill price when print type is selected
+      if (fromSelect && sel.value && INK_DEFAULTS[sel.value] !== undefined) {
+        inputs[1].value = INK_DEFAULTS[sel.value].toFixed(2);
+      }
+      const qty = parseFloat(inputs[0].value) || 0;
+      const pricePerQty = parseFloat(inputs[1].value) || 0;
+      tr.querySelector('.row-cost').textContent = fmt(qty * pricePerQty);
+      updateCalcInkTotal();
+    }
+
+    function removeCalcInkRow(rowId) {
+      document.getElementById(rowId).remove();
+      updateCalcInkTotal();
+    }
+
+    function updateCalcInkTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const inputs = tr.querySelectorAll('input');
+        if (inputs.length < 2) return;
+        total += (parseFloat(inputs[0].value) || 0) * (parseFloat(inputs[1].value) || 0);
+      });
+      document.getElementById('calcInkTotal').textContent = fmt(total);
+      runCalculator();
+    }
+
+    function getCalcInkTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const inputs = tr.querySelectorAll('input');
+        if (inputs.length < 2) return;
+        total += (parseFloat(inputs[0].value) || 0) * (parseFloat(inputs[1].value) || 0);
+      });
+      return total;
+    }
+
     function buildSupplyOptions(selectedName) {
       // Deduplicate by name + variation — keep highest pricePerQty
       const seen = {};
@@ -2324,11 +2411,12 @@
       const overheadCost  = getCalcOverheadTotal();
       const laborCost     = getCalcLaborTotal();
       const packagingCost = getCalcPackagingTotal();
+      const inkCost       = getCalcInkTotal();
       const markup  = parseFloat(document.getElementById('calcMarkup').value) || 0;
       const discount = parseFloat(document.getElementById('calcDiscount').value) || 0;
       const tax      = parseFloat(document.getElementById('calcTax').value) || 0;
 
-      const totalCost = suppliesCost + overheadCost + laborCost + packagingCost;
+      const totalCost = suppliesCost + overheadCost + laborCost + packagingCost + inkCost;
       const markupAmt = totalCost * (markup / 100);
       const priceBeforeDiscount = totalCost + markupAmt;
       const discountAmt = priceBeforeDiscount * (discount / 100);
@@ -2343,6 +2431,7 @@
       document.getElementById('rCalcOverheadAmt').textContent  = fmt(overheadCost);
       document.getElementById('rCalcLaborAmt').textContent     = fmt(laborCost);
       document.getElementById('rCalcPackagingAmt').textContent = fmt(packagingCost);
+      document.getElementById('rCalcInkAmt').textContent       = fmt(inkCost);
       document.getElementById('rCalcCost').textContent         = fmt(totalCost);
       document.getElementById('rCalcMarkupAmt').textContent    = fmt(markupAmt);
       document.getElementById('rCalcBeforeDiscount').textContent = fmt(priceBeforeDiscount);
@@ -2366,6 +2455,8 @@
       document.getElementById('calcLaborTotal').textContent = '₱0.00';
       document.getElementById('calcPackagingBody').innerHTML = '';
       document.getElementById('calcPackagingTotal').textContent = '₱0.00';
+      document.getElementById('calcInkBody').innerHTML = '';
+      document.getElementById('calcInkTotal').textContent = '₱0.00';
       runCalculator();
       document.getElementById('rCalcName').textContent = '—';
     }
