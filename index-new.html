@@ -608,11 +608,11 @@
             <th>Year</th>
             <th>Month</th>
             <th style="text-align:center;">No. of Orders</th>
-            <th style="text-align:right; padding-right:16px;">Total Revenue</th>
-            <th style="text-align:right; padding-right:16px;">Paid</th>
             <th style="text-align:center;">Pending / Partial</th>
             <th style="text-align:center;">Delivered</th>
             <th style="text-align:center;">Cancelled</th>
+            <th style="text-align:right; padding-right:16px;">Paid</th>
+            <th style="text-align:right; padding-right:16px;">Total Revenue</th>
             <th style="text-align:right; padding-right:16px;">Total Expense Cost</th>
             <th style="text-align:right; padding-right:16px;">Total Net Profit</th>
           </tr>
@@ -2995,11 +2995,11 @@
           <td>${yr}</td>
           <td>${mName}</td>
           <td style="text-align:center;">${empty ? '—' : mOrders.length}</td>
-          <td class="price-col">${empty ? '—' : fmt(mRev)}</td>
-          <td class="price-col">${empty ? '—' : fmt(mPaid)}</td>
           <td style="text-align:center;">${empty ? '—' : mOrders.filter(o => o.payment !== 'Paid').length}</td>
           <td style="text-align:center;">${empty ? '—' : mDelivered}</td>
           <td style="text-align:center;">${empty ? '—' : mCancelled}</td>
+          <td class="price-col">${empty ? '—' : fmt(mPaid)}</td>
+          <td class="price-col">${empty ? '—' : fmt(mRev)}</td>
           <td class="price-col">${empty ? '—' : fmt(mExpense)}</td>
           <td style="color:${mNetProfit>=0?'#2e7d32':'#dc2626'};font-weight:600;text-align:right;padding-right:16px;">${empty ? '—' : fmt(mNetProfit)}</td>
         </tr>`;
@@ -3090,7 +3090,7 @@
       const cleanNum = v => parseFloat((v || '0').replace(/[₱,]/g, '')) || 0;
       const monthlyRows = [...document.querySelectorAll('#soMonthlyBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        return [tds[0], tds[1], tds[2]==='—'?'':+tds[2], cleanNum(tds[3]), cleanNum(tds[4]), tds[5]==='—'?'':+tds[5], tds[6]==='—'?'':+tds[6], tds[7]==='—'?'':+tds[7], cleanNum(tds[8]), cleanNum(tds[9])];
+        return [tds[0], tds[1], tds[2]==='—'?'':+tds[2], tds[3]==='—'?'':+tds[3], tds[4]==='—'?'':+tds[4], tds[5]==='—'?'':+tds[5], cleanNum(tds[6]), cleanNum(tds[7]), cleanNum(tds[8]), cleanNum(tds[9])];
       });
       const topRows = [...document.querySelectorAll('#soProductsBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
@@ -3099,11 +3099,11 @@
 
       // Totals for monthly sheet
       const totalOrders    = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
-      const totalRev       = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
-      const totalPaid      = monthlyRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
-      const totalPending   = monthlyRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
-      const totalDelivered = monthlyRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
-      const totalCancelled = monthlyRows.reduce((s, r) => s + (parseFloat(r[7]) || 0), 0);
+      const totalPending   = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
+      const totalDelivered = monthlyRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalCancelled = monthlyRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
+      const totalPaid      = monthlyRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
+      const totalRev       = monthlyRows.reduce((s, r) => s + (parseFloat(r[7]) || 0), 0);
       const totalExpense   = monthlyRows.reduce((s, r) => s + (parseFloat(r[8]) || 0), 0);
       const totalNetProfit = monthlyRows.reduce((s, r) => s + (parseFloat(r[9]) || 0), 0);
       const totalRevTop    = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
@@ -3113,13 +3113,13 @@
       const wb = XLSX.utils.book_new();
 
       const ws1 = XLSX.utils.aoa_to_sheet([
-        ['Year','Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled','Total Expense Cost','Total Net Profit'],
+        ['Year','Month','No. of Orders','Pending/Partial','Delivered','Cancelled','Paid','Total Revenue','Total Expense Cost','Total Net Profit'],
         ...monthlyRows,
-        ['', 'Total', totalOrders, totalRev, totalPaid, totalPending, totalDelivered, totalCancelled, totalExpense, totalNetProfit]
+        ['', 'Total', totalOrders, totalPending, totalDelivered, totalCancelled, totalPaid, totalRev, totalExpense, totalNetProfit]
       ]);
       const r1 = XLSX.utils.decode_range(ws1['!ref']);
       for (let R = 1; R <= r1.e.r; R++) {
-        [3, 4, 8, 9].forEach(c => {
+        [6, 7, 8, 9].forEach(c => {
           const cell = ws1[XLSX.utils.encode_cell({ r: R, c })];
           if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
         });
@@ -3155,7 +3155,7 @@
         <h2>Sales Overview</h2>
         <p>Total Revenue: ${document.getElementById('soTotalRev').textContent} | Orders: ${document.getElementById('soTotalOrders').textContent}</p>
         <h3>Monthly Breakdown</h3>
-        <table><thead><tr><th>Year</th><th>Month</th><th>Orders</th><th>Revenue</th><th>Paid</th><th>Pending</th><th>Delivered</th><th>Cancelled</th><th>Total Expense</th><th>Net Profit</th></tr></thead><tbody>${monthly}</tbody></table>
+        <table><thead><tr><th>Year</th><th>Month</th><th>Orders</th><th>Pending</th><th>Delivered</th><th>Cancelled</th><th>Paid</th><th>Revenue</th><th>Total Expense</th><th>Net Profit</th></tr></thead><tbody>${monthly}</tbody></table>
         <h3>Top Products</h3>
         <table><thead><tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty</th><th>Revenue</th><th>Expense Cost</th><th>Net Profit</th></tr></thead><tbody>${top}</tbody></table>
       </body></html>`);
