@@ -2413,14 +2413,28 @@
     function exportExpenseExcel() {
       const evRows = [...document.querySelectorAll('#evBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        // Clean peso sign from Total Price column (index 7)
         tds[7] = parseFloat((tds[7] || '0').replace(/[₱,]/g, '')) || 0;
         return tds;
       });
+      const totalAmt = evRows.reduce((s, r) => s + (parseFloat(r[7]) || 0), 0);
+
       const ws = XLSX.utils.aoa_to_sheet([
         ['No.','Type','Date','Shop','Product','Variation','Qty','Total Price'],
-        ...evRows
+        ...evRows,
+        ['','','','','','','Total', totalAmt]
       ]);
+
+      // Apply peso currency format to Total Price column (H) and Total row
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = 1; R <= range.e.r; R++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: 7 })];
+        if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+      }
+      // Bold the total row
+      const totalCell = ws[XLSX.utils.encode_cell({ r: range.e.r, c: 6 })];
+      if (totalCell) totalCell.s = { font: { bold: true } };
+
+      ws['!cols'] = [{ wch: 5 },{ wch: 10 },{ wch: 12 },{ wch: 20 },{ wch: 35 },{ wch: 20 },{ wch: 6 },{ wch: 14 }];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Expense Overview');
       XLSX.writeFile(wb, 'expense-overview.xlsx');
@@ -2518,7 +2532,6 @@
       const cleanNum = v => parseFloat((v || '0').replace(/[₱,]/g, '')) || 0;
       const monthlyRows = [...document.querySelectorAll('#soMonthlyBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        // Columns: Month, Orders, Revenue, Paid, Pending, Delivered, Cancelled
         return [tds[0], tds[1]==='—'?'':+tds[1], cleanNum(tds[2]), cleanNum(tds[3]), tds[4]==='—'?'':+tds[4], tds[5]==='—'?'':+tds[5], tds[6]==='—'?'':+tds[6]];
       });
       const topRows = [...document.querySelectorAll('#soProductsBody tr')].map(tr => {
@@ -2526,17 +2539,44 @@
         return [tds[0], tds[1], +tds[2]||0, +tds[3]||0, cleanNum(tds[4])];
       });
 
+      // Totals for monthly sheet
+      const totalOrders  = monthlyRows.reduce((s, r) => s + (parseFloat(r[1]) || 0), 0);
+      const totalRev     = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+      const totalPaid    = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
+      const totalRevTop  = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+
       const wb = XLSX.utils.book_new();
+
       const ws1 = XLSX.utils.aoa_to_sheet([
         ['Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled'],
-        ...monthlyRows
+        ...monthlyRows,
+        ['Total', totalOrders, totalRev, totalPaid, '', '', '']
       ]);
+      // Peso format on Revenue (col C=2) and Paid (col D=3)
+      const r1 = XLSX.utils.decode_range(ws1['!ref']);
+      for (let R = 1; R <= r1.e.r; R++) {
+        [2, 3].forEach(c => {
+          const cell = ws1[XLSX.utils.encode_cell({ r: R, c })];
+          if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+        });
+      }
+      ws1['!cols'] = [{ wch: 12 },{ wch: 14 },{ wch: 16 },{ wch: 14 },{ wch: 16 },{ wch: 12 },{ wch: 12 }];
       XLSX.utils.book_append_sheet(wb, ws1, 'Monthly Breakdown');
+
       const ws2 = XLSX.utils.aoa_to_sheet([
         ['Product','Variation','Orders','Qty Sold','Revenue'],
-        ...topRows
+        ...topRows,
+        ['Total', '', '', '', totalRevTop]
       ]);
+      // Peso format on Revenue (col E=4)
+      const r2 = XLSX.utils.decode_range(ws2['!ref']);
+      for (let R = 1; R <= r2.e.r; R++) {
+        const cell = ws2[XLSX.utils.encode_cell({ r: R, c: 4 })];
+        if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+      }
+      ws2['!cols'] = [{ wch: 30 },{ wch: 20 },{ wch: 10 },{ wch: 10 },{ wch: 14 }];
       XLSX.utils.book_append_sheet(wb, ws2, 'Top Products');
+
       XLSX.writeFile(wb, 'sales-overview.xlsx');
     }
 
