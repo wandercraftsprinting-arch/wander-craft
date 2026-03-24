@@ -25,8 +25,27 @@ async function sbLoad(table) {
 
 // Delete all rows then insert fresh data (same pattern as gsheets saveToSheet)
 async function sbSave(table, data) {
+  // Strip any local 'id' field so Supabase auto-generates it
+  const clean = data.map(({ id, _i, ...rest }) => rest);
+
   try {
-    // Delete all rows (id >= 0 covers everything)
+    // If there's data, do a dry-run insert first (single row) to catch schema errors
+    // before we delete anything
+    if (clean.length > 0) {
+      const testRes = await fetch(SB.url(table), {
+        method: 'POST',
+        headers: { ...SB.headers, 'Prefer': 'return=minimal,tx=rollback' },
+        body: JSON.stringify([clean[0]])
+      });
+      if (!testRes.ok) {
+        const errText = await testRes.text();
+        console.warn(`sbSave pre-check(${table}) failed:`, errText);
+        alert(`⚠️ Save failed — schema error on table "${table}".\n\nDetails: ${errText}\n\nYour data was NOT deleted. Please check your Supabase table columns.`);
+        return false;
+      }
+    }
+
+    // Safe to delete now
     const delRes = await fetch(SB.url(table) + '?id=gte.0', {
       method: 'DELETE',
       headers: SB.headers
@@ -36,10 +55,7 @@ async function sbSave(table, data) {
       console.warn(`sbSave delete(${table}) failed:`, errText);
     }
 
-    if (data.length === 0) return true;
-
-    // Strip any local 'id' field so Supabase auto-generates it
-    const clean = data.map(({ id, ...rest }) => rest);
+    if (clean.length === 0) return true;
 
     const insRes = await fetch(SB.url(table), {
       method: 'POST',
