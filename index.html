@@ -905,18 +905,6 @@
         </div>
 
         <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
-          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Magenta (₱)</label>
-            <select id="inkMagenta" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
-          </div>
-          <div class="form-group" style="margin:0;"><label>Page Yield</label>
-            <input type="number" id="inkMagentaYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
-          </div>
-          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
-            <input type="text" id="inkMagentaCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
           <div class="form-group" style="margin:0;"><label>Cartridge Cost — Cyan (₱)</label>
             <select id="inkCyan" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
           </div>
@@ -925,6 +913,18 @@
           </div>
           <div class="form-group" style="margin:0;"><label>Cost / Page</label>
             <input type="text" id="inkCyanCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Magenta (₱)</label>
+            <select id="inkMagenta" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkMagentaYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkMagentaCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
           </div>
         </div>
 
@@ -2610,7 +2610,7 @@
     }
 
     const INK_YIELDS = {
-      'Canon IX6770':  { black: 1645, pigBlack: 333, magenta: 327, cyan: 334, yellow: 300 },
+      'Canon IX6770':  { black: 1645, pigBlack: 300, magenta: 327, cyan: 333, yellow: 334 },
       'Brother T930DW':{ black: 6500, pigBlack: null, magenta: 5000, cyan: 5000, yellow: 5000 }
     };
 
@@ -2645,6 +2645,8 @@
       calcInkCosts();
     }
 
+    const INK_ADJUSTMENT = 1.25; // realistic cost adjustment factor
+
     function calcInkCosts() {
       const getVal = id => parseFloat(document.getElementById(id).value) || 0;
       const costPerPage = (cartId, yieldId, costId) => {
@@ -2662,11 +2664,11 @@
       let bwCpp = bCpp;
       if (printer === 'Canon IX6770') {
         const pbCpp = costPerPage('inkPigBlack', 'inkPigBlackYield', 'inkPigBlackCost');
-        bwCpp = pbCpp; // Canon uses Pigment Black for B&W
+        bwCpp = pbCpp;
       }
 
-      document.getElementById('inkBWResult').textContent     = '₱' + bwCpp.toFixed(2);
-      document.getElementById('inkColourResult').textContent = '₱' + (bCpp + mCpp + cCpp + yCpp).toFixed(2);
+      document.getElementById('inkBWResult').textContent     = '₱' + (bwCpp * INK_ADJUSTMENT).toFixed(2);
+      document.getElementById('inkColourResult').textContent = '₱' + ((bCpp + mCpp + cCpp + yCpp) * INK_ADJUSTMENT).toFixed(2);
     }
 
     async function saveInkEntry() {
@@ -2690,8 +2692,8 @@
         bwCpp = pbCpp;
       }
 
-      inkEntries.push({ printer, type: 'Black/White', costPerPage: bwCpp });
-      inkEntries.push({ printer, type: 'Colour', costPerPage: bCpp + mCpp + cCpp + yCpp });
+      inkEntries.push({ printer, type: 'Black/White', costPerPage: bwCpp * INK_ADJUSTMENT });
+      inkEntries.push({ printer, type: 'Colour', costPerPage: (bCpp + mCpp + cCpp + yCpp) * INK_ADJUSTMENT });
       await syncTable('inkcalculator', inkEntries);
       renderInkTable();
       buildCalcInkOptions();
