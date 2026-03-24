@@ -6,6 +6,7 @@
   <title>WanderCrafts PH - Pricing Calculator</title>
   <script src="supabase-config.js"></script>
   <script src="supabase-api.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #f5f0e8; color: #3d2e1e; display: flex; min-height: 100vh; }
@@ -2526,6 +2527,35 @@
     }
 
     // ── BULK UPLOAD: MATERIAL ────────────────────────────────
+    // Reads .xlsx, .xls, or .csv — returns array of arrays (rows)
+    function readUploadFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        const isCSV = file.name.toLowerCase().endsWith('.csv');
+        reader.onload = (e) => {
+          try {
+            if (isCSV) {
+              const text = e.target.result;
+              const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+              const delim = lines[0].includes('\t') ? '\t' : ',';
+              resolve(lines.map(l => parseCSVLine(l, delim)));
+            } else {
+              const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+              const ws = wb.Sheets[wb.SheetNames[0]];
+              const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+              resolve(rows.filter(r => r.some(c => c !== null && c !== '')));
+            }
+          } catch(err) { reject(err); }
+        };
+        reader.onerror = () => reject(new Error('File read error'));
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          reader.readAsText(file);
+        } else {
+          reader.readAsArrayBuffer(file);
+        }
+      });
+    }
+
     // Proper CSV parser — handles quoted fields containing commas
     function parseCSVLine(line, delim) {
       if (delim === '\t') return line.split('\t').map(c => c.trim().replace(/^"|"$/g, ''));
@@ -2534,7 +2564,7 @@
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
         if (ch === '"') {
-          if (inQuotes && line[i+1] === '"') { cur += '"'; i++; } // escaped quote
+          if (inQuotes && line[i+1] === '"') { cur += '"'; i++; }
           else inQuotes = !inQuotes;
         } else if (ch === ',' && !inQuotes) {
           cols.push(cur.trim()); cur = '';
@@ -2546,13 +2576,13 @@
       return cols;
     }
     function downloadMatTemplate() {
-      const header = 'Order Date,Shop Name,Product Name,Variation,Quantity,Total Price,Stock Status';
-      const sample = '2025-01-15,Shopee,Fabric,Red 1m,10,250.00,In Stock';
-      const blob = new Blob([header + '\n' + sample], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'material_template.csv';
-      a.click();
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price','Stock Status'],
+        ['2025-01-15','Shopee','Fabric','Red 1m',10,250.00,'In Stock']
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Material');
+      XLSX.writeFile(wb, 'material_template.xlsx');
     }
 
     async function bulkUploadMaterial(event) {
@@ -2560,15 +2590,13 @@
       if (!file) return;
       event.target.value = '';
 
-      const text = await file.text();
-      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-      if (lines.length < 2) { alert('File is empty or has no data rows.'); return; }
+      let rows = [];
+      try {
+        rows = await readUploadFile(file);
+      } catch(e) { alert('Could not read file: ' + e.message); return; }
+      if (rows.length < 2) { alert('File is empty or has no data rows.'); return; }
 
-      // Detect delimiter (tab for .tsv / Excel copy-paste, comma for .csv)
-      const delim = lines[0].includes('\t') ? '\t' : ',';
-      const headers = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
-
-      // Map header names to expected fields
+      const headers = rows[0].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
       const idx = {
         date:      headers.findIndex(h => h.includes('date')),
         shop:      headers.findIndex(h => h.includes('shop')),
@@ -2580,21 +2608,20 @@
       };
 
       let added = 0, skipped = 0, dupes = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const cols = parseCSVLine(lines[i], delim);
-        const name = idx.name >= 0 ? cols[idx.name] : '';
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        const name = idx.name >= 0 ? (cols[idx.name]||'').toString().trim() : '';
         if (!name) { skipped++; continue; }
 
-        const rawDate = idx.date >= 0 ? cols[idx.date] : '';
+        const rawDate = idx.date >= 0 ? (cols[idx.date]||'') : '';
         const date = parseUploadDate(rawDate);
-        const shop = idx.shop >= 0 ? cols[idx.shop] : '';
-        const variation = idx.variation >= 0 ? cols[idx.variation] : '';
+        const shop = idx.shop >= 0 ? (cols[idx.shop]||'').toString().trim() : '';
+        const variation = idx.variation >= 0 ? (cols[idx.variation]||'').toString().trim() : '';
         const qty = parseFloat(idx.qty >= 0 ? cols[idx.qty] : '') || 0;
         const price = parseFloat(idx.price >= 0 ? cols[idx.price] : '') || 0;
-        const stock = idx.stock >= 0 && cols[idx.stock] ? cols[idx.stock] : 'In Stock';
+        const stock = idx.stock >= 0 && cols[idx.stock] ? cols[idx.stock].toString().trim() : 'In Stock';
         const pricePerQty = qty > 0 ? price / qty : 0;
 
-        // Duplicate check: all key fields match an existing entry
         const isDupe = materials.some(m =>
           m.date === date &&
           (m.shop || '').toLowerCase() === shop.toLowerCase() &&
@@ -2620,13 +2647,13 @@
 
     // ── BULK UPLOAD: EQUIPMENT ───────────────────────────────
     function downloadEqTemplate() {
-      const header = 'Order Date,Shop Name,Product Name,Variation,Quantity,Total Price';
-      const sample = '2025-01-15,Lazada,Sewing Machine,White,1,3500.00';
-      const blob = new Blob([header + '\n' + sample], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'equipment_template.csv';
-      a.click();
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price'],
+        ['2025-01-15','Lazada','Sewing Machine','White',1,3500.00]
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Equipment');
+      XLSX.writeFile(wb, 'equipment_template.xlsx');
     }
 
     async function bulkUploadEquipment(event) {
@@ -2634,13 +2661,13 @@
       if (!file) return;
       event.target.value = '';
 
-      const text = await file.text();
-      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-      if (lines.length < 2) { alert('File is empty or has no data rows.'); return; }
+      let rows = [];
+      try {
+        rows = await readUploadFile(file);
+      } catch(e) { alert('Could not read file: ' + e.message); return; }
+      if (rows.length < 2) { alert('File is empty or has no data rows.'); return; }
 
-      const delim = lines[0].includes('\t') ? '\t' : ',';
-      const headers = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
-
+      const headers = rows[0].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
       const idx = {
         date:      headers.findIndex(h => h.includes('date')),
         shop:      headers.findIndex(h => h.includes('shop')),
@@ -2651,19 +2678,18 @@
       };
 
       let added = 0, skipped = 0, dupes = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const cols = parseCSVLine(lines[i], delim);
-        const name = idx.name >= 0 ? cols[idx.name] : '';
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        const name = idx.name >= 0 ? (cols[idx.name]||'').toString().trim() : '';
         if (!name) { skipped++; continue; }
 
-        const rawDate = idx.date >= 0 ? cols[idx.date] : '';
+        const rawDate = idx.date >= 0 ? (cols[idx.date]||'') : '';
         const date = parseUploadDate(rawDate);
-        const shop = idx.shop >= 0 ? cols[idx.shop] : '';
-        const variation = idx.variation >= 0 ? cols[idx.variation] : '';
+        const shop = idx.shop >= 0 ? (cols[idx.shop]||'').toString().trim() : '';
+        const variation = idx.variation >= 0 ? (cols[idx.variation]||'').toString().trim() : '';
         const qty = parseFloat(idx.qty >= 0 ? cols[idx.qty] : '') || 0;
         const price = parseFloat(idx.price >= 0 ? cols[idx.price] : '') || 0;
 
-        // Duplicate check: all key fields match an existing entry
         const isDupe = equipment.some(e =>
           e.date === date &&
           (e.shop || '').toLowerCase() === shop.toLowerCase() &&
