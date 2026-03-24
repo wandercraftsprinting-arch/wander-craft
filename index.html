@@ -128,6 +128,7 @@
       <p style="font-size:15px; font-weight:700; color:#4a90d9; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Inventory</p>
       <button class="tab active" onclick="showTab('products')" style="padding-left:28px;">🛍️ Product</button>
       <button class="tab" onclick="showTab('calculator')" style="padding-left:28px;">🧮 Pricing Calculator</button>
+      <button class="tab" onclick="showTab('inkcalculator')" style="padding-left:28px;">🖨 Ink Calculator</button>
       <button class="tab" onclick="showTab('materials')" style="padding-left:28px;">📦 Material</button>
       <button class="tab" onclick="showTab('equipment')" style="padding-left:28px;">🔧 Equipment</button>
       <button class="tab" onclick="showTab('overhead')" style="padding-left:28px;">⚡ Electricity Cost</button>
@@ -860,6 +861,122 @@
       </div>
     </div>
 
+    <!-- INK CALCULATOR TAB -->
+    <div id="inkcalculator" class="tab-content">
+      <h2>Ink Calculator</h2>
+      <p style="font-size:13px; color:#7a6248; margin-bottom:20px;">Calculate your cost per page based on cartridge cost and page yield. Cartridge costs are pulled from your Materials list.</p>
+
+      <div style="background:white; border-radius:12px; padding:24px; box-shadow:0 1px 6px rgba(0,0,0,0.08); max-width:700px;">
+
+        <!-- Printer Selection -->
+        <div class="form-group">
+          <label>Printer Name</label>
+          <select id="inkPrinter" onchange="onInkPrinterChange()" style="width:100%; padding:10px; border:1px solid #d9cfc0; border-radius:5px; font-size:14px;">
+            <option value="">-- Select Printer --</option>
+            <option value="Brother T930DW">Brother T930DW</option>
+            <option value="Canon IX6770">Canon IX6770</option>
+            <option value="Other Printer">Other Printer</option>
+          </select>
+        </div>
+
+        <!-- Cartridge rows -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Black (₱)</label>
+            <select id="inkBlack" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkBlackYield" placeholder="e.g. 2400" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkBlackCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <!-- Pigment Black — Canon only -->
+        <div id="inkPigmentRow" style="display:none; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Pigment Black (₱)</label>
+            <select id="inkPigBlack" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkPigBlackYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkPigBlackCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Magenta (₱)</label>
+            <select id="inkMagenta" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkMagentaYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkMagentaCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:12px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Cyan (₱)</label>
+            <select id="inkCyan" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkCyanYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkCyanCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:end; margin-bottom:20px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Yellow (₱)</label>
+            <select id="inkYellow" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkYellowYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkYellowCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div style="background:#f5f0e8; border-radius:8px; padding:14px 18px; margin-bottom:20px; display:flex; gap:40px; flex-wrap:wrap;">
+          <div>
+            <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Black/White Cost Per Page</p>
+            <p id="inkBWResult" style="font-size:20px; font-weight:700; color:#3d2e1e;">₱0.0000</p>
+          </div>
+          <div>
+            <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Colour Cost Per Page</p>
+            <p id="inkColourResult" style="font-size:20px; font-weight:700; color:#7c3aed;">₱0.0000</p>
+          </div>
+        </div>
+
+        <button onclick="saveInkEntry()" style="background:#4caf50; margin:0;">+ Add to Table</button>
+      </div>
+
+      <!-- Saved Ink Entries Table -->
+      <table id="inkTable" style="margin-top:24px; max-width:900px;">
+        <thead>
+          <tr>
+            <th style="text-align:center;">No.</th>
+            <th>Printer</th>
+            <th style="text-align:right; padding-right:12px;">B&W / Page</th>
+            <th style="text-align:right; padding-right:12px;">Colour / Page</th>
+            <th>Black Cart.</th>
+            <th>Magenta Cart.</th>
+            <th>Cyan Cart.</th>
+            <th>Yellow Cart.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="inkTableBody">
+          <tr><td colspan="9" style="text-align:center; color:#999;">No entries yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
   <script>
@@ -1028,6 +1145,7 @@
       renderExpenseView();
       buildSalesYearOptions();
       buildOrderYearOptions();
+      buildInkMaterialOptions();
       renderSalesOverview();
     }
 
@@ -1177,12 +1295,14 @@
       document.getElementById('matStock').value = 'In Stock';
       
       renderMaterials();
+      buildInkMaterialOptions();
     }
 
     async function deleteMaterial(i) {
       materials.splice(i, 1);
       await syncTable('materials', materials);
       renderMaterials();
+      buildInkMaterialOptions();
     }
 
     function renderMaterials() {
@@ -2459,6 +2579,112 @@
       document.getElementById('calcInkTotal').textContent = '₱0.00';
       runCalculator();
       document.getElementById('rCalcName').textContent = '—';
+    }
+
+    // ── INK CALCULATOR ──────────────────────────────────────
+    let inkEntries = [];
+
+    function buildInkMaterialOptions() {
+      const opts = '<option value="0">-- Select --</option>' +
+        materials.map(m => {
+          const label = m.name + (m.variation ? ' (' + m.variation + ')' : '');
+          const price = parseFloat(m.pricePerQty) || 0;
+          return `<option value="${price}">${label} — ₱${price.toFixed(2)}</option>`;
+        }).join('');
+      ['inkBlack','inkPigBlack','inkMagenta','inkCyan','inkYellow'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = opts;
+      });
+    }
+
+    function onInkPrinterChange() {
+      const printer = document.getElementById('inkPrinter').value;
+      const pigRow = document.getElementById('inkPigmentRow');
+      pigRow.style.display = printer === 'Canon IX6770' ? 'grid' : 'none';
+      calcInkCosts();
+    }
+
+    function calcInkCosts() {
+      const getVal = id => parseFloat(document.getElementById(id).value) || 0;
+      const costPerPage = (cartId, yieldId, costId) => {
+        const cart = getVal(cartId), yld = getVal(yieldId);
+        const cpp = yld > 0 ? cart / yld : 0;
+        document.getElementById(costId).value = cpp > 0 ? '₱' + cpp.toFixed(4) : '';
+        return cpp;
+      };
+      const bCpp  = costPerPage('inkBlack',   'inkBlackYield',   'inkBlackCost');
+      const mCpp  = costPerPage('inkMagenta', 'inkMagentaYield', 'inkMagentaCost');
+      const cCpp  = costPerPage('inkCyan',    'inkCyanYield',    'inkCyanCost');
+      const yCpp  = costPerPage('inkYellow',  'inkYellowYield',  'inkYellowCost');
+
+      const printer = document.getElementById('inkPrinter').value;
+      let bwCpp = bCpp;
+      if (printer === 'Canon IX6770') {
+        const pbCpp = costPerPage('inkPigBlack', 'inkPigBlackYield', 'inkPigBlackCost');
+        bwCpp = pbCpp; // Canon uses Pigment Black for B&W
+      }
+
+      document.getElementById('inkBWResult').textContent     = '₱' + bwCpp.toFixed(4);
+      document.getElementById('inkColourResult').textContent = '₱' + (bCpp + mCpp + cCpp + yCpp).toFixed(4);
+    }
+
+    function saveInkEntry() {
+      const printer = document.getElementById('inkPrinter').value;
+      if (!printer) { alert('Please select a printer.'); return; }
+      const getVal = id => parseFloat(document.getElementById(id).value) || 0;
+      const getYield = id => parseFloat(document.getElementById(id).value) || 0;
+      const getMatName = id => {
+        const el = document.getElementById(id);
+        return el ? el.options[el.selectedIndex]?.text.split(' — ')[0] : '—';
+      };
+
+      const bCpp  = getYield('inkBlackYield')   > 0 ? getVal('inkBlack')   / getYield('inkBlackYield')   : 0;
+      const mCpp  = getYield('inkMagentaYield') > 0 ? getVal('inkMagenta') / getYield('inkMagentaYield') : 0;
+      const cCpp  = getYield('inkCyanYield')    > 0 ? getVal('inkCyan')    / getYield('inkCyanYield')    : 0;
+      const yCpp  = getYield('inkYellowYield')  > 0 ? getVal('inkYellow')  / getYield('inkYellowYield')  : 0;
+
+      let bwCpp = bCpp;
+      if (printer === 'Canon IX6770') {
+        const pbCpp = getYield('inkPigBlackYield') > 0 ? getVal('inkPigBlack') / getYield('inkPigBlackYield') : 0;
+        bwCpp = pbCpp;
+      }
+
+      inkEntries.push({
+        printer,
+        bw: bwCpp,
+        colour: bCpp + mCpp + cCpp + yCpp,
+        blackCart: getMatName('inkBlack'),
+        magentaCart: getMatName('inkMagenta'),
+        cyanCart: getMatName('inkCyan'),
+        yellowCart: getMatName('inkYellow'),
+      });
+      renderInkTable();
+    }
+
+    function deleteInkEntry(i) {
+      inkEntries.splice(i, 1);
+      renderInkTable();
+    }
+
+    function renderInkTable() {
+      const tbody = document.getElementById('inkTableBody');
+      if (inkEntries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999;">No entries yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = inkEntries.map((e, i) => `
+        <tr>
+          <td style="text-align:center;">${i + 1}</td>
+          <td>${e.printer}</td>
+          <td style="text-align:right; padding-right:12px; font-weight:600;">₱${e.bw.toFixed(4)}</td>
+          <td style="text-align:right; padding-right:12px; font-weight:600; color:#7c3aed;">₱${e.colour.toFixed(4)}</td>
+          <td>${e.blackCart}</td>
+          <td>${e.magentaCart}</td>
+          <td>${e.cyanCart}</td>
+          <td>${e.yellowCart}</td>
+          <td style="text-align:center;"><button class="btn-delete" onclick="deleteInkEntry(${i})">✕</button></td>
+        </tr>
+      `).join('');
     }
 
     async function saveCalculatorToProducts() {
