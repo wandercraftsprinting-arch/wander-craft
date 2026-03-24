@@ -90,11 +90,15 @@ insert into settings (id, brand_name, logo_url)
 values (1, 'Your Store Name', '')
 on conflict (id) do nothing;
 
--- ============================================================
--- Disable Row Level Security on all tables
--- (allows the app to read/write without authentication)
--- ============================================================
-alter table materials  disable row level security;
+-- 8. INK CALCULATOR
+create table if not exists inkcalculator (
+  id           bigint generated always as identity primary key,
+  printer      text,
+  type         text,
+  "costPerPage" numeric
+);
+
+alter table inkcalculator disable row level security;
 alter table products   disable row level security;
 alter table equipment  disable row level security;
 alter table overhead   disable row level security;

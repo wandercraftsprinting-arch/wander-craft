@@ -1125,13 +1125,15 @@
       const oh   = await window.supabase.loadData('overhead');
       const lc   = await window.supabase.loadData('laborcosts');
       const ord  = await window.supabase.loadData('orders');
+      const ink  = await window.supabase.loadData('inkcalculator');
 
-      if (mat)  materials  = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0 }));
-      if (prod) products   = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
-      if (eq)   equipment  = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
-      if (oh)   overhead   = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
-      if (lc)   laborCosts = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
-      if (ord)  orders     = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
+      if (mat)  materials   = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0 }));
+      if (prod) products    = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
+      if (eq)   equipment   = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
+      if (oh)   overhead    = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
+      if (lc)   laborCosts  = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
+      if (ord)  orders      = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
+      if (ink)  inkEntries  = ink.map(i => ({ ...i, costPerPage: +i.costPerPage||0 }));
 
       renderMaterials();
       renderProducts();
@@ -1145,6 +1147,8 @@
       buildSalesYearOptions();
       buildOrderYearOptions();
       buildInkMaterialOptions();
+      renderInkTable();
+      buildCalcInkOptions();
       renderSalesOverview();
     }
 
@@ -2665,7 +2669,7 @@
       document.getElementById('inkColourResult').textContent = '₱' + (bCpp + mCpp + cCpp + yCpp).toFixed(2);
     }
 
-    function saveInkEntry() {
+    async function saveInkEntry() {
       const printer = document.getElementById('inkPrinter').value;
       if (!printer) { alert('Please select a printer.'); return; }
       const getVal = id => parseFloat(document.getElementById(id).value) || 0;
@@ -2688,12 +2692,14 @@
 
       inkEntries.push({ printer, type: 'Black/White', costPerPage: bwCpp });
       inkEntries.push({ printer, type: 'Colour', costPerPage: bCpp + mCpp + cCpp + yCpp });
+      await syncTable('inkcalculator', inkEntries);
       renderInkTable();
       buildCalcInkOptions();
     }
 
     function deleteInkEntry(i) {
       inkEntries.splice(i, 1);
+      syncTable('inkcalculator', inkEntries);
       renderInkTable();
       buildCalcInkOptions();
     }
