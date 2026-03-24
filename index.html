@@ -708,6 +708,30 @@
             <input type="text" id="calcName" placeholder="e.g. Handmade Bag" oninput="runCalculator()">
           </div>
 
+          <!-- Ink Cost in Calculator -->
+          <div class="form-group">
+            <label>Ink Cost</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcInkTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Print</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:70px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Price/Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcInkBody"></tbody>
+              </table>
+              <button onclick="addCalcInkRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:8px; font-size:12px;">
+                🖨 <a href="https://ph.canon/en/consumer/tco-calculator" target="_blank" style="color:#1d4ed8; text-decoration:underline;">Ink Calculator (Canon PH)</a>
+              </p>
+              <p style="margin-top:6px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Ink Cost: <span id="calcInkTotal" style="color:#2e7d32;">₱0.00</span></p>
+            </div>
+          </div>
+
           <!-- Supplies Cost -->
           <div class="form-group">
             <label>Material Cost</label>
@@ -786,30 +810,6 @@
               <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Packaging Cost: <span id="calcPackagingTotal" style="color:#2e7d32;">₱0.00</span></p>
             </div>
           </div>
-          <!-- Ink Cost in Calculator -->
-          <div class="form-group">
-            <label>Ink Cost</label>
-            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
-              <table style="margin:0; box-shadow:none; background:transparent;" id="calcInkTable">
-                <thead>
-                  <tr>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Print</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:70px;">Qty</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Price/Qty</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
-                  </tr>
-                </thead>
-                <tbody id="calcInkBody"></tbody>
-              </table>
-              <button onclick="addCalcInkRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
-              <p style="margin-top:8px; font-size:12px;">
-                🖨 <a href="https://ph.canon/en/consumer/tco-calculator" target="_blank" style="color:#1d4ed8; text-decoration:underline;">Ink Calculator (Canon PH)</a>
-              </p>
-              <p style="margin-top:6px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Ink Cost: <span id="calcInkTotal" style="color:#2e7d32;">₱0.00</span></p>
-            </div>
-          </div>
-
           <div class="form-group">
             <label>Markup (%)</label>
             <input type="number" id="calcMarkup" placeholder="0" step="0.1" oninput="runCalculator()">
@@ -836,11 +836,11 @@
             <table style="margin-top:0; box-shadow:none;">
               <tbody>
                 <tr><td style="color:#7a6248;">Product</td><td id="rCalcName" style="font-weight:600;">—</td></tr>
+                <tr><td style="color:#7a6248;">Ink Cost</td><td id="rCalcInkAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Material Cost</td><td id="rCalcSupplies" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Electricity Cost</td><td id="rCalcOverheadAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Labor Cost</td><td id="rCalcLaborAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Packaging Cost</td><td id="rCalcPackagingAmt" class="price-col">₱0.00</td></tr>
-                <tr><td style="color:#7a6248;">Ink Cost</td><td id="rCalcInkAmt" class="price-col">₱0.00</td></tr>
                 <tr style="border-top:1px solid #e0d5c5;"><td style="color:#7a6248;">Total Cost Price</td><td id="rCalcCost" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Markup Amount</td><td id="rCalcMarkupAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Price Before Discount</td><td id="rCalcBeforeDiscount" class="price-col">₱0.00</td></tr>
