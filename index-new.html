@@ -614,7 +614,7 @@
           <label>Type</label>
           <select id="evType" onchange="renderExpenseView()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
             <option value="">All</option>
-            <option value="Supplies">Supplies</option>
+            <option value="Material">Material</option>
             <option value="Equipment">Equipment</option>
           </select>
         </div>
@@ -631,7 +631,7 @@
           <p id="evTotal" style="font-size:22px; font-weight:700; color:#2e7d32;">₱0.00</p>
         </div>
         <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-          <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Supplies Cost</p>
+          <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600;">Material Cost</p>
           <p id="evSuppliesTotal" style="font-size:22px; font-weight:700; color:#1d4ed8;">₱0.00</p>
         </div>
         <div style="background:white; border-radius:10px; padding:16px 24px; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
@@ -2351,8 +2351,8 @@
       const type  = document.getElementById('evType').value;
 
       let rows = [];
-      if (!type || type === 'Supplies') {
-        materials.forEach(m => rows.push({ type: 'Supplies', date: m.date || '', shop: m.shop || '—', name: m.name, variation: m.variation || '—', qty: parseFloat(m.qty) || 0, price: parseFloat(m.price) || 0 }));
+      if (!type || type === 'Material') {
+        materials.forEach(m => rows.push({ type: 'Material', date: m.date || '', shop: m.shop || '—', name: m.name, variation: m.variation || '—', qty: parseFloat(m.qty) || 0, price: parseFloat(m.price) || 0 }));
       }
       if (!type || type === 'Equipment') {
         equipment.forEach(e => rows.push({ type: 'Equipment', date: e.date || '', shop: e.shop || '—', name: e.name, variation: e.variation || '—', qty: parseFloat(e.qty) || 0, price: parseFloat(e.price) || 0 }));
@@ -2373,7 +2373,7 @@
       });
 
       const totalAll   = rows.reduce((s, r) => s + r.price, 0);
-      const totalSup   = rows.filter(r => r.type === 'Supplies').reduce((s, r) => s + r.price, 0);
+      const totalSup   = rows.filter(r => r.type === 'Material').reduce((s, r) => s + r.price, 0);
       const totalEquip = rows.filter(r => r.type === 'Equipment').reduce((s, r) => s + r.price, 0);
 
       document.getElementById('evTotal').textContent        = fmt(totalAll);
@@ -2389,7 +2389,7 @@
       tbody.innerHTML = rows.map((r, i) => `
         <tr>
           <td style="text-align:center;">${i + 1}</td>
-          <td style="text-align:center;"><span style="background:${r.type==='Supplies'?'#dbeafe':'#ede9fe'};color:${r.type==='Supplies'?'#1d4ed8':'#7c3aed'};padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">${r.type}</span></td>
+          <td style="text-align:center;"><span style="background:${r.type==='Material'?'#dbeafe':'#ede9fe'};color:${r.type==='Material'?'#1d4ed8':'#7c3aed'};padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">${r.type}</span></td>
           <td style="text-align:center;">${r.date || '—'}</td>
           <td>${r.shop}</td>
           <td>${r.name}</td>
