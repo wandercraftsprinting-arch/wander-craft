@@ -477,6 +477,11 @@
       <button id="ordAddBtn" onclick="addOrder()">+ Add Order</button>
       <button id="ordUpdateBtn" onclick="updateOrder()" style="display:none; background:#ff9800; margin-left:8px;">✔ Update</button>
       <button id="ordCancelBtn" onclick="cancelEditOrder()" style="display:none; background:#757575; margin-left:8px;">Cancel</button>
+      <button onclick="downloadOrdTemplate()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin-left:8px;">📥 Download Template</button>
+      <label style="background:#1d4ed8; color:white; border-radius:5px; padding:8px 14px; font-size:13px; cursor:pointer; margin-left:4px; font-weight:normal; text-transform:none; display:inline-block;">
+        📤 Bulk Upload
+        <input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="bulkUploadOrders(event)">
+      </label>
 
       <!-- Order Filters -->
       <div style="background:white; border-radius:10px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-top:16px; display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
@@ -3368,6 +3373,89 @@
         return d.toISOString().substring(0, 10);
       }
       return raw;
+    }
+
+    // ── BULK UPLOAD: ORDERS ──────────────────────────────────
+    function downloadOrdTemplate() {
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Order Date','Customer Name','Contact No.','Email','Product','Variation','Qty','Unit Price','Unit Expense Cost','Payment Status','Order Status','Notes'],
+        ['2025-01-15','Maria Santos','09178024092','maria@email.com','Bookmark','Red',10,50.00,20.00,'Paid','Delivered','']
+      ]);
+      ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:24},{wch:20},{wch:14},{wch:6},{wch:12},{wch:18},{wch:14},{wch:14},{wch:20}];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+      XLSX.writeFile(wb, 'orders_template.xlsx');
+    }
+
+    async function bulkUploadOrders(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      event.target.value = '';
+
+      let rows = [];
+      try { rows = await readUploadFile(file); }
+      catch(e) { alert('Could not read file: ' + e.message); return; }
+      if (rows.length < 2) { alert('File is empty or has no data rows.'); return; }
+
+      const headers = rows[0].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
+      const idx = {
+        date:     headers.findIndex(h => h.includes('date')),
+        customer: headers.findIndex(h => h.includes('customer')),
+        contact:  headers.findIndex(h => h.includes('contact')),
+        email:    headers.findIndex(h => h.includes('email')),
+        product:  headers.findIndex(h => h.includes('product')),
+        variation:headers.findIndex(h => h.includes('variation')),
+        qty:      headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
+        price:    headers.findIndex(h => h.includes('unitprice') || h.includes('price')),
+        expense:  headers.findIndex(h => h.includes('expense')),
+        payment:  headers.findIndex(h => h.includes('payment')),
+        status:   headers.findIndex(h => h.includes('status') || h.includes('order')),
+        notes:    headers.findIndex(h => h.includes('note'))
+      };
+
+      let added = 0, skipped = 0, dupes = 0;
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        const customer = idx.customer >= 0 ? (cols[idx.customer]||'').toString().trim() : '';
+        const product  = idx.product  >= 0 ? (cols[idx.product] ||'').toString().trim() : '';
+        if (!customer || !product) { skipped++; continue; }
+
+        const date      = parseUploadDate(idx.date >= 0 ? cols[idx.date] : '');
+        const contact   = idx.contact   >= 0 ? (cols[idx.contact]  ||'').toString().trim() : '';
+        const email     = idx.email     >= 0 ? (cols[idx.email]    ||'').toString().trim() : '';
+        const variation = idx.variation >= 0 ? (cols[idx.variation]||'').toString().trim() : '';
+        const qty       = parseFloat(idx.qty     >= 0 ? cols[idx.qty]     : '') || 0;
+        const price     = parseFloat(idx.price   >= 0 ? cols[idx.price]   : '') || 0;
+        const expense   = parseFloat(idx.expense >= 0 ? cols[idx.expense] : '') || 0;
+        const total     = qty * price;
+        const netProfit = total - expense * qty;
+        const payment   = idx.payment >= 0 && cols[idx.payment] ? cols[idx.payment].toString().trim() : 'Pending';
+        const status    = idx.status  >= 0 && cols[idx.status]  ? cols[idx.status].toString().trim()  : 'New';
+        const notes     = idx.notes   >= 0 ? (cols[idx.notes]||'').toString().trim() : '';
+
+        const isDupe = orders.some(o =>
+          o.date === date &&
+          (o.customer||'').toLowerCase() === customer.toLowerCase() &&
+          (o.product||'').toLowerCase()  === product.toLowerCase() &&
+          parseFloat(o.qty)   === qty &&
+          parseFloat(o.price) === price
+        );
+        if (isDupe) { dupes++; continue; }
+
+        orders.push({ date, customer, contact, email, product, variation, qty, price, total, expenseCost: expense, netProfit, payment, status, notes });
+        added++;
+      }
+
+      if (added === 0) {
+        alert(`No new rows uploaded.${dupes ? ` ${dupes} duplicate(s) detected and skipped.` : ''}`);
+        return;
+      }
+      await syncTable('orders', orders);
+      renderOrders();
+      buildSalesYearOptions();
+      buildOrderYearOptions();
+      renderSalesOverview();
+      alert(`✅ Uploaded ${added} order(s).${dupes ? ` ${dupes} duplicate(s) skipped.` : ''}${skipped ? ` ${skipped} empty row(s) ignored.` : ''}`);
     }
     // ── END BULK UPLOAD ──────────────────────────────────────
   </script>
