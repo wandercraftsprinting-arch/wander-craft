@@ -2600,10 +2600,10 @@
       const idx = {
         date:      headers.findIndex(h => h.includes('date')),
         shop:      headers.findIndex(h => h.includes('shop')),
-        name:      headers.findIndex(h => h.includes('product') || h.includes('name')),
+        name:      headers.findIndex(h => h.includes('product') || (h.includes('name') && !h.includes('shop'))),
         variation: headers.findIndex(h => h.includes('variation')),
         qty:       headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
-        price:     headers.findIndex(h => h.includes('price') || h.includes('total')),
+        price:     headers.findIndex(h => (h.includes('price') || h.includes('total')) && !h.includes('stock')),
         stock:     headers.findIndex(h => h.includes('stock'))
       };
 
@@ -2671,10 +2671,10 @@
       const idx = {
         date:      headers.findIndex(h => h.includes('date')),
         shop:      headers.findIndex(h => h.includes('shop')),
-        name:      headers.findIndex(h => h.includes('product') || h.includes('name')),
+        name:      headers.findIndex(h => h.includes('product') || (h.includes('name') && !h.includes('shop'))),
         variation: headers.findIndex(h => h.includes('variation')),
         qty:       headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
-        price:     headers.findIndex(h => h.includes('price') || h.includes('total'))
+        price:     headers.findIndex(h => (h.includes('price') || h.includes('total')) && !h.includes('stock'))
       };
 
       let added = 0, skipped = 0, dupes = 0;
