@@ -2526,6 +2526,25 @@
     }
 
     // ── BULK UPLOAD: MATERIAL ────────────────────────────────
+    // Proper CSV parser — handles quoted fields containing commas
+    function parseCSVLine(line, delim) {
+      if (delim === '\t') return line.split('\t').map(c => c.trim().replace(/^"|"$/g, ''));
+      const cols = [];
+      let cur = '', inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i+1] === '"') { cur += '"'; i++; } // escaped quote
+          else inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          cols.push(cur.trim()); cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      cols.push(cur.trim());
+      return cols;
+    }
     function downloadMatTemplate() {
       const header = 'Order Date,Shop Name,Product Name,Variation,Quantity,Total Price,Stock Status';
       const sample = '2025-01-15,Shopee,Fabric,Red 1m,10,250.00,In Stock';
@@ -2562,7 +2581,7 @@
 
       let added = 0, skipped = 0, dupes = 0;
       for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
+        const cols = parseCSVLine(lines[i], delim);
         const name = idx.name >= 0 ? cols[idx.name] : '';
         if (!name) { skipped++; continue; }
 
@@ -2633,7 +2652,7 @@
 
       let added = 0, skipped = 0, dupes = 0;
       for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
+        const cols = parseCSVLine(lines[i], delim);
         const name = idx.name >= 0 ? cols[idx.name] : '';
         if (!name) { skipped++; continue; }
 
