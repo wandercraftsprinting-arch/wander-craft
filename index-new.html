@@ -2540,17 +2540,20 @@
       });
 
       // Totals for monthly sheet
-      const totalOrders  = monthlyRows.reduce((s, r) => s + (parseFloat(r[1]) || 0), 0);
-      const totalRev     = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
-      const totalPaid    = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
-      const totalRevTop  = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalOrders   = monthlyRows.reduce((s, r) => s + (parseFloat(r[1]) || 0), 0);
+      const totalRev      = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+      const totalPaid     = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
+      const totalPending  = monthlyRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalDelivered= monthlyRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
+      const totalCancelled= monthlyRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
+      const totalRevTop   = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
 
       const wb = XLSX.utils.book_new();
 
       const ws1 = XLSX.utils.aoa_to_sheet([
         ['Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled'],
         ...monthlyRows,
-        ['Total', totalOrders, totalRev, totalPaid, '', '', '']
+        ['Total', totalOrders, totalRev, totalPaid, totalPending, totalDelivered, totalCancelled]
       ]);
       // Peso format on Revenue (col C=2) and Paid (col D=3)
       const r1 = XLSX.utils.decode_range(ws1['!ref']);
