@@ -63,20 +63,26 @@ create table if not exists laborcosts (
 
 -- 6. ORDERS
 create table if not exists orders (
-  id        bigint generated always as identity primary key,
-  date      text,
-  customer  text,
-  contact   text,
-  email     text,
-  product   text,
-  variation text,
-  qty       numeric,
-  price     numeric,
-  total     numeric,
-  payment   text,
-  status    text,
-  notes     text
+  id          bigint generated always as identity primary key,
+  date        text,
+  customer    text,
+  contact     text,
+  email       text,
+  product     text,
+  variation   text,
+  qty         numeric,
+  price       numeric,
+  total       numeric,
+  "expenseCost" numeric default 0,
+  "netProfit"   numeric default 0,
+  payment     text,
+  status      text,
+  notes       text
 );
+
+-- Add expenseCost and netProfit columns if upgrading existing table
+alter table orders add column if not exists "expenseCost" numeric default 0;
+alter table orders add column if not exists "netProfit" numeric default 0;
 
 -- 7. SETTINGS (brand name + logo — single row)
 create table if not exists settings (

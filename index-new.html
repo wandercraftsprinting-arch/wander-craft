@@ -128,6 +128,7 @@
       <p style="font-size:15px; font-weight:700; color:#4a90d9; text-transform:uppercase; letter-spacing:1px; padding:6px 15px 2px; margin:0;">Inventory</p>
       <button class="tab active" onclick="showTab('products')" style="padding-left:28px;">🛍️ Product</button>
       <button class="tab" onclick="showTab('calculator')" style="padding-left:28px;">🧮 Pricing Calculator</button>
+      <button class="tab" onclick="showTab('inkcalculator')" style="padding-left:28px;">🖨 Ink Calculator</button>
       <button class="tab" onclick="showTab('materials')" style="padding-left:28px;">📦 Material</button>
       <button class="tab" onclick="showTab('equipment')" style="padding-left:28px;">🔧 Equipment</button>
       <button class="tab" onclick="showTab('overhead')" style="padding-left:28px;">⚡ Electricity Cost</button>
@@ -181,6 +182,10 @@
             <option value="Out of Stock">Out of Stock</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Stock Qty</label>
+          <input type="number" id="matStockQty" placeholder="0" min="0" step="any" oninput="onStockQtyChange()" style="">
+        </div>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <button id="matAddBtn" onclick="addMaterial()">+ Add Material</button>
@@ -208,6 +213,7 @@
             <th class="sortable" onclick="sortTable('materialsTable','price','num')" style="text-align:right; padding-right:16px;">Total Price</th>
             <th class="sortable" onclick="sortTable('materialsTable','pricePerQty','num')" style="text-align:right; padding-right:16px;">Price/QTY</th>
             <th class="sortable" onclick="sortTable('materialsTable','stock','str')" style="text-align:center;">Stock Status</th>
+            <th class="sortable" onclick="sortTable('materialsTable','stockQty','num')" style="text-align:center;">Stock Qty</th>
             <th style="text-align:center;">Action</th>
           </tr>
         </thead>
@@ -438,6 +444,14 @@
           <input type="number" id="ordTotal" readonly style="background:#f5f0e8; cursor:not-allowed;">
         </div>
         <div class="form-group">
+          <label>Unit Expense Cost (₱)</label>
+          <input type="number" id="ordExpense" placeholder="0.00" step="0.01" oninput="calculateOrder()">
+        </div>
+        <div class="form-group">
+          <label>Net Profit (₱)</label>
+          <input type="number" id="ordNetProfit" readonly style="background:#f5f0e8; cursor:not-allowed;">
+        </div>
+        <div class="form-group">
           <label>Payment Status</label>
           <select id="ordPayment" style="width:100%; padding:10px; border:1px solid #d9cfc0; border-radius:5px; font-size:14px;">
             <option value="Pending">Pending</option>
@@ -464,19 +478,55 @@
       <button id="ordUpdateBtn" onclick="updateOrder()" style="display:none; background:#ff9800; margin-left:8px;">✔ Update</button>
       <button id="ordCancelBtn" onclick="cancelEditOrder()" style="display:none; background:#757575; margin-left:8px;">Cancel</button>
 
-      <table id="ordersTable" style="margin-top:20px;">
+      <!-- Order Filters -->
+      <div style="background:white; border-radius:10px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-top:16px; display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+        <div class="form-group" style="margin:0;">
+          <label>Year</label>
+          <select id="ordFilterYear" onchange="renderOrders()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All Years</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Payment</label>
+          <select id="ordFilterPayment" onchange="renderOrders()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All</option>
+            <option value="Paid">Paid</option>
+            <option value="Partial">Partial</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Order Status</label>
+          <select id="ordFilterStatus" onchange="renderOrders()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;">
+            <option value="">All</option>
+            <option value="New">New</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Ready">Ready</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:8px; align-items:flex-end;">
+          <button onclick="exportOrdersExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin:0;">📥 Export Excel</button>
+          <button onclick="exportOrdersPDF()" style="background:#c0392b; font-size:13px; padding:8px 14px; margin:0;">🖨 Export PDF</button>
+        </div>
+      </div>
+
+      <table id="ordersTable" style="margin-top:12px;">
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
             <th class="sortable" onclick="sortTable('ordersTable','date','str')">Order Date</th>
-            <th class="sortable" onclick="sortTable('ordersTable','customer','str')">Customer</th>
-            <th class="sortable" onclick="sortTable('ordersTable','contact','str')">Contact</th>
+            <th class="sortable" onclick="sortTable('ordersTable','customer','str')">Customer Name</th>
+            <th class="sortable" onclick="sortTable('ordersTable','contact','str')">Contact No.</th>
             <th class="sortable" onclick="sortTable('ordersTable','email','str')">Email</th>
             <th class="sortable" onclick="sortTable('ordersTable','product','str')">Product</th>
             <th class="sortable" onclick="sortTable('ordersTable','variation','str')">Variation</th>
             <th class="sortable" onclick="sortTable('ordersTable','qty','num')" style="text-align:center;">Qty</th>
             <th class="sortable" onclick="sortTable('ordersTable','price','num')" style="text-align:right; padding-right:16px;">Unit Price</th>
             <th class="sortable" onclick="sortTable('ordersTable','total','num')" style="text-align:right; padding-right:16px;">Total</th>
+            <th class="sortable" onclick="sortTable('ordersTable','expenseCost','num')" style="text-align:right; padding-right:16px;">Unit Expense</th>
+            <th class="sortable" onclick="sortTable('ordersTable','netProfit','num')" style="text-align:right; padding-right:16px;">Net Profit</th>
             <th class="sortable" onclick="sortTable('ordersTable','payment','str')" style="text-align:center;">Payment</th>
             <th class="sortable" onclick="sortTable('ordersTable','status','str')" style="text-align:center;">Status</th>
             <th>Notes</th>
@@ -563,6 +613,8 @@
             <th style="text-align:center;">Pending / Partial</th>
             <th style="text-align:center;">Delivered</th>
             <th style="text-align:center;">Cancelled</th>
+            <th style="text-align:right; padding-right:16px;">Total Expense Cost</th>
+            <th style="text-align:right; padding-right:16px;">Total Net Profit</th>
           </tr>
         </thead>
         <tbody id="soMonthlyBody"></tbody>
@@ -577,6 +629,8 @@
             <th style="text-align:center;">Orders</th>
             <th style="text-align:center;">Qty Sold</th>
             <th style="text-align:right; padding-right:16px;">Revenue</th>
+            <th style="text-align:right; padding-right:16px;">Expense Cost</th>
+            <th style="text-align:right; padding-right:16px;">Net Profit</th>
           </tr>
         </thead>
         <tbody id="soProductsBody"></tbody>
@@ -672,6 +726,27 @@
           <div class="form-group">
             <label>Product Name</label>
             <input type="text" id="calcName" placeholder="e.g. Handmade Bag" oninput="runCalculator()">
+          </div>
+
+          <!-- Ink Cost in Calculator -->
+          <div class="form-group">
+            <label>Ink Cost</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcInkTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Print</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:70px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost/Page</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcInkBody"></tbody>
+              </table>
+              <button onclick="addCalcInkRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:6px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Ink Cost: <span id="calcInkTotal" style="color:#2e7d32;">₱0.00</span></p>
+            </div>
           </div>
 
           <!-- Supplies Cost -->
@@ -778,6 +853,7 @@
             <table style="margin-top:0; box-shadow:none;">
               <tbody>
                 <tr><td style="color:#7a6248;">Product</td><td id="rCalcName" style="font-weight:600;">—</td></tr>
+                <tr><td style="color:#7a6248;">Ink Cost</td><td id="rCalcInkAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Material Cost</td><td id="rCalcSupplies" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Electricity Cost</td><td id="rCalcOverheadAmt" class="price-col">₱0.00</td></tr>
                 <tr><td style="color:#7a6248;">Labor Cost</td><td id="rCalcLaborAmt" class="price-col">₱0.00</td></tr>
@@ -799,6 +875,124 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- INK CALCULATOR TAB -->
+    <div id="inkcalculator" class="tab-content">
+      <h2>Ink Calculator</h2>
+      <p style="font-size:13px; color:#7a6248; margin-bottom:20px;">Calculate your cost per page based on cartridge cost and page yield. Cartridge costs are pulled from your Materials list.</p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:start;">
+
+      <div style="background:white; border-radius:12px; padding:28px 32px; box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+
+        <!-- Printer Selection -->
+        <div class="form-group">
+          <label>Printer Name</label>
+          <select id="inkPrinter" onchange="onInkPrinterChange()" style="width:100%; padding:10px; border:1px solid #d9cfc0; border-radius:5px; font-size:14px;">
+            <option value="">-- Select Printer --</option>
+            <option value="Brother T930DW">Brother T930DW</option>
+            <option value="Canon IX6770">Canon IX6770</option>
+            <option value="Other Printer">Other Printer</option>
+          </select>
+        </div>
+
+        <!-- Cartridge rows -->
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Black (₱)</label>
+            <select id="inkBlack" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkBlackYield" placeholder="e.g. 2400" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkBlackCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <!-- Pigment Black — Canon only -->
+        <div id="inkPigmentRow" style="display:none; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Pigment Black (₱)</label>
+            <select id="inkPigBlack" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkPigBlackYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkPigBlackCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Cyan (₱)</label>
+            <select id="inkCyan" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkCyanYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkCyanCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:14px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Magenta (₱)</label>
+            <select id="inkMagenta" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkMagentaYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkMagentaCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:16px; align-items:end; margin-bottom:24px;">
+          <div class="form-group" style="margin:0;"><label>Cartridge Cost — Yellow (₱)</label>
+            <select id="inkYellow" onchange="calcInkCosts()" style="width:100%; padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px;"><option value="0">-- Select --</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label>Page Yield</label>
+            <input type="number" id="inkYellowYield" placeholder="e.g. 1500" min="1" oninput="calcInkCosts()" style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%;">
+          </div>
+          <div class="form-group" style="margin:0;"><label>Cost / Page</label>
+            <input type="text" id="inkYellowCost" readonly style="padding:8px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:100%; background:#f5f0e8;">
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div style="background:#f5f0e8; border-radius:8px; padding:16px 20px; margin-bottom:20px; display:flex; gap:60px; flex-wrap:wrap;">
+          <div>
+            <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Black/White Cost Per Page</p>
+            <p id="inkBWResult" style="font-size:22px; font-weight:700; color:#3d2e1e;">₱0.00</p>
+          </div>
+          <div>
+            <p style="font-size:12px; color:#7a6248; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Colour Cost Per Page</p>
+            <p id="inkColourResult" style="font-size:22px; font-weight:700; color:#7c3aed;">₱0.00</p>
+          </div>
+        </div>
+
+        <button onclick="saveInkEntry()" style="background:#4caf50; margin:0;">+ Add Ink Cost</button>
+      </div>
+
+      <!-- Saved Ink Entries Table -->
+      <div>
+      <table id="inkTable" style="margin-top:0;">
+        <thead>
+          <tr>
+            <th style="text-align:center;">No.</th>
+            <th>Printer</th>
+            <th>Print Type</th>
+            <th style="text-align:right; padding-right:12px;">Cost per Page</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="inkTableBody">
+          <tr><td colspan="5" style="text-align:center; color:#999;">No entries yet</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      </div><!-- end grid -->
     </div>
 
   </div>
@@ -950,13 +1144,15 @@
       const oh   = await window.supabase.loadData('overhead');
       const lc   = await window.supabase.loadData('laborcosts');
       const ord  = await window.supabase.loadData('orders');
+      const ink  = await window.supabase.loadData('inkcalculator');
 
-      if (mat)  materials  = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0 }));
-      if (prod) products   = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
-      if (eq)   equipment  = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
-      if (oh)   overhead   = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
-      if (lc)   laborCosts = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
-      if (ord)  orders     = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
+      if (mat)  materials   = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0, stockQty: m.stockQty != null ? +m.stockQty : +m.qty||0 }));
+      if (prod) products    = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
+      if (eq)   equipment   = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
+      if (oh)   overhead    = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
+      if (lc)   laborCosts  = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
+      if (ord)  orders      = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0, expenseCost: +o.expenseCost||0, netProfit: +o.netProfit||0 }));
+      if (ink)  inkEntries  = ink.map(i => ({ ...i, costPerPage: +i.costPerPage||0 }));
 
       renderMaterials();
       renderProducts();
@@ -968,6 +1164,10 @@
       buildYearOptions();
       renderExpenseView();
       buildSalesYearOptions();
+      buildOrderYearOptions();
+      buildInkMaterialOptions();
+      renderInkTable();
+      buildCalcInkOptions();
       renderSalesOverview();
     }
 
@@ -1089,6 +1289,12 @@
     }
     // ── END SORT ENGINE ──────────────────────────────────────
 
+    function onStockQtyChange() {
+      const val = parseFloat(document.getElementById('matStockQty').value);
+      if (!isNaN(val) && val <= 0) document.getElementById('matStock').value = 'Out of Stock';
+      else if (!isNaN(val) && val > 0) document.getElementById('matStock').value = 'In Stock';
+    }
+
     async function addMaterial() {
       const date      = document.getElementById('matDate').value;
       const shop      = document.getElementById('matShop').value.trim();
@@ -1096,17 +1302,19 @@
       const variation = document.getElementById('matVariation').value.trim();
       const qty       = parseFloat(document.getElementById('matQty').value) || 0;
       const price     = parseFloat(document.getElementById('matPrice').value) || 0;
-      const stock     = document.getElementById('matStock').value;
-      
+      const stockQtyVal = document.getElementById('matStockQty').value;
+      const stockQty  = stockQtyVal !== '' ? parseFloat(stockQtyVal) : qty;
+      const stock     = stockQty <= 0 ? 'Out of Stock' : document.getElementById('matStock').value;
+
       if (!name || qty <= 0 || price <= 0) {
         alert('Please fill required fields (Product Name, Quantity, Total Price)');
         return;
       }
 
       const pricePerQty = price / qty;
-      materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock });
+      materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock, stockQty });
       await syncTable('materials', materials);
-      
+
       document.getElementById('matDate').value = '';
       document.getElementById('matShop').value = '';
       document.getElementById('matName').value = '';
@@ -1115,20 +1323,23 @@
       document.getElementById('matPrice').value = '';
       document.getElementById('matPricePerQty').value = '';
       document.getElementById('matStock').value = 'In Stock';
-      
+      document.getElementById('matStockQty').value = '';
+
       renderMaterials();
+      buildInkMaterialOptions();
     }
 
     async function deleteMaterial(i) {
       materials.splice(i, 1);
       await syncTable('materials', materials);
       renderMaterials();
+      buildInkMaterialOptions();
     }
 
     function renderMaterials() {
       const tbody = document.getElementById('materialsBody');
       if (materials.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999;">No material added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:#999;">No material added yet</td></tr>';
         return;
       }
       const sorted = [...materials].map((m, i) => ({ ...m, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -1149,6 +1360,7 @@
           <td style="text-align:center;">
             <span style="background:${m.stock==='Out of Stock'?'#fee2e2':'#dcfce7'};color:${m.stock==='Out of Stock'?'#dc2626':'#16a34a'};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${m.stock||'In Stock'}</span>
           </td>
+          <td style="text-align:center;">${m.stockQty != null ? m.stockQty : '—'}</td>
           <td style="text-align:center;">
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editMaterial(${m._i})">✏️ Edit</button>
             <button class="btn-delete" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; margin-right:5px;" onclick="duplicateMaterial(${m._i})">⧉ Copy</button>
@@ -1174,6 +1386,7 @@
       document.getElementById('matPrice').value     = m.price;
       document.getElementById('matPricePerQty').value = m.pricePerQty ? parseFloat(m.pricePerQty).toFixed(2) : (m.price && m.qty ? (m.price / m.qty).toFixed(2) : '');
       document.getElementById('matStock').value     = m.stock || 'In Stock';
+      document.getElementById('matStockQty').value  = m.stockQty != null ? m.stockQty : m.qty;
       
       document.getElementById('matAddBtn').style.display    = 'none';
       document.getElementById('matUpdateBtn').style.display = 'inline-block';
@@ -1191,17 +1404,19 @@
       const variation = document.getElementById('matVariation').value.trim();
       const qty       = parseFloat(document.getElementById('matQty').value) || 0;
       const price     = parseFloat(document.getElementById('matPrice').value) || 0;
-      const stock     = document.getElementById('matStock').value;
-      
+      const stockQtyVal = document.getElementById('matStockQty').value;
+      const stockQty  = stockQtyVal !== '' ? parseFloat(stockQtyVal) : qty;
+      const stock     = stockQty <= 0 ? 'Out of Stock' : document.getElementById('matStock').value;
+
       if (!name || qty <= 0 || price <= 0) {
         alert('Please fill required fields (Product Name, Quantity, Total Price)');
         return;
       }
 
       const pricePerQty = price / qty;
-      materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty, stock };
+      materials[editingMaterialIndex] = { date, shop, name, variation, qty, price, pricePerQty, stock, stockQty };
       await syncTable('materials', materials);
-      
+
       cancelEditMaterial();
       renderMaterials();
     }
@@ -1217,7 +1432,8 @@
       document.getElementById('matPrice').value     = '';
       document.getElementById('matPricePerQty').value = '';
       document.getElementById('matStock').value     = 'In Stock';
-      
+      document.getElementById('matStockQty').value  = '';
+
       document.getElementById('matAddBtn').style.display = 'inline-block';
       document.getElementById('matUpdateBtn').style.display = 'none';
       document.getElementById('matCancelBtn').style.display = 'none';
@@ -1780,7 +1996,10 @@
     function calculateOrder() {
       const qty = parseFloat(document.getElementById('ordQty').value) || 0;
       const price = parseFloat(document.getElementById('ordPrice').value) || 0;
-      document.getElementById('ordTotal').value = (qty * price).toFixed(2);
+      const total = qty * price;
+      document.getElementById('ordTotal').value = total.toFixed(2);
+      const expense = parseFloat(document.getElementById('ordExpense').value) || 0;
+      document.getElementById('ordNetProfit').value = (total - expense * qty).toFixed(2);
     }
 
     async function addOrder() {
@@ -1802,15 +2021,18 @@
         return;
       }
 
-      orders.push({ date, customer, contact, email, product, variation, qty, price, total, payment, status, notes });
+      const expenseCost = parseFloat(document.getElementById('ordExpense').value) || 0;
+      const netProfit   = total - expenseCost * qty;
+      orders.push({ date, customer, contact, email, product, variation, qty, price, total, expenseCost, netProfit, payment, status, notes });
       await syncTable('orders', orders);
 
-      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordNotes'].forEach(id => document.getElementById(id).value = '');
+      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordExpense','ordNetProfit','ordNotes'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('ordPayment').value = 'Pending';
       document.getElementById('ordStatus').value = 'New';
 
       renderOrders();
       buildSalesYearOptions();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1818,6 +2040,7 @@
       orders.splice(i, 1);
       await syncTable('orders', orders);
       renderOrders();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1836,6 +2059,8 @@
       document.getElementById('ordPayment').value   = o.payment || 'Pending';
       document.getElementById('ordStatus').value    = o.status || 'New';
       document.getElementById('ordNotes').value     = o.notes || '';
+      document.getElementById('ordExpense').value   = o.expenseCost || '';
+      document.getElementById('ordNetProfit').value = o.netProfit != null ? parseFloat(o.netProfit).toFixed(2) : '';
       document.getElementById('ordAddBtn').style.display = 'none';
       document.getElementById('ordUpdateBtn').style.display = 'inline-block';
       document.getElementById('ordCancelBtn').style.display = 'inline-block';
@@ -1857,17 +2082,20 @@
       const status   = document.getElementById('ordStatus').value;
       const notes    = document.getElementById('ordNotes').value.trim();
       if (!customer || !product || qty <= 0 || price <= 0) { alert('Please fill required fields'); return; }
-      orders[editingOrderIndex] = { date, customer, contact, email, product, variation, qty, price, total, payment, status, notes };
+      const expenseCost = parseFloat(document.getElementById('ordExpense').value) || 0;
+      const netProfit   = total - expenseCost * qty;
+      orders[editingOrderIndex] = { date, customer, contact, email, product, variation, qty, price, total, expenseCost, netProfit, payment, status, notes };
       await syncTable('orders', orders);
       cancelEditOrder();
       renderOrders();
       buildSalesYearOptions();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
     function cancelEditOrder() {
       editingOrderIndex = -1;
-      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordNotes'].forEach(id => document.getElementById(id).value = '');
+      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordExpense','ordNetProfit','ordNotes'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('ordPayment').value = 'Pending';
       document.getElementById('ordStatus').value = 'New';
       document.getElementById('ordAddBtn').style.display = 'inline-block';
@@ -1881,6 +2109,7 @@
       await syncTable('orders', orders);
       renderOrders();
       buildSalesYearOptions();
+      buildOrderYearOptions();
       renderSalesOverview();
     }
 
@@ -1898,14 +2127,35 @@
 
     let editingOrderIndex = -1;
 
+    function buildOrderYearOptions() {
+      const sel = document.getElementById('ordFilterYear');
+      if (!sel) return;
+      const current = sel.value;
+      const years = [...new Set(orders.map(o => (o.date || '').substring(0, 4)).filter(Boolean))].sort().reverse();
+      sel.innerHTML = '<option value="">All Years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (years.includes(current)) sel.value = current;
+    }
+
     function renderOrders() {
       const tbody = document.getElementById('ordersBody');
-      if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#999;">No orders added yet</td></tr>';
+      const filterYear    = (document.getElementById('ordFilterYear')    || {}).value || '';
+      const filterPayment = (document.getElementById('ordFilterPayment') || {}).value || '';
+      const filterStatus  = (document.getElementById('ordFilterStatus')  || {}).value || '';
+
+      let filtered = orders.map((o, i) => ({ ...o, _i: i })).filter(o => {
+        if (filterYear    && !(o.date || '').startsWith(filterYear)) return false;
+        if (filterPayment && o.payment !== filterPayment) return false;
+        if (filterStatus  && o.status  !== filterStatus)  return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="16" style="text-align:center; color:#999;">${orders.length === 0 ? 'No orders added yet' : 'No orders match the selected filters'}</td></tr>`;
         document.getElementById('totalRevenue').textContent = '₱0.00';
         return;
       }
-      const sorted = [...orders].map((o, i) => ({ ...o, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+      const sorted = filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       tbody.innerHTML = sorted.map((o, idx) => `
         <tr>
           <td style="text-align:center;">${idx + 1}</td>
@@ -1918,6 +2168,8 @@
           <td style="text-align:center;">${o.qty}</td>
           <td style="text-align:right; padding-right:16px;">${fmt(parseFloat(o.price))}</td>
           <td style="color:#2e7d32; font-weight:600; text-align:right; padding-right:16px;">${fmt(parseFloat(o.total))}</td>
+          <td style="text-align:right; padding-right:16px;">${fmt(parseFloat(o.expenseCost)||0)}</td>
+          <td style="color:${(parseFloat(o.netProfit)||0)>=0?'#2e7d32':'#dc2626'}; font-weight:600; text-align:right; padding-right:16px;">${fmt(parseFloat(o.netProfit)||0)}</td>
           <td style="text-align:center;">${getPaymentBadge(o.payment)}</td>
           <td style="text-align:center;">${getStatusBadge(o.status)}</td>
           <td>${o.notes || '—'}</td>
@@ -1929,7 +2181,7 @@
         </tr>
       `).join('');
 
-      const totalRev = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+      const totalRev = filtered.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
       document.getElementById('totalRevenue').textContent = fmt(totalRev);
       makeTableSortable('ordersBody');
     }
@@ -2176,10 +2428,72 @@
       return total;
     }
 
+    function addCalcInkRow() {
+      const tbody = document.getElementById('calcInkBody');
+      const rowId = 'ink_' + Date.now();
+      const tr = document.createElement('tr');
+      tr.id = rowId;
+      const opts = '<option value="">-- Select --</option>' +
+        inkEntries.map((e, i) =>
+          `<option value="${e.costPerPage.toFixed(2)}">${e.printer} — ${e.type}</option>`
+        ).join('');
+      tr.innerHTML = `
+        <td><select onchange="updateCalcInkRow('${rowId}', true)" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${opts}</select></td>
+        <td><input type="number" value="1" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcInkRow('${rowId}')"></td>
+        <td><input type="number" value="0" min="0" step="0.01" style="width:80px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly></td>
+        <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
+        <td><button onclick="removeCalcInkRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+      updateCalcInkTotal();
+    }
+
+    const INK_DEFAULTS = {};
+
+    function updateCalcInkRow(rowId, fromSelect) {
+      const tr = document.getElementById(rowId);
+      const sel = tr.querySelector('select');
+      const inputs = tr.querySelectorAll('input');
+      // Auto-fill price/qty from selected ink entry (read-only)
+      if (fromSelect && sel.value) {
+        inputs[1].value = parseFloat(sel.value).toFixed(2);
+      }
+      const qty = parseFloat(inputs[0].value) || 0;
+      const pricePerQty = parseFloat(inputs[1].value) || 0;
+      tr.querySelector('.row-cost').textContent = fmt(qty * pricePerQty);
+      updateCalcInkTotal();
+    }
+
+    function removeCalcInkRow(rowId) {
+      document.getElementById(rowId).remove();
+      updateCalcInkTotal();
+    }
+
+    function updateCalcInkTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const inputs = tr.querySelectorAll('input');
+        if (inputs.length < 2) return;
+        total += (parseFloat(inputs[0].value) || 0) * (parseFloat(inputs[1].value) || 0);
+      });
+      document.getElementById('calcInkTotal').textContent = fmt(total);
+      runCalculator();
+    }
+
+    function getCalcInkTotal() {
+      let total = 0;
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const inputs = tr.querySelectorAll('input');
+        if (inputs.length < 2) return;
+        total += (parseFloat(inputs[0].value) || 0) * (parseFloat(inputs[1].value) || 0);
+      });
+      return total;
+    }
+
     function buildSupplyOptions(selectedName) {
-      // Deduplicate by name + variation — keep highest pricePerQty
+      // Deduplicate by name + variation — keep highest pricePerQty, exclude Out of Stock
       const seen = {};
-      materials.forEach(m => {
+      materials.filter(m => m.stock !== 'Out of Stock').forEach(m => {
         const key = m.name + '|' + (m.variation || '');
         const price = parseFloat(m.pricePerQty) || 0;
         if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) {
@@ -2264,11 +2578,12 @@
       const overheadCost  = getCalcOverheadTotal();
       const laborCost     = getCalcLaborTotal();
       const packagingCost = getCalcPackagingTotal();
+      const inkCost       = getCalcInkTotal();
       const markup  = parseFloat(document.getElementById('calcMarkup').value) || 0;
       const discount = parseFloat(document.getElementById('calcDiscount').value) || 0;
       const tax      = parseFloat(document.getElementById('calcTax').value) || 0;
 
-      const totalCost = suppliesCost + overheadCost + laborCost + packagingCost;
+      const totalCost = suppliesCost + overheadCost + laborCost + packagingCost + inkCost;
       const markupAmt = totalCost * (markup / 100);
       const priceBeforeDiscount = totalCost + markupAmt;
       const discountAmt = priceBeforeDiscount * (discount / 100);
@@ -2283,6 +2598,7 @@
       document.getElementById('rCalcOverheadAmt').textContent  = fmt(overheadCost);
       document.getElementById('rCalcLaborAmt').textContent     = fmt(laborCost);
       document.getElementById('rCalcPackagingAmt').textContent = fmt(packagingCost);
+      document.getElementById('rCalcInkAmt').textContent       = fmt(inkCost);
       document.getElementById('rCalcCost').textContent         = fmt(totalCost);
       document.getElementById('rCalcMarkupAmt').textContent    = fmt(markupAmt);
       document.getElementById('rCalcBeforeDiscount').textContent = fmt(priceBeforeDiscount);
@@ -2306,8 +2622,167 @@
       document.getElementById('calcLaborTotal').textContent = '₱0.00';
       document.getElementById('calcPackagingBody').innerHTML = '';
       document.getElementById('calcPackagingTotal').textContent = '₱0.00';
+      document.getElementById('calcInkBody').innerHTML = '';
+      document.getElementById('calcInkTotal').textContent = '₱0.00';
       runCalculator();
       document.getElementById('rCalcName').textContent = '—';
+    }
+
+    // ── INK CALCULATOR ──────────────────────────────────────
+    let inkEntries = [];
+
+    function buildInkMaterialOptions() {
+      const printer = (document.getElementById('inkPrinter') || {}).value || '';
+      // Filter keyword based on printer selection
+      const keyword = printer === 'Brother T930DW' ? 'brother ink'
+                    : printer === 'Canon IX6770'   ? 'canon ink'
+                    : 'ink';
+      // Dedup by name+variation keeping highest pricePerQty, exclude Out of Stock
+      const seen = {};
+      materials
+        .filter(m => m.stock !== 'Out of Stock' && (m.name || '').toLowerCase().includes(keyword))
+        .forEach(m => {
+          const key = m.name + '|' + (m.variation || '');
+          const price = parseFloat(m.pricePerQty) || 0;
+          if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) seen[key] = m;
+        });
+      const opts = '<option value="0">-- Select --</option>' +
+        Object.values(seen).map(m => {
+          const label = m.name + (m.variation ? ' (' + m.variation + ')' : '');
+          const price = parseFloat(m.pricePerQty) || 0;
+          return `<option value="${price}">${label} — ₱${price.toFixed(2)}</option>`;
+        }).join('');
+      ['inkBlack','inkPigBlack','inkMagenta','inkCyan','inkYellow'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = opts;
+      });
+    }
+
+    const INK_YIELDS = {
+      'Canon IX6770':  { black: 1645, pigBlack: 300, magenta: 327, cyan: 333, yellow: 334 },
+      'Brother T930DW':{ black: 6500, pigBlack: null, magenta: 5000, cyan: 5000, yellow: 5000 }
+    };
+
+    function onInkPrinterChange() {
+      const printer = document.getElementById('inkPrinter').value;
+      const pigRow = document.getElementById('inkPigmentRow');
+      pigRow.style.display = printer === 'Canon IX6770' ? 'grid' : 'none';
+      buildInkMaterialOptions();
+
+      const yields = INK_YIELDS[printer] || null;
+      const yieldFields = [
+        { id: 'inkBlackYield',    key: 'black' },
+        { id: 'inkPigBlackYield', key: 'pigBlack' },
+        { id: 'inkMagentaYield',  key: 'magenta' },
+        { id: 'inkCyanYield',     key: 'cyan' },
+        { id: 'inkYellowYield',   key: 'yellow' },
+      ];
+      yieldFields.forEach(({ id, key }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (yields && yields[key] != null) {
+          el.value = yields[key];
+          el.readOnly = true;
+          el.style.background = '#f5f0e8';
+          el.style.cursor = 'not-allowed';
+        } else {
+          el.value = '';
+          el.readOnly = false;
+          el.style.background = '';
+          el.style.cursor = '';
+        }
+      });
+      calcInkCosts();
+    }
+
+    const INK_ADJUSTMENT = 1.25; // realistic cost adjustment factor
+
+    function calcInkCosts() {
+      const getVal = id => parseFloat(document.getElementById(id).value) || 0;
+      const costPerPage = (cartId, yieldId, costId) => {
+        const cart = getVal(cartId), yld = getVal(yieldId);
+        const cpp = yld > 0 ? cart / yld : 0;
+        document.getElementById(costId).value = cpp > 0 ? '₱' + cpp.toFixed(2) : '';
+        return cpp;
+      };
+      const bCpp  = costPerPage('inkBlack',   'inkBlackYield',   'inkBlackCost');
+      const mCpp  = costPerPage('inkMagenta', 'inkMagentaYield', 'inkMagentaCost');
+      const cCpp  = costPerPage('inkCyan',    'inkCyanYield',    'inkCyanCost');
+      const yCpp  = costPerPage('inkYellow',  'inkYellowYield',  'inkYellowCost');
+
+      const printer = document.getElementById('inkPrinter').value;
+      let bwCpp = bCpp;
+      if (printer === 'Canon IX6770') {
+        const pbCpp = costPerPage('inkPigBlack', 'inkPigBlackYield', 'inkPigBlackCost');
+        bwCpp = pbCpp;
+      }
+
+      document.getElementById('inkBWResult').textContent     = '₱' + (bwCpp * INK_ADJUSTMENT).toFixed(2);
+      document.getElementById('inkColourResult').textContent = '₱' + ((bCpp + mCpp + cCpp + yCpp) * INK_ADJUSTMENT).toFixed(2);
+    }
+
+    async function saveInkEntry() {
+      const printer = document.getElementById('inkPrinter').value;
+      if (!printer) { alert('Please select a printer.'); return; }
+      const getVal = id => parseFloat(document.getElementById(id).value) || 0;
+      const getYield = id => parseFloat(document.getElementById(id).value) || 0;
+      const getMatName = id => {
+        const el = document.getElementById(id);
+        return el ? el.options[el.selectedIndex]?.text.split(' — ')[0] : '—';
+      };
+
+      const bCpp  = getYield('inkBlackYield')   > 0 ? getVal('inkBlack')   / getYield('inkBlackYield')   : 0;
+      const mCpp  = getYield('inkMagentaYield') > 0 ? getVal('inkMagenta') / getYield('inkMagentaYield') : 0;
+      const cCpp  = getYield('inkCyanYield')    > 0 ? getVal('inkCyan')    / getYield('inkCyanYield')    : 0;
+      const yCpp  = getYield('inkYellowYield')  > 0 ? getVal('inkYellow')  / getYield('inkYellowYield')  : 0;
+
+      let bwCpp = bCpp;
+      if (printer === 'Canon IX6770') {
+        const pbCpp = getYield('inkPigBlackYield') > 0 ? getVal('inkPigBlack') / getYield('inkPigBlackYield') : 0;
+        bwCpp = pbCpp;
+      }
+
+      inkEntries.push({ printer, type: 'Black/White', costPerPage: bwCpp * INK_ADJUSTMENT });
+      inkEntries.push({ printer, type: 'Colour', costPerPage: (bCpp + mCpp + cCpp + yCpp) * INK_ADJUSTMENT });
+      await syncTable('inkcalculator', inkEntries);
+      renderInkTable();
+      buildCalcInkOptions();
+    }
+
+    function deleteInkEntry(i) {
+      inkEntries.splice(i, 1);
+      syncTable('inkcalculator', inkEntries);
+      renderInkTable();
+      buildCalcInkOptions();
+    }
+
+    function renderInkTable() {
+      const tbody = document.getElementById('inkTableBody');
+      if (inkEntries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">No entries yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = inkEntries.map((e, i) => `
+        <tr>
+          <td style="text-align:center;">${i + 1}</td>
+          <td>${e.printer}</td>
+          <td>${e.type}</td>
+          <td style="text-align:right; padding-right:12px; font-weight:600; ${e.type==='Colour'?'color:#7c3aed;':''}">₱${e.costPerPage.toFixed(2)}</td>
+          <td style="text-align:center;"><button class="btn-delete" onclick="deleteInkEntry(${i})">✕</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function buildCalcInkOptions() {
+      // Rebuild the Select Print dropdown in every calc ink row from inkEntries
+      const opts = '<option value="">-- Select --</option>' +
+        inkEntries.map((e, i) =>
+          `<option value="${e.costPerPage.toFixed(2)}">${e.printer} — ${e.type}</option>`
+        ).join('');
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        if (sel) sel.innerHTML = opts;
+      });
     }
 
     async function saveCalculatorToProducts() {
@@ -2513,6 +2988,8 @@
         const mPaid      = mOrders.filter(o => o.payment === 'Paid').reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
         const mDelivered = mOrders.filter(o => o.status === 'Delivered').length;
         const mCancelled = mOrders.filter(o => o.status === 'Cancelled').length;
+        const mExpense   = mOrders.reduce((s, o) => s + (parseFloat(o.expenseCost)||0) * (parseFloat(o.qty)||0), 0);
+        const mNetProfit = mOrders.reduce((s, o) => s + (parseFloat(o.netProfit)||0), 0);
         const empty = mOrders.length === 0;
         return `<tr>
           <td>${yr}</td>
@@ -2523,6 +3000,8 @@
           <td style="text-align:center;">${empty ? '—' : mOrders.filter(o => o.payment !== 'Paid').length}</td>
           <td style="text-align:center;">${empty ? '—' : mDelivered}</td>
           <td style="text-align:center;">${empty ? '—' : mCancelled}</td>
+          <td class="price-col">${empty ? '—' : fmt(mExpense)}</td>
+          <td style="color:${mNetProfit>=0?'#2e7d32':'#dc2626'};font-weight:600;text-align:right;padding-right:16px;">${empty ? '—' : fmt(mNetProfit)}</td>
         </tr>`;
       }).join('');
 
@@ -2530,74 +3009,137 @@
       const prodMap = {};
       filtered.forEach(o => {
         const key = (o.product || '') + '|' + (o.variation || '—');
-        if (!prodMap[key]) prodMap[key] = { product: o.product, variation: o.variation || '—', orders: 0, qty: 0, revenue: 0 };
+        if (!prodMap[key]) prodMap[key] = { product: o.product, variation: o.variation || '—', orders: 0, qty: 0, revenue: 0, expenseCost: 0, netProfit: 0 };
         prodMap[key].orders++;
         prodMap[key].qty += parseFloat(o.qty) || 0;
         prodMap[key].revenue += parseFloat(o.total) || 0;
+        prodMap[key].expenseCost += (parseFloat(o.expenseCost)||0) * (parseFloat(o.qty)||0);
+        prodMap[key].netProfit += parseFloat(o.netProfit) || 0;
       });
       const topProds = Object.values(prodMap).sort((a, b) => (a.product || '').localeCompare(b.product || ''));
       const prodBody = document.getElementById('soProductsBody');
       prodBody.innerHTML = topProds.length === 0
-        ? '<tr><td colspan="5" style="text-align:center;color:#999;">No data</td></tr>'
+        ? '<tr><td colspan="7" style="text-align:center;color:#999;">No data</td></tr>'
         : topProds.map(p => `<tr>
             <td>${p.product}</td>
             <td>${p.variation}</td>
             <td style="text-align:center;">${p.orders}</td>
             <td style="text-align:center;">${p.qty}</td>
             <td class="price-col">${fmt(p.revenue)}</td>
+            <td class="price-col">${fmt(p.expenseCost)}</td>
+            <td style="color:${p.netProfit>=0?'#2e7d32':'#dc2626'};font-weight:600;text-align:right;padding-right:16px;">${fmt(p.netProfit)}</td>
           </tr>`).join('');
+    }
+
+    function exportOrdersExcel() {
+      const wb = XLSX.utils.book_new();
+      const rows = [...document.querySelectorAll('#ordersBody tr')].map(tr => {
+        const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
+        if (tds.length < 15) return null; // skip empty/placeholder row
+        return [tds[1], tds[2], tds[3], tds[4], tds[5], tds[6], +tds[7]||0,
+                parseFloat((tds[8]||'0').replace(/[₱,]/g,''))||0,
+                parseFloat((tds[9]||'0').replace(/[₱,]/g,''))||0,
+                parseFloat((tds[10]||'0').replace(/[₱,]/g,''))||0,
+                parseFloat((tds[11]||'0').replace(/[₱,]/g,''))||0,
+                tds[12], tds[13], tds[14]];
+      }).filter(Boolean);
+
+      const totalRev = rows.reduce((s, r) => s + (r[8] || 0), 0);
+      const totalNetProfit = rows.reduce((s, r) => s + (r[10] || 0), 0);
+
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Order Date','Customer Name','Contact No.','Email','Product','Variation','Qty','Unit Price','Total','Unit Expense','Net Profit','Payment','Status','Notes'],
+        ...rows,
+        ['','','','','','','','Total', totalRev,'',totalNetProfit,'','','']
+      ]);
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = 1; R <= range.e.r; R++) {
+        [7, 8, 9, 10].forEach(c => {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c })];
+          if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+        });
+      }
+      ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:22},{wch:20},{wch:16},{wch:6},{wch:12},{wch:12},{wch:14},{wch:14},{wch:10},{wch:12},{wch:20}];
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+      XLSX.writeFile(wb, 'orders.xlsx');
+    }
+
+    function exportOrdersPDF() {
+      const win = window.open('', '_blank');
+      const rows = [...document.querySelectorAll('#ordersBody tr')].map(tr =>
+        `<tr>${[...tr.querySelectorAll('td')].slice(1, -1).map(td => `<td style="padding:5px 8px;border:1px solid #ddd;">${td.innerText}</td>`).join('')}</tr>`
+      ).join('');
+      const total = document.getElementById('totalRevenue').textContent;
+      win.document.write(`<html><head><title>Orders</title><style>
+        body{font-family:sans-serif;font-size:12px;}
+        table{border-collapse:collapse;width:100%;}
+        th{background:#dbeafe;padding:7px 8px;border:1px solid #ddd;font-size:12px;}
+      </style></head><body>
+        <h2>Orders</h2>
+        <p style="margin-bottom:10px;">Total Revenue: <strong>${total}</strong></p>
+        <table><thead><tr>
+          <th>Order Date</th><th>Customer Name</th><th>Contact No.</th><th>Email</th>
+          <th>Product</th><th>Variation</th><th>Qty</th>
+          <th>Unit Price</th><th>Total</th><th>Unit Expense</th><th>Net Profit</th><th>Payment</th><th>Status</th><th>Notes</th>
+        </tr></thead><tbody>${rows}</tbody></table>
+      </body></html>`);
+      win.document.close(); win.print();
     }
 
     function exportSalesExcel() {
       const cleanNum = v => parseFloat((v || '0').replace(/[₱,]/g, '')) || 0;
       const monthlyRows = [...document.querySelectorAll('#soMonthlyBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        return [tds[0], tds[1], tds[2]==='—'?'':+tds[2], cleanNum(tds[3]), cleanNum(tds[4]), tds[5]==='—'?'':+tds[5], tds[6]==='—'?'':+tds[6], tds[7]==='—'?'':+tds[7]];
+        return [tds[0], tds[1], tds[2]==='—'?'':+tds[2], cleanNum(tds[3]), cleanNum(tds[4]), tds[5]==='—'?'':+tds[5], tds[6]==='—'?'':+tds[6], tds[7]==='—'?'':+tds[7], cleanNum(tds[8]), cleanNum(tds[9])];
       });
       const topRows = [...document.querySelectorAll('#soProductsBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        return [tds[0], tds[1], +tds[2]||0, +tds[3]||0, cleanNum(tds[4])];
+        return [tds[0], tds[1], +tds[2]||0, +tds[3]||0, cleanNum(tds[4]), cleanNum(tds[5]), cleanNum(tds[6])];
       });
 
       // Totals for monthly sheet
-      const totalOrders   = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
-      const totalRev      = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
-      const totalPaid     = monthlyRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
-      const totalPending  = monthlyRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
-      const totalDelivered= monthlyRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
-      const totalCancelled= monthlyRows.reduce((s, r) => s + (parseFloat(r[7]) || 0), 0);
-      const totalRevTop   = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalOrders    = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+      const totalRev       = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
+      const totalPaid      = monthlyRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalPending   = monthlyRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
+      const totalDelivered = monthlyRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
+      const totalCancelled = monthlyRows.reduce((s, r) => s + (parseFloat(r[7]) || 0), 0);
+      const totalExpense   = monthlyRows.reduce((s, r) => s + (parseFloat(r[8]) || 0), 0);
+      const totalNetProfit = monthlyRows.reduce((s, r) => s + (parseFloat(r[9]) || 0), 0);
+      const totalRevTop    = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalExpTop    = topRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
+      const totalNPTop     = topRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
 
       const wb = XLSX.utils.book_new();
 
       const ws1 = XLSX.utils.aoa_to_sheet([
-        ['Year','Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled'],
+        ['Year','Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled','Total Expense Cost','Total Net Profit'],
         ...monthlyRows,
-        ['', 'Total', totalOrders, totalRev, totalPaid, totalPending, totalDelivered, totalCancelled]
+        ['', 'Total', totalOrders, totalRev, totalPaid, totalPending, totalDelivered, totalCancelled, totalExpense, totalNetProfit]
       ]);
-      // Peso format on Revenue (col D=3) and Paid (col E=4)
       const r1 = XLSX.utils.decode_range(ws1['!ref']);
       for (let R = 1; R <= r1.e.r; R++) {
-        [3, 4].forEach(c => {
+        [3, 4, 8, 9].forEach(c => {
           const cell = ws1[XLSX.utils.encode_cell({ r: R, c })];
           if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
         });
       }
-      ws1['!cols'] = [{ wch: 8 },{ wch: 12 },{ wch: 14 },{ wch: 16 },{ wch: 14 },{ wch: 16 },{ wch: 12 },{ wch: 12 }];
+      ws1['!cols'] = [{ wch: 8 },{ wch: 12 },{ wch: 14 },{ wch: 16 },{ wch: 14 },{ wch: 16 },{ wch: 12 },{ wch: 12 },{ wch: 18 },{ wch: 16 }];
       XLSX.utils.book_append_sheet(wb, ws1, 'Monthly Breakdown');
 
       const ws2 = XLSX.utils.aoa_to_sheet([
-        ['Product','Variation','Orders','Qty Sold','Revenue'],
+        ['Product','Variation','Orders','Qty Sold','Revenue','Expense Cost','Net Profit'],
         ...topRows,
-        ['Total', '', '', '', totalRevTop]
+        ['Total', '', '', '', totalRevTop, totalExpTop, totalNPTop]
       ]);
-      // Peso format on Revenue (col E=4)
       const r2 = XLSX.utils.decode_range(ws2['!ref']);
       for (let R = 1; R <= r2.e.r; R++) {
-        const cell = ws2[XLSX.utils.encode_cell({ r: R, c: 4 })];
-        if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+        [4, 5, 6].forEach(c => {
+          const cell = ws2[XLSX.utils.encode_cell({ r: R, c })];
+          if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+        });
       }
-      ws2['!cols'] = [{ wch: 30 },{ wch: 20 },{ wch: 10 },{ wch: 10 },{ wch: 14 }];
+      ws2['!cols'] = [{ wch: 30 },{ wch: 20 },{ wch: 10 },{ wch: 10 },{ wch: 14 },{ wch: 14 },{ wch: 14 }];
       XLSX.utils.book_append_sheet(wb, ws2, 'Top Products');
 
       XLSX.writeFile(wb, 'sales-overview.xlsx');
@@ -2613,9 +3155,9 @@
         <h2>Sales Overview</h2>
         <p>Total Revenue: ${document.getElementById('soTotalRev').textContent} | Orders: ${document.getElementById('soTotalOrders').textContent}</p>
         <h3>Monthly Breakdown</h3>
-        <table><thead><tr><th>Year</th><th>Month</th><th>Orders</th><th>Revenue</th><th>Paid</th><th>Pending</th><th>Delivered</th><th>Cancelled</th></tr></thead><tbody>${monthly}</tbody></table>
+        <table><thead><tr><th>Year</th><th>Month</th><th>Orders</th><th>Revenue</th><th>Paid</th><th>Pending</th><th>Delivered</th><th>Cancelled</th><th>Total Expense</th><th>Net Profit</th></tr></thead><tbody>${monthly}</tbody></table>
         <h3>Top Products</h3>
-        <table><thead><tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>${top}</tbody></table>
+        <table><thead><tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty</th><th>Revenue</th><th>Expense Cost</th><th>Net Profit</th></tr></thead><tbody>${top}</tbody></table>
       </body></html>`);
       win.document.close(); win.print();
     }

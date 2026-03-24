@@ -444,6 +444,14 @@
           <input type="number" id="ordTotal" readonly style="background:#f5f0e8; cursor:not-allowed;">
         </div>
         <div class="form-group">
+          <label>Unit Expense Cost (₱)</label>
+          <input type="number" id="ordExpense" placeholder="0.00" step="0.01" oninput="calculateOrder()">
+        </div>
+        <div class="form-group">
+          <label>Net Profit (₱)</label>
+          <input type="number" id="ordNetProfit" readonly style="background:#f5f0e8; cursor:not-allowed;">
+        </div>
+        <div class="form-group">
           <label>Payment Status</label>
           <select id="ordPayment" style="width:100%; padding:10px; border:1px solid #d9cfc0; border-radius:5px; font-size:14px;">
             <option value="Pending">Pending</option>
@@ -509,14 +517,16 @@
           <tr>
             <th style="text-align:center;">No.</th>
             <th class="sortable" onclick="sortTable('ordersTable','date','str')">Order Date</th>
-            <th class="sortable" onclick="sortTable('ordersTable','customer','str')">Customer</th>
-            <th class="sortable" onclick="sortTable('ordersTable','contact','str')">Contact</th>
+            <th class="sortable" onclick="sortTable('ordersTable','customer','str')">Customer Name</th>
+            <th class="sortable" onclick="sortTable('ordersTable','contact','str')">Contact No.</th>
             <th class="sortable" onclick="sortTable('ordersTable','email','str')">Email</th>
             <th class="sortable" onclick="sortTable('ordersTable','product','str')">Product</th>
             <th class="sortable" onclick="sortTable('ordersTable','variation','str')">Variation</th>
             <th class="sortable" onclick="sortTable('ordersTable','qty','num')" style="text-align:center;">Qty</th>
             <th class="sortable" onclick="sortTable('ordersTable','price','num')" style="text-align:right; padding-right:16px;">Unit Price</th>
             <th class="sortable" onclick="sortTable('ordersTable','total','num')" style="text-align:right; padding-right:16px;">Total</th>
+            <th class="sortable" onclick="sortTable('ordersTable','expenseCost','num')" style="text-align:right; padding-right:16px;">Unit Expense</th>
+            <th class="sortable" onclick="sortTable('ordersTable','netProfit','num')" style="text-align:right; padding-right:16px;">Net Profit</th>
             <th class="sortable" onclick="sortTable('ordersTable','payment','str')" style="text-align:center;">Payment</th>
             <th class="sortable" onclick="sortTable('ordersTable','status','str')" style="text-align:center;">Status</th>
             <th>Notes</th>
@@ -603,6 +613,8 @@
             <th style="text-align:center;">Pending / Partial</th>
             <th style="text-align:center;">Delivered</th>
             <th style="text-align:center;">Cancelled</th>
+            <th style="text-align:right; padding-right:16px;">Total Expense Cost</th>
+            <th style="text-align:right; padding-right:16px;">Total Net Profit</th>
           </tr>
         </thead>
         <tbody id="soMonthlyBody"></tbody>
@@ -617,6 +629,8 @@
             <th style="text-align:center;">Orders</th>
             <th style="text-align:center;">Qty Sold</th>
             <th style="text-align:right; padding-right:16px;">Revenue</th>
+            <th style="text-align:right; padding-right:16px;">Expense Cost</th>
+            <th style="text-align:right; padding-right:16px;">Net Profit</th>
           </tr>
         </thead>
         <tbody id="soProductsBody"></tbody>
@@ -1137,7 +1151,7 @@
       if (eq)   equipment   = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
       if (oh)   overhead    = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
       if (lc)   laborCosts  = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
-      if (ord)  orders      = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0 }));
+      if (ord)  orders      = ord.map(o => ({ ...o, qty: +o.qty||0, price: +o.price||0, total: +o.total||0, expenseCost: +o.expenseCost||0, netProfit: +o.netProfit||0 }));
       if (ink)  inkEntries  = ink.map(i => ({ ...i, costPerPage: +i.costPerPage||0 }));
 
       renderMaterials();
@@ -1982,7 +1996,10 @@
     function calculateOrder() {
       const qty = parseFloat(document.getElementById('ordQty').value) || 0;
       const price = parseFloat(document.getElementById('ordPrice').value) || 0;
-      document.getElementById('ordTotal').value = (qty * price).toFixed(2);
+      const total = qty * price;
+      document.getElementById('ordTotal').value = total.toFixed(2);
+      const expense = parseFloat(document.getElementById('ordExpense').value) || 0;
+      document.getElementById('ordNetProfit').value = (total - expense * qty).toFixed(2);
     }
 
     async function addOrder() {
@@ -2004,10 +2021,12 @@
         return;
       }
 
-      orders.push({ date, customer, contact, email, product, variation, qty, price, total, payment, status, notes });
+      const expenseCost = parseFloat(document.getElementById('ordExpense').value) || 0;
+      const netProfit   = total - expenseCost * qty;
+      orders.push({ date, customer, contact, email, product, variation, qty, price, total, expenseCost, netProfit, payment, status, notes });
       await syncTable('orders', orders);
 
-      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordNotes'].forEach(id => document.getElementById(id).value = '');
+      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordExpense','ordNetProfit','ordNotes'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('ordPayment').value = 'Pending';
       document.getElementById('ordStatus').value = 'New';
 
@@ -2040,6 +2059,8 @@
       document.getElementById('ordPayment').value   = o.payment || 'Pending';
       document.getElementById('ordStatus').value    = o.status || 'New';
       document.getElementById('ordNotes').value     = o.notes || '';
+      document.getElementById('ordExpense').value   = o.expenseCost || '';
+      document.getElementById('ordNetProfit').value = o.netProfit != null ? parseFloat(o.netProfit).toFixed(2) : '';
       document.getElementById('ordAddBtn').style.display = 'none';
       document.getElementById('ordUpdateBtn').style.display = 'inline-block';
       document.getElementById('ordCancelBtn').style.display = 'inline-block';
@@ -2061,7 +2082,9 @@
       const status   = document.getElementById('ordStatus').value;
       const notes    = document.getElementById('ordNotes').value.trim();
       if (!customer || !product || qty <= 0 || price <= 0) { alert('Please fill required fields'); return; }
-      orders[editingOrderIndex] = { date, customer, contact, email, product, variation, qty, price, total, payment, status, notes };
+      const expenseCost = parseFloat(document.getElementById('ordExpense').value) || 0;
+      const netProfit   = total - expenseCost * qty;
+      orders[editingOrderIndex] = { date, customer, contact, email, product, variation, qty, price, total, expenseCost, netProfit, payment, status, notes };
       await syncTable('orders', orders);
       cancelEditOrder();
       renderOrders();
@@ -2072,7 +2095,7 @@
 
     function cancelEditOrder() {
       editingOrderIndex = -1;
-      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordNotes'].forEach(id => document.getElementById(id).value = '');
+      ['ordDate','ordCustomer','ordContact','ordEmail','ordProduct','ordVariation','ordQty','ordPrice','ordTotal','ordExpense','ordNetProfit','ordNotes'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('ordPayment').value = 'Pending';
       document.getElementById('ordStatus').value = 'New';
       document.getElementById('ordAddBtn').style.display = 'inline-block';
@@ -2127,7 +2150,7 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:#999;">${orders.length === 0 ? 'No orders added yet' : 'No orders match the selected filters'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="16" style="text-align:center; color:#999;">${orders.length === 0 ? 'No orders added yet' : 'No orders match the selected filters'}</td></tr>`;
         document.getElementById('totalRevenue').textContent = '₱0.00';
         return;
       }
@@ -2145,6 +2168,8 @@
           <td style="text-align:center;">${o.qty}</td>
           <td style="text-align:right; padding-right:16px;">${fmt(parseFloat(o.price))}</td>
           <td style="color:#2e7d32; font-weight:600; text-align:right; padding-right:16px;">${fmt(parseFloat(o.total))}</td>
+          <td style="text-align:right; padding-right:16px;">${fmt(parseFloat(o.expenseCost)||0)}</td>
+          <td style="color:${(parseFloat(o.netProfit)||0)>=0?'#2e7d32':'#dc2626'}; font-weight:600; text-align:right; padding-right:16px;">${fmt(parseFloat(o.netProfit)||0)}</td>
           <td style="text-align:center;">${getPaymentBadge(o.payment)}</td>
           <td style="text-align:center;">${getStatusBadge(o.status)}</td>
           <td>${o.notes || '—'}</td>
@@ -2963,6 +2988,8 @@
         const mPaid      = mOrders.filter(o => o.payment === 'Paid').reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
         const mDelivered = mOrders.filter(o => o.status === 'Delivered').length;
         const mCancelled = mOrders.filter(o => o.status === 'Cancelled').length;
+        const mExpense   = mOrders.reduce((s, o) => s + (parseFloat(o.expenseCost)||0) * (parseFloat(o.qty)||0), 0);
+        const mNetProfit = mOrders.reduce((s, o) => s + (parseFloat(o.netProfit)||0), 0);
         const empty = mOrders.length === 0;
         return `<tr>
           <td>${yr}</td>
@@ -2973,6 +3000,8 @@
           <td style="text-align:center;">${empty ? '—' : mOrders.filter(o => o.payment !== 'Paid').length}</td>
           <td style="text-align:center;">${empty ? '—' : mDelivered}</td>
           <td style="text-align:center;">${empty ? '—' : mCancelled}</td>
+          <td class="price-col">${empty ? '—' : fmt(mExpense)}</td>
+          <td style="color:${mNetProfit>=0?'#2e7d32':'#dc2626'};font-weight:600;text-align:right;padding-right:16px;">${empty ? '—' : fmt(mNetProfit)}</td>
         </tr>`;
       }).join('');
 
@@ -2980,21 +3009,25 @@
       const prodMap = {};
       filtered.forEach(o => {
         const key = (o.product || '') + '|' + (o.variation || '—');
-        if (!prodMap[key]) prodMap[key] = { product: o.product, variation: o.variation || '—', orders: 0, qty: 0, revenue: 0 };
+        if (!prodMap[key]) prodMap[key] = { product: o.product, variation: o.variation || '—', orders: 0, qty: 0, revenue: 0, expenseCost: 0, netProfit: 0 };
         prodMap[key].orders++;
         prodMap[key].qty += parseFloat(o.qty) || 0;
         prodMap[key].revenue += parseFloat(o.total) || 0;
+        prodMap[key].expenseCost += (parseFloat(o.expenseCost)||0) * (parseFloat(o.qty)||0);
+        prodMap[key].netProfit += parseFloat(o.netProfit) || 0;
       });
       const topProds = Object.values(prodMap).sort((a, b) => (a.product || '').localeCompare(b.product || ''));
       const prodBody = document.getElementById('soProductsBody');
       prodBody.innerHTML = topProds.length === 0
-        ? '<tr><td colspan="5" style="text-align:center;color:#999;">No data</td></tr>'
+        ? '<tr><td colspan="7" style="text-align:center;color:#999;">No data</td></tr>'
         : topProds.map(p => `<tr>
             <td>${p.product}</td>
             <td>${p.variation}</td>
             <td style="text-align:center;">${p.orders}</td>
             <td style="text-align:center;">${p.qty}</td>
             <td class="price-col">${fmt(p.revenue)}</td>
+            <td class="price-col">${fmt(p.expenseCost)}</td>
+            <td style="color:${p.netProfit>=0?'#2e7d32':'#dc2626'};font-weight:600;text-align:right;padding-right:16px;">${fmt(p.netProfit)}</td>
           </tr>`).join('');
     }
 
@@ -3002,28 +3035,31 @@
       const wb = XLSX.utils.book_new();
       const rows = [...document.querySelectorAll('#ordersBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        if (tds.length < 13) return null; // skip empty/placeholder row
+        if (tds.length < 15) return null; // skip empty/placeholder row
         return [tds[1], tds[2], tds[3], tds[4], tds[5], tds[6], +tds[7]||0,
                 parseFloat((tds[8]||'0').replace(/[₱,]/g,''))||0,
                 parseFloat((tds[9]||'0').replace(/[₱,]/g,''))||0,
-                tds[10], tds[11], tds[12]];
+                parseFloat((tds[10]||'0').replace(/[₱,]/g,''))||0,
+                parseFloat((tds[11]||'0').replace(/[₱,]/g,''))||0,
+                tds[12], tds[13], tds[14]];
       }).filter(Boolean);
 
       const totalRev = rows.reduce((s, r) => s + (r[8] || 0), 0);
+      const totalNetProfit = rows.reduce((s, r) => s + (r[10] || 0), 0);
 
       const ws = XLSX.utils.aoa_to_sheet([
-        ['Order Date','Customer','Contact','Email','Product','Variation','Qty','Unit Price','Total','Payment','Status','Notes'],
+        ['Order Date','Customer Name','Contact No.','Email','Product','Variation','Qty','Unit Price','Total','Unit Expense','Net Profit','Payment','Status','Notes'],
         ...rows,
-        ['','','','','','','','Total', totalRev,'','','']
+        ['','','','','','','','Total', totalRev,'',totalNetProfit,'','','']
       ]);
       const range = XLSX.utils.decode_range(ws['!ref']);
       for (let R = 1; R <= range.e.r; R++) {
-        [7, 8].forEach(c => {
+        [7, 8, 9, 10].forEach(c => {
           const cell = ws[XLSX.utils.encode_cell({ r: R, c })];
           if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
         });
       }
-      ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:22},{wch:20},{wch:16},{wch:6},{wch:12},{wch:12},{wch:10},{wch:12},{wch:20}];
+      ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:22},{wch:20},{wch:16},{wch:6},{wch:12},{wch:12},{wch:14},{wch:14},{wch:10},{wch:12},{wch:20}];
       XLSX.utils.book_append_sheet(wb, ws, 'Orders');
       XLSX.writeFile(wb, 'orders.xlsx');
     }
@@ -3042,9 +3078,9 @@
         <h2>Orders</h2>
         <p style="margin-bottom:10px;">Total Revenue: <strong>${total}</strong></p>
         <table><thead><tr>
-          <th>Order Date</th><th>Customer</th><th>Contact</th><th>Email</th>
+          <th>Order Date</th><th>Customer Name</th><th>Contact No.</th><th>Email</th>
           <th>Product</th><th>Variation</th><th>Qty</th>
-          <th>Unit Price</th><th>Total</th><th>Payment</th><th>Status</th><th>Notes</th>
+          <th>Unit Price</th><th>Total</th><th>Unit Expense</th><th>Net Profit</th><th>Payment</th><th>Status</th><th>Notes</th>
         </tr></thead><tbody>${rows}</tbody></table>
       </body></html>`);
       win.document.close(); win.print();
@@ -3054,52 +3090,56 @@
       const cleanNum = v => parseFloat((v || '0').replace(/[₱,]/g, '')) || 0;
       const monthlyRows = [...document.querySelectorAll('#soMonthlyBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        return [tds[0], tds[1], tds[2]==='—'?'':+tds[2], cleanNum(tds[3]), cleanNum(tds[4]), tds[5]==='—'?'':+tds[5], tds[6]==='—'?'':+tds[6], tds[7]==='—'?'':+tds[7]];
+        return [tds[0], tds[1], tds[2]==='—'?'':+tds[2], cleanNum(tds[3]), cleanNum(tds[4]), tds[5]==='—'?'':+tds[5], tds[6]==='—'?'':+tds[6], tds[7]==='—'?'':+tds[7], cleanNum(tds[8]), cleanNum(tds[9])];
       });
       const topRows = [...document.querySelectorAll('#soProductsBody tr')].map(tr => {
         const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
-        return [tds[0], tds[1], +tds[2]||0, +tds[3]||0, cleanNum(tds[4])];
+        return [tds[0], tds[1], +tds[2]||0, +tds[3]||0, cleanNum(tds[4]), cleanNum(tds[5]), cleanNum(tds[6])];
       });
 
       // Totals for monthly sheet
-      const totalOrders   = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
-      const totalRev      = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
-      const totalPaid     = monthlyRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
-      const totalPending  = monthlyRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
-      const totalDelivered= monthlyRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
-      const totalCancelled= monthlyRows.reduce((s, r) => s + (parseFloat(r[7]) || 0), 0);
-      const totalRevTop   = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalOrders    = monthlyRows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+      const totalRev       = monthlyRows.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
+      const totalPaid      = monthlyRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalPending   = monthlyRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
+      const totalDelivered = monthlyRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
+      const totalCancelled = monthlyRows.reduce((s, r) => s + (parseFloat(r[7]) || 0), 0);
+      const totalExpense   = monthlyRows.reduce((s, r) => s + (parseFloat(r[8]) || 0), 0);
+      const totalNetProfit = monthlyRows.reduce((s, r) => s + (parseFloat(r[9]) || 0), 0);
+      const totalRevTop    = topRows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+      const totalExpTop    = topRows.reduce((s, r) => s + (parseFloat(r[5]) || 0), 0);
+      const totalNPTop     = topRows.reduce((s, r) => s + (parseFloat(r[6]) || 0), 0);
 
       const wb = XLSX.utils.book_new();
 
       const ws1 = XLSX.utils.aoa_to_sheet([
-        ['Year','Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled'],
+        ['Year','Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled','Total Expense Cost','Total Net Profit'],
         ...monthlyRows,
-        ['', 'Total', totalOrders, totalRev, totalPaid, totalPending, totalDelivered, totalCancelled]
+        ['', 'Total', totalOrders, totalRev, totalPaid, totalPending, totalDelivered, totalCancelled, totalExpense, totalNetProfit]
       ]);
-      // Peso format on Revenue (col D=3) and Paid (col E=4)
       const r1 = XLSX.utils.decode_range(ws1['!ref']);
       for (let R = 1; R <= r1.e.r; R++) {
-        [3, 4].forEach(c => {
+        [3, 4, 8, 9].forEach(c => {
           const cell = ws1[XLSX.utils.encode_cell({ r: R, c })];
           if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
         });
       }
-      ws1['!cols'] = [{ wch: 8 },{ wch: 12 },{ wch: 14 },{ wch: 16 },{ wch: 14 },{ wch: 16 },{ wch: 12 },{ wch: 12 }];
+      ws1['!cols'] = [{ wch: 8 },{ wch: 12 },{ wch: 14 },{ wch: 16 },{ wch: 14 },{ wch: 16 },{ wch: 12 },{ wch: 12 },{ wch: 18 },{ wch: 16 }];
       XLSX.utils.book_append_sheet(wb, ws1, 'Monthly Breakdown');
 
       const ws2 = XLSX.utils.aoa_to_sheet([
-        ['Product','Variation','Orders','Qty Sold','Revenue'],
+        ['Product','Variation','Orders','Qty Sold','Revenue','Expense Cost','Net Profit'],
         ...topRows,
-        ['Total', '', '', '', totalRevTop]
+        ['Total', '', '', '', totalRevTop, totalExpTop, totalNPTop]
       ]);
-      // Peso format on Revenue (col E=4)
       const r2 = XLSX.utils.decode_range(ws2['!ref']);
       for (let R = 1; R <= r2.e.r; R++) {
-        const cell = ws2[XLSX.utils.encode_cell({ r: R, c: 4 })];
-        if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+        [4, 5, 6].forEach(c => {
+          const cell = ws2[XLSX.utils.encode_cell({ r: R, c })];
+          if (cell && typeof cell.v === 'number') cell.z = '₱#,##0.00';
+        });
       }
-      ws2['!cols'] = [{ wch: 30 },{ wch: 20 },{ wch: 10 },{ wch: 10 },{ wch: 14 }];
+      ws2['!cols'] = [{ wch: 30 },{ wch: 20 },{ wch: 10 },{ wch: 10 },{ wch: 14 },{ wch: 14 },{ wch: 14 }];
       XLSX.utils.book_append_sheet(wb, ws2, 'Top Products');
 
       XLSX.writeFile(wb, 'sales-overview.xlsx');
@@ -3115,9 +3155,9 @@
         <h2>Sales Overview</h2>
         <p>Total Revenue: ${document.getElementById('soTotalRev').textContent} | Orders: ${document.getElementById('soTotalOrders').textContent}</p>
         <h3>Monthly Breakdown</h3>
-        <table><thead><tr><th>Year</th><th>Month</th><th>Orders</th><th>Revenue</th><th>Paid</th><th>Pending</th><th>Delivered</th><th>Cancelled</th></tr></thead><tbody>${monthly}</tbody></table>
+        <table><thead><tr><th>Year</th><th>Month</th><th>Orders</th><th>Revenue</th><th>Paid</th><th>Pending</th><th>Delivered</th><th>Cancelled</th><th>Total Expense</th><th>Net Profit</th></tr></thead><tbody>${monthly}</tbody></table>
         <h3>Top Products</h3>
-        <table><thead><tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>${top}</tbody></table>
+        <table><thead><tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty</th><th>Revenue</th><th>Expense Cost</th><th>Net Profit</th></tr></thead><tbody>${top}</tbody></table>
       </body></html>`);
       win.document.close(); win.print();
     }
