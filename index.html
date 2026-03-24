@@ -726,9 +726,6 @@
                 <tbody id="calcInkBody"></tbody>
               </table>
               <button onclick="addCalcInkRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
-              <p style="margin-top:8px; font-size:12px;">
-                🖨 <a href="https://ph.canon/en/consumer/tco-calculator" target="_blank" style="color:#1d4ed8; text-decoration:underline;">Ink Calculator (Canon PH)</a>
-              </p>
               <p style="margin-top:6px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Ink Cost: <span id="calcInkTotal" style="color:#2e7d32;">₱0.00</span></p>
             </div>
           </div>
@@ -2390,12 +2387,12 @@
       tr.id = rowId;
       const opts = '<option value="">-- Select --</option>' +
         inkEntries.map((e, i) =>
-          `<option value="${e.costPerPage.toFixed(4)}">${e.printer} — ${e.type}</option>`
+          `<option value="${e.costPerPage.toFixed(2)}">${e.printer} — ${e.type}</option>`
         ).join('');
       tr.innerHTML = `
         <td><select onchange="updateCalcInkRow('${rowId}', true)" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${opts}</select></td>
         <td><input type="number" value="1" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcInkRow('${rowId}')"></td>
-        <td><input type="number" value="0" min="0" step="0.0001" style="width:80px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly></td>
+        <td><input type="number" value="0" min="0" step="0.01" style="width:80px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly></td>
         <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
         <td><button onclick="removeCalcInkRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
       `;
@@ -2411,7 +2408,7 @@
       const inputs = tr.querySelectorAll('input');
       // Auto-fill price/qty from selected ink entry (read-only)
       if (fromSelect && sel.value) {
-        inputs[1].value = parseFloat(sel.value).toFixed(4);
+        inputs[1].value = parseFloat(sel.value).toFixed(2);
       }
       const qty = parseFloat(inputs[0].value) || 0;
       const pricePerQty = parseFloat(inputs[1].value) || 0;
@@ -2722,7 +2719,7 @@
       // Rebuild the Select Print dropdown in every calc ink row from inkEntries
       const opts = '<option value="">-- Select --</option>' +
         inkEntries.map((e, i) =>
-          `<option value="${e.costPerPage.toFixed(4)}">${e.printer} — ${e.type}</option>`
+          `<option value="${e.costPerPage.toFixed(2)}">${e.printer} — ${e.type}</option>`
         ).join('');
       document.querySelectorAll('#calcInkBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
