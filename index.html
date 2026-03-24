@@ -2411,13 +2411,19 @@
     }
 
     function exportExpenseExcel() {
-      const rows = [...document.querySelectorAll('#evBody tr')].map(tr =>
-        [...tr.querySelectorAll('td')].map(td => td.innerText).join('\t')
-      ).join('\n');
-      const header = 'No.\tType\tDate\tShop\tProduct\tVariation\tQty\tTotal Price\n';
-      const blob = new Blob([header + rows], { type: 'text/tab-separated-values' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'expense-view.xls'; a.click();
+      const evRows = [...document.querySelectorAll('#evBody tr')].map(tr => {
+        const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
+        // Clean peso sign from Total Price column (index 7)
+        tds[7] = parseFloat((tds[7] || '0').replace(/[₱,]/g, '')) || 0;
+        return tds;
+      });
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['No.','Type','Date','Shop','Product','Variation','Qty','Total Price'],
+        ...evRows
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Expense Overview');
+      XLSX.writeFile(wb, 'expense-overview.xlsx');
     }
 
     function exportExpensePDF() {
@@ -2509,13 +2515,29 @@
     }
 
     function exportSalesExcel() {
-      const rows = [
+      const cleanNum = v => parseFloat((v || '0').replace(/[₱,]/g, '')) || 0;
+      const monthlyRows = [...document.querySelectorAll('#soMonthlyBody tr')].map(tr => {
+        const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
+        // Columns: Month, Orders, Revenue, Paid, Pending, Delivered, Cancelled
+        return [tds[0], tds[1]==='—'?'':+tds[1], cleanNum(tds[2]), cleanNum(tds[3]), tds[4]==='—'?'':+tds[4], tds[5]==='—'?'':+tds[5], tds[6]==='—'?'':+tds[6]];
+      });
+      const topRows = [...document.querySelectorAll('#soProductsBody tr')].map(tr => {
+        const tds = [...tr.querySelectorAll('td')].map(td => td.innerText.trim());
+        return [tds[0], tds[1], +tds[2]||0, +tds[3]||0, cleanNum(tds[4])];
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws1 = XLSX.utils.aoa_to_sheet([
         ['Month','No. of Orders','Total Revenue','Paid','Pending/Partial','Delivered','Cancelled'],
-        ...[...document.querySelectorAll('#soMonthlyBody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText))
-      ].map(r => r.join('\t')).join('\n');
-      const blob = new Blob([rows], { type: 'text/tab-separated-values' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'sales-overview.xls'; a.click();
+        ...monthlyRows
+      ]);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Monthly Breakdown');
+      const ws2 = XLSX.utils.aoa_to_sheet([
+        ['Product','Variation','Orders','Qty Sold','Revenue'],
+        ...topRows
+      ]);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Top Products');
+      XLSX.writeFile(wb, 'sales-overview.xlsx');
     }
 
     function exportSalesPDF() {
