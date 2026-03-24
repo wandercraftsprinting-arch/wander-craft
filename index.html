@@ -2588,10 +2588,15 @@
     let inkEntries = [];
 
     function buildInkMaterialOptions() {
-      // Filter to items containing "ink" (case-insensitive), dedup by name+variation keeping highest pricePerQty
+      const printer = (document.getElementById('inkPrinter') || {}).value || '';
+      // Filter keyword based on printer selection
+      const keyword = printer === 'Brother T930DW' ? 'brother ink'
+                    : printer === 'Canon IX6770'   ? 'canon ink'
+                    : 'ink';
+      // Dedup by name+variation keeping highest pricePerQty
       const seen = {};
       materials
-        .filter(m => (m.name || '').toLowerCase().includes('ink'))
+        .filter(m => (m.name || '').toLowerCase().includes(keyword))
         .forEach(m => {
           const key = m.name + '|' + (m.variation || '');
           const price = parseFloat(m.pricePerQty) || 0;
@@ -2618,6 +2623,7 @@
       const printer = document.getElementById('inkPrinter').value;
       const pigRow = document.getElementById('inkPigmentRow');
       pigRow.style.display = printer === 'Canon IX6770' ? 'grid' : 'none';
+      buildInkMaterialOptions();
 
       const yields = INK_YIELDS[printer] || null;
       const yieldFields = [
