@@ -1020,12 +1020,21 @@
             if (!aCell || !bCell) return 0;
             let aVal = aCell.textContent.trim();
             let bVal = bCell.textContent.trim();
+            // Date detection: YYYY-MM-DD (▲ = newest first, ▼ = oldest first)
+            if (/^\d{4}-\d{2}-\d{2}$/.test(aVal) && /^\d{4}-\d{2}-\d{2}$/.test(bVal)) {
+              return asc ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+            }
             const aNum = parseFloat(aVal.replace(/[₱,%]/g, '').replace(/,/g, ''));
             const bNum = parseFloat(bVal.replace(/[₱,%]/g, '').replace(/,/g, ''));
             if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum - bNum : bNum - aNum;
             return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
           });
-          rows.forEach(r => tbody.appendChild(r));
+          rows.forEach((r, i) => {
+            tbody.appendChild(r);
+            // Renumber the No. column (first td)
+            const noCell = r.querySelector('td:first-child');
+            if (noCell) noCell.textContent = i + 1;
+          });
         });
         th.parentNode.replaceChild(newTh, th);
       });
