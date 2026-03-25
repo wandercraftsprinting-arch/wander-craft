@@ -2067,8 +2067,8 @@
           <td class="price-col">${fmt(profit)}</td>
           <td style="text-align:center;">${margin.toFixed(2)}%</td>
           <td style="text-align:center;">
-            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${p._i})">✏️ Edit</button>
             ${p.recipe ? `<button class="btn-delete" style="background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; margin-right:5px;" onclick="viewRecipe(${p._i})">📋 Recipe</button>` : ''}
+            <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${p._i})">✏️ Edit</button>
             <button class="btn-delete" onclick="deleteProduct(${p._i})">✕ Delete</button>
           </td>
         </tr>
@@ -2594,9 +2594,10 @@
 
       let opts = `<option value="">— Select supply —</option>`;
       unique.forEach(m => {
-        const label = `${m.name}${m.variation ? ' – ' + m.variation : ''} (₱${parseFloat(m.pricePerQty).toFixed(2)}/qty)`;
+        const price = parseFloat(m.pricePerQty) || 0;
+        const label = `${m.name}${m.variation ? ' – ' + m.variation : ''} (₱${price.toFixed(2)}/qty)`;
         const sel = selectedName === m.name + '|' + (m.variation || '') ? 'selected' : '';
-        opts += `<option value="${m.name}|${m.variation || ''}|${m.pricePerQty}" ${sel}>${label}</option>`;
+        opts += `<option value="${m.name}|${m.variation || ''}|${price}" ${sel}>${label}</option>`;
       });
       return opts;
     }
