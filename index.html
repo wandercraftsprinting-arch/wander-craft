@@ -852,8 +852,8 @@
           </div>
           <div style="display:flex; gap:10px; margin-top:10px;">
             <button onclick="runCalculator()">Calculate</button>
-            <button onclick="saveCalculatorToProducts()" style="background:#1d4ed8;">💾 Save to Products</button>
-            <button onclick="resetCalculator()" style="background:#757575;">Reset</button>
+            <button id="calcSaveBtn" onclick="saveCalculatorToProducts()" style="background:#1d4ed8;">💾 Save to Products</button>
+            <button onclick="resetCalculatorFull()" style="background:#757575;">Reset</button>
           </div>
         </div>
 
@@ -1864,6 +1864,16 @@
       setTimeout(() => win.print(), 400);
     }
 
+    function resetCalculatorFull() {
+      resetCalculator();
+      const btn = document.getElementById('calcSaveBtn');
+      if (btn) {
+        btn.textContent = '💾 Save to Products';
+        btn.style.background = '#1d4ed8';
+        btn.setAttribute('onclick', 'saveCalculatorToProducts()');
+      }
+    }
+
     function renderCalcLaborList() { /* no-op: now uses dropdown rows */ }
 
     function calculateProductPrice() {
@@ -1939,109 +1949,135 @@
 
     function editProduct(i) {
       const p = products[i];
-      const existing = document.getElementById('prodEditModal');
-      if (existing) existing.remove();
 
-      const modal = document.createElement('div');
-      modal.id = 'prodEditModal';
-      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center;';
-      modal.innerHTML = `
-        <div style="background:white;border-radius:12px;padding:28px;width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);">
-          <h3 style="color:#2e7d32;margin-bottom:18px;">✏️ Edit Product</h3>
-          <div class="form-group"><label>Product Name</label>
-            <input type="text" id="peditName" value="${p.name}" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label>Markup (%)</label>
-              <input type="number" id="peditMarkup" value="${parseFloat(p.markup)||0}" step="0.1" oninput="recalcProductEdit()" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
-            </div>
-            <div class="form-group"><label>Discount (%)</label>
-              <input type="number" id="peditDiscount" value="${parseFloat(p.discount)||0}" step="0.1" oninput="recalcProductEdit()" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
-            </div>
-            <div class="form-group"><label>Tax / VAT (%)</label>
-              <input type="number" id="peditTax" value="${parseFloat(p.tax)||0}" step="0.1" oninput="recalcProductEdit()" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
-            </div>
-          </div>
-          <!-- Live Summary -->
-          <div style="background:#f5f0e8;border-radius:8px;padding:14px 18px;margin-top:8px;">
-            <p style="font-size:12px;color:#7a6248;font-weight:600;text-transform:uppercase;margin-bottom:10px;">Summary</p>
-            <table style="width:100%;margin:0;box-shadow:none;background:transparent;">
-              <tbody>
-                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Total Cost Price</td><td id="peditRCost" style="text-align:right;font-weight:600;color:#2e7d32;font-size:13px;">₱${(parseFloat(p.cost)||0).toFixed(2)}</td></tr>
-                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Markup Amount</td><td id="peditRMarkupAmt" style="text-align:right;font-size:13px;">₱0.00</td></tr>
-                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Discount Amount</td><td id="peditRDiscountAmt" style="text-align:right;font-size:13px;color:#c0392b;">₱0.00</td></tr>
-                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Price Before Tax</td><td id="peditRBeforeTax" style="text-align:right;font-size:13px;">₱0.00</td></tr>
-                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Tax Amount</td><td id="peditRTaxAmt" style="text-align:right;font-size:13px;">₱0.00</td></tr>
-                <tr style="border-top:2px solid #d9cfc0;">
-                  <td style="color:#7c3aed;font-weight:700;font-size:15px;padding-top:6px;">Selling Price</td>
-                  <td id="peditRSelling" style="text-align:right;color:#7c3aed;font-weight:700;font-size:15px;padding-top:6px;">₱0.00</td>
-                </tr>
-                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Profit</td><td id="peditRProfit" style="text-align:right;font-size:13px;color:#2e7d32;font-weight:600;">₱0.00</td></tr>
-                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Profit Margin</td><td id="peditRMargin" style="text-align:right;font-size:13px;">0.00%</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:16px;">
-            <button onclick="saveProductEdit(${i})" style="background:#2e7d32;margin:0;">💾 Save Changes</button>
-            <button onclick="document.getElementById('prodEditModal').remove()" style="background:#757575;margin:0;">Cancel</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-      recalcProductEdit();
+      // Reset calculator first
+      resetCalculator();
+
+      // Fill in product name and pricing fields
+      document.getElementById('calcName').value    = p.name || '';
+      document.getElementById('calcMarkup').value  = parseFloat(p.markup) || 0;
+      document.getElementById('calcDiscount').value= parseFloat(p.discount) || 0;
+      document.getElementById('calcTax').value     = parseFloat(p.tax) || 0;
+
+      // Restore recipe rows if available
+      if (p.recipe) {
+        let r;
+        try { r = typeof p.recipe === 'string' ? JSON.parse(p.recipe) : p.recipe; } catch(e) { r = null; }
+        if (r) {
+          // Ink rows
+          (r.ink || []).forEach(item => {
+            const tbody = document.getElementById('calcInkBody');
+            const rowId = 'ink_' + Date.now() + Math.random();
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            const opts = '<option value="">-- Select --</option>' +
+              inkEntries.map(e => `<option value="${e.costPerPage.toFixed(2)}" ${e.printer + ' — ' + e.type === item.name ? 'selected' : ''}>${e.printer} — ${e.type}</option>`).join('');
+            tr.innerHTML = `
+              <td><select onchange="updateCalcInkRow('${rowId}', true)" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${opts}</select></td>
+              <td><input type="number" value="${item.qty||1}" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcInkRow('${rowId}')"></td>
+              <td><input type="number" value="${(item.costPerPage||0).toFixed(2)}" min="0" step="0.01" style="width:80px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly></td>
+              <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">${fmt(item.cost||0)}</td>
+              <td><button onclick="removeCalcInkRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>`;
+            tbody.appendChild(tr);
+          });
+
+          // Material rows
+          (r.materials || []).forEach(item => {
+            const tbody = document.getElementById('calcSuppliesBody');
+            const rowId = 'sr_' + Date.now() + Math.random();
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            tr.innerHTML = `
+              <td><select onchange="updateCalcSupplyRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptionsWithSelected(item.name, item.pricePerQty)}</select></td>
+              <td><input type="number" value="${item.qty||1}" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcSupplyRow('${rowId}')"></td>
+              <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">${fmt(item.cost||0)}</td>
+              <td><button onclick="removeCalcSupplyRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>`;
+            tbody.appendChild(tr);
+          });
+
+          // Packaging rows
+          (r.packaging || []).forEach(item => {
+            const tbody = document.getElementById('calcPackagingBody');
+            const rowId = 'pk_' + Date.now() + Math.random();
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            tr.innerHTML = `
+              <td><select onchange="updateCalcPackagingRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptionsWithSelected(item.name, item.pricePerQty)}</select></td>
+              <td><input type="number" value="${item.qty||1}" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcPackagingRow('${rowId}')"></td>
+              <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">${fmt(item.cost||0)}</td>
+              <td><button onclick="removeCalcPackagingRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>`;
+            tbody.appendChild(tr);
+          });
+
+          // Electricity rows
+          (r.electricity || []).forEach(item => {
+            const tbody = document.getElementById('calcElecBody');
+            const rowId = 'er_' + Date.now() + Math.random();
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            const ohIdx = overhead.findIndex(o => o.desc === item.name);
+            const val = ohIdx >= 0 ? `${ohIdx}|${parseFloat(overhead[ohIdx].rate)||0}` : '';
+            tr.innerHTML = `
+              <td><select onchange="updateCalcElecRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildElecOptions(val)}</select></td>
+              <td><input type="number" value="${item.hours||1}" min="0.01" step="any" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcElecRow('${rowId}')"></td>
+              <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">${fmt(item.cost||0)}</td>
+              <td><button onclick="removeCalcElecRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>`;
+            tbody.appendChild(tr);
+          });
+
+          // Labor rows
+          (r.labor || []).forEach(item => {
+            const tbody = document.getElementById('calcLaborBody');
+            const rowId = 'lr_' + Date.now() + Math.random();
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            const lcIdx = laborCosts.findIndex(l => l.desc === item.name);
+            const val = lcIdx >= 0 ? `${lcIdx}|${parseFloat(laborCosts[lcIdx].rate)||0}` : '';
+            tr.innerHTML = `
+              <td><select onchange="updateCalcLaborRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildLaborOptions(val)}</select></td>
+              <td><input type="number" value="${item.hours||1}" min="0.01" step="any" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcLaborRow('${rowId}')"></td>
+              <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">${fmt(item.cost||0)}</td>
+              <td><button onclick="removeCalcLaborRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>`;
+            tbody.appendChild(tr);
+          });
+        }
+      }
+
+      // Run calculator to refresh summary
+      runCalculator();
+
+      // Switch Save button to Update mode
+      const saveBtn = document.getElementById('calcSaveBtn');
+      if (saveBtn) {
+        saveBtn.textContent = '💾 Update Product';
+        saveBtn.style.background = '#ff9800';
+        saveBtn.setAttribute('onclick', `updateProductFromCalculator(${i})`);
+      }
+
+      // Switch to calculator tab
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('calculator').classList.add('active');
+      document.querySelectorAll('.tab').forEach(t => { if (t.textContent.includes('Pricing Calculator')) t.classList.add('active'); });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function recalcProductEdit() {
-      // Read cost from the product being edited (stored in saveProductEdit closure via index)
-      // We store it in a hidden span to avoid re-querying
-      const costEl = document.getElementById('peditRCost');
-      const cost = parseFloat((costEl.textContent || '0').replace(/[₱,]/g,'')) || 0;
-      const markup   = parseFloat(document.getElementById('peditMarkup').value) || 0;
-      const discount = parseFloat(document.getElementById('peditDiscount').value) || 0;
-      const tax      = parseFloat(document.getElementById('peditTax').value) || 0;
-
-      const markupAmt           = cost * (markup / 100);
-      const priceBeforeDiscount = cost + markupAmt;
-      const discountAmt         = priceBeforeDiscount * (discount / 100);
-      const priceBeforeTax      = priceBeforeDiscount - discountAmt;
-      const taxAmt              = priceBeforeTax * (tax / 100);
-      const selling             = priceBeforeTax + taxAmt;
-      const profit              = selling - cost;
-      const margin              = selling > 0 ? (profit / selling * 100) : 0;
-
-      const f = v => '₱' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      document.getElementById('peditRMarkupAmt').textContent  = f(markupAmt);
-      document.getElementById('peditRDiscountAmt').textContent = f(discountAmt);
-      document.getElementById('peditRBeforeTax').textContent  = f(priceBeforeTax);
-      document.getElementById('peditRTaxAmt').textContent     = f(taxAmt);
-      document.getElementById('peditRSelling').textContent    = f(selling);
-      document.getElementById('peditRProfit').textContent     = f(profit);
-      document.getElementById('peditRMargin').textContent     = margin.toFixed(2) + '%';
-    }
-
-    async function saveProductEdit(i) {
-      const name     = document.getElementById('peditName').value.trim();
-      const cost     = parseFloat((document.getElementById('peditRCost').textContent||'0').replace(/[₱,]/g,'')) || 0;
-      const markup   = parseFloat(document.getElementById('peditMarkup').value) || 0;
-      const discount = parseFloat(document.getElementById('peditDiscount').value) || 0;
-      const tax      = parseFloat(document.getElementById('peditTax').value) || 0;
-
-      if (!name) { alert('Please enter a product name.'); return; }
-
-      const markupAmt           = cost * (markup / 100);
-      const priceBeforeDiscount = cost + markupAmt;
-      const discountAmt         = priceBeforeDiscount * (discount / 100);
-      const priceBeforeTax      = priceBeforeDiscount - discountAmt;
-      const taxAmt              = priceBeforeTax * (tax / 100);
-      const selling             = priceBeforeTax + taxAmt;
-      const profit              = selling - cost;
-      const margin              = selling > 0 ? (profit / selling * 100) : 0;
-
-      products[i] = { ...products[i], name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
-      await syncTable('products', products);
-      renderProducts();
-      document.getElementById('prodEditModal').remove();
+    // Helper: build supply options with a specific item pre-selected by name + price
+    function buildSupplyOptionsWithSelected(name, pricePerQty) {
+      const seen = {};
+      materials.filter(m => m.stock !== 'Out of Stock').forEach(m => {
+        const key = m.name + '||' + (m.variation || '');
+        const price = parseFloat(m.pricePerQty) || 0;
+        if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) seen[key] = m;
+      });
+      let opts = `<option value="">— Select supply —</option>`;
+      Object.values(seen).forEach(m => {
+        const price = parseFloat(m.pricePerQty) || 0;
+        const label = `${m.name}${m.variation ? ' – ' + m.variation : ''} (₱${price.toFixed(2)}/qty)`;
+        const isSelected = m.name === name && Math.abs(price - (parseFloat(pricePerQty)||0)) < 0.01;
+        opts += `<option value="${price}" data-key="${m.name}||${m.variation||''}" ${isSelected ? 'selected' : ''}>${label}</option>`;
+      });
+      return opts;
     }
 
     async function copyProduct(i) {
@@ -2059,7 +2095,10 @@
 
       const suppliesCost   = getCalcSuppliesTotal();
       const overheadCost   = getCalcOverheadTotal();
-      const cost           = suppliesCost + overheadCost;
+      const laborCost      = getCalcLaborTotal();
+      const packagingCost  = getCalcPackagingTotal();
+      const inkCost        = getCalcInkTotal();
+      const cost           = suppliesCost + overheadCost + laborCost + packagingCost + inkCost;
       const markup         = parseFloat(document.getElementById('calcMarkup').value) || 0;
       const discount       = parseFloat(document.getElementById('calcDiscount').value) || 0;
       const tax            = parseFloat(document.getElementById('calcTax').value) || 0;
@@ -2073,18 +2112,55 @@
       const profit              = selling - cost;
       const margin              = selling > 0 ? (profit / selling * 100) : 0;
 
-      products[i] = { name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
+      // Capture updated recipe
+      const recipe = { ink: [], materials: [], electricity: [], labor: [], packaging: [] };
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const inputs = tr.querySelectorAll('input');
+        if (!sel || !sel.value) return;
+        recipe.ink.push({ name: sel.options[sel.selectedIndex].text, qty: parseFloat(inputs[0].value)||0, costPerPage: parseFloat(inputs[1].value)||0, cost: (parseFloat(inputs[0].value)||0)*(parseFloat(inputs[1].value)||0) });
+      });
+      document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const pricePerQty = parseFloat(sel.value) || 0;
+        recipe.materials.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
+      });
+      document.querySelectorAll('#calcElecBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hours = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        recipe.electricity.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], hours, ratePerKwh: parseFloat(parts[1])||0, cost: hours*(parseFloat(parts[1])||0) });
+      });
+      document.querySelectorAll('#calcLaborBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hours = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        recipe.labor.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], hours, ratePerHr: parseFloat(parts[1])||0, cost: hours*(parseFloat(parts[1])||0) });
+      });
+      document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const pricePerQty = parseFloat(sel.value) || 0;
+        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
+      });
+
+      products[i] = { ...products[i], name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin, recipe: JSON.stringify(recipe) };
       await syncTable('products', products);
       renderProducts();
 
-      // Reset save button
-      document.querySelectorAll('#calculator button').forEach(btn => {
-        if (btn.textContent.includes('Update Product')) {
-          btn.textContent = '💾 Save to Products';
-          btn.setAttribute('onclick', 'saveCalculatorToProducts()');
-        }
-      });
-
+      // Reset save button back to normal
+      const saveBtn = document.querySelector('#calculator button[onclick*="updateProductFromCalculator"]');
+      if (saveBtn) {
+        saveBtn.textContent = '💾 Save to Products';
+        saveBtn.style.background = '#1d4ed8';
+        saveBtn.setAttribute('onclick', 'saveCalculatorToProducts()');
+      }
+      resetCalculator();
       alert(`✅ "${name}" updated!`);
     }
 
