@@ -1863,6 +1863,8 @@
       setTimeout(() => win.print(), 400);
     }
 
+    function renderCalcLaborList() { /* no-op: now uses dropdown rows */ }
+
     function calculateProductPrice() {
       const cost = parseFloat(document.getElementById('prodCost').value) || 0;
       const markup = parseFloat(document.getElementById('prodMarkup').value) || 0;
