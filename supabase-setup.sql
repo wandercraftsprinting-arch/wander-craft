@@ -35,6 +35,7 @@ create table if not exists products (
 
 alter table products add column if not exists recipe text;
 alter table products add column if not exists "dateCreated" text;
+alter table products add column if not exists "finalSelling" numeric;
 
 -- 3. EQUIPMENT
 create table if not exists equipment (
