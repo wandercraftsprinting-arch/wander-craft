@@ -83,6 +83,7 @@ create table if not exists orders (
 -- Add expenseCost and netProfit columns if upgrading existing table
 alter table orders add column if not exists "expenseCost" numeric default 0;
 alter table orders add column if not exists "netProfit" numeric default 0;
+alter table orders add column if not exists "totalExpense" numeric default 0;
 
 -- 7. SETTINGS (brand name + logo — single row)
 create table if not exists settings (
