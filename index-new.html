@@ -1152,7 +1152,7 @@
     async function syncTable(table, data) {
       while (_syncing) await new Promise(r => setTimeout(r, 80));
       _syncing = true;
-      try { await window.supabase.save(table, data); }
+      try { return await window.supabase.save(table, data); }
       finally { _syncing = false; }
     }
 
@@ -3102,14 +3102,15 @@
       });
 
       const dateCreated = new Date().toISOString().substring(0, 10);
-      products.push({ dateCreated, name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, finalSelling, profit, margin, recipe: JSON.stringify(recipe) });
-      try {
-        await syncTable('products', products);
+      const newProduct = { dateCreated, name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, finalSelling, profit, margin, recipe: JSON.stringify(recipe) };
+      products.push(newProduct);
+      const ok = await syncTable('products', products);
+      if (ok !== false) {
         renderProducts();
         alert(`✅ "${name}" saved to Products!`);
-      } catch(e) {
-        products.pop(); // rollback local push
-        alert('❌ Save failed: ' + e.message);
+      } else {
+        products.pop();
+        alert('❌ Save failed. Please check your Supabase connection and try again.');
       }
     }
 
