@@ -1157,7 +1157,7 @@
       const ink  = await window.supabase.loadData('inkcalculator');
 
       if (mat)  materials   = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0, stockQty: m.stockQty != null ? +m.stockQty : +m.qty||0 }));
-      if (prod) products    = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0 }));
+      if (prod) products    = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0, recipe: p.recipe||null }));
       if (eq)   equipment   = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
       if (oh)   overhead    = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
       if (lc)   laborCosts  = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
@@ -1790,7 +1790,78 @@
       makeTableSortable('laborBody');
     }
 
-    function renderCalcLaborList() { /* no-op: now uses dropdown rows */ }
+    function viewRecipe(i) {
+      const p = products[i];
+      if (!p.recipe) return;
+      let r;
+      try { r = typeof p.recipe === 'string' ? JSON.parse(p.recipe) : p.recipe; } catch(e) { alert('Recipe data is invalid.'); return; }
+
+      const section = (title, rows, cols) => {
+        if (!rows || rows.length === 0) return '';
+        const headers = cols.map(c => `<th style="background:#dbeafe;color:#1d4ed8;padding:6px 10px;border:1px solid #ddd;font-size:12px;">${c}</th>`).join('');
+        const body = rows.map(row => `<tr>${Object.values(row).map(v => `<td style="padding:6px 10px;border:1px solid #ddd;font-size:12px;">${typeof v === 'number' ? (v % 1 === 0 ? v : v.toFixed(2)) : v}</td>`).join('')}</tr>`).join('');
+        return `<h4 style="color:#2e7d32;margin:16px 0 6px;">${title}</h4><table style="width:100%;border-collapse:collapse;""><thead><tr>${headers}</tr></thead><tbody>${body}</tbody></table>`;
+      };
+
+      const cost = parseFloat(p.cost)||0;
+      const selling = parseFloat(p.selling)||0;
+      const profit = parseFloat(p.profit)||0;
+      const margin = parseFloat(p.margin)||0;
+
+      const content = `
+        <div style="font-family:'Segoe UI',sans-serif;padding:24px;max-width:700px;margin:0 auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <h2 style="color:#2e7d32;margin:0;">📋 Product Recipe</h2>
+            <button onclick="printRecipe()" style="background:#1d4ed8;color:white;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">🖨 Print / Save PDF</button>
+          </div>
+          <p style="color:#7a6248;font-size:13px;margin-bottom:16px;">Saved on ${new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})}</p>
+          <h3 style="color:#3d2e1e;margin-bottom:16px;font-size:18px;">${p.name}</h3>
+          ${section('🖨 Ink Cost', r.ink, ['Print Type', 'Qty', 'Cost/Page (₱)', 'Cost (₱)'])}
+          ${section('📦 Material Cost', r.materials, ['Material', 'Qty', 'Price/Qty (₱)', 'Cost (₱)'])}
+          ${section('⚡ Electricity Cost', r.electricity, ['Equipment', 'Hours', 'Rate/kWh (₱)', 'Cost (₱)'])}
+          ${section('👷 Labor Cost', r.labor, ['Description', 'Hours', 'Rate/Hr (₱)', 'Cost (₱)'])}
+          ${section('🎁 Packaging Cost', r.packaging, ['Material', 'Qty', 'Price/Qty (₱)', 'Cost (₱)'])}
+          <div style="margin-top:20px;background:#f5f0e8;border-radius:8px;padding:16px 20px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Total Cost Price</td><td style="text-align:right;font-weight:700;color:#2e7d32;">₱${cost.toFixed(2)}</td></tr>
+              <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Markup</td><td style="text-align:right;">${parseFloat(p.markup)||0}%</td></tr>
+              <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Discount</td><td style="text-align:right;">${parseFloat(p.discount)||0}%</td></tr>
+              <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Tax</td><td style="text-align:right;">${parseFloat(p.tax)||0}%</td></tr>
+              <tr style="border-top:2px solid #d9cfc0;"><td style="padding:8px 0;color:#7c3aed;font-weight:700;font-size:15px;">Selling Price</td><td style="text-align:right;color:#7c3aed;font-weight:700;font-size:15px;">₱${selling.toFixed(2)}</td></tr>
+              <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Profit</td><td style="text-align:right;color:#2e7d32;font-weight:600;">₱${profit.toFixed(2)}</td></tr>
+              <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Profit Margin</td><td style="text-align:right;">${margin.toFixed(2)}%</td></tr>
+            </table>
+          </div>
+        </div>`;
+
+      const existing = document.getElementById('recipeModal');
+      if (existing) existing.remove();
+      const modal = document.createElement('div');
+      modal.id = 'recipeModal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:0;width:740px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+          <div style="position:sticky;top:0;background:white;padding:12px 20px;border-bottom:1px solid #e0d5c5;display:flex;justify-content:flex-end;">
+            <button onclick="document.getElementById('recipeModal').remove()" style="background:#f3f4f6;color:#374151;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;margin:0;">✕ Close</button>
+          </div>
+          <div id="recipeContent">${content}</div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    }
+
+    function printRecipe() {
+      const content = document.getElementById('recipeContent').innerHTML;
+      const win = window.open('', '_blank');
+      win.document.write(`<html><head><title>Product Recipe</title><style>
+        body{font-family:'Segoe UI',sans-serif;margin:0;padding:0;}
+        button{display:none!important;}
+        @media print{button{display:none!important;}}
+      </style></head><body>${content}</body></html>`);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 400);
+    }
 
     function calculateProductPrice() {
       const cost = parseFloat(document.getElementById('prodCost').value) || 0;
@@ -1995,6 +2066,7 @@
           <td style="text-align:center;">${margin.toFixed(2)}%</td>
           <td style="text-align:center;">
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${p._i})">✏️ Edit</button>
+            ${p.recipe ? `<button class="btn-delete" style="background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; margin-right:5px;" onclick="viewRecipe(${p._i})">📋 Recipe</button>` : ''}
             <button class="btn-delete" onclick="deleteProduct(${p._i})">✕ Delete</button>
           </td>
         </tr>
@@ -2826,7 +2898,45 @@
       const profit         = selling - cost;
       const margin         = selling > 0 ? (profit / selling * 100) : 0;
 
-      products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin });
+      // Capture recipe from calculator rows
+      const recipe = { ink: [], materials: [], electricity: [], labor: [], packaging: [] };
+
+      document.querySelectorAll('#calcInkBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const inputs = tr.querySelectorAll('input');
+        if (!sel || !sel.value) return;
+        recipe.ink.push({ name: sel.options[sel.selectedIndex].text, qty: parseFloat(inputs[0].value)||0, costPerPage: parseFloat(inputs[1].value)||0, cost: (parseFloat(inputs[0].value)||0)*(parseFloat(inputs[1].value)||0) });
+      });
+      document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        recipe.materials.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty: parseFloat(parts[2])||0, cost: qty*(parseFloat(parts[2])||0) });
+      });
+      document.querySelectorAll('#calcElecBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hours = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        recipe.electricity.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], hours, ratePerKwh: parseFloat(parts[1])||0, cost: hours*(parseFloat(parts[1])||0) });
+      });
+      document.querySelectorAll('#calcLaborBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const hours = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        recipe.labor.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], hours, ratePerHr: parseFloat(parts[1])||0, cost: hours*(parseFloat(parts[1])||0) });
+      });
+      document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
+        const sel = tr.querySelector('select');
+        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        if (!sel || !sel.value) return;
+        const parts = sel.value.split('|');
+        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty: parseFloat(parts[2])||0, cost: qty*(parseFloat(parts[2])||0) });
+      });
+
+      products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin, recipe: JSON.stringify(recipe) });
       await syncTable('products', products);
       renderProducts();
       alert(`✅ "${name}" saved to Products!`);

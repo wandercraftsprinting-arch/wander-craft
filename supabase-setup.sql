@@ -28,8 +28,11 @@ create table if not exists products (
   "taxAmt"        numeric,
   selling         numeric,
   profit          numeric,
-  margin          numeric
+  margin          numeric,
+  recipe          text
 );
+
+alter table products add column if not exists recipe text;
 
 -- 3. EQUIPMENT
 create table if not exists equipment (
