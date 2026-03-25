@@ -3218,9 +3218,10 @@
     }
     function downloadMatTemplate() {
       const ws = XLSX.utils.aoa_to_sheet([
-        ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price','Stock Status'],
-        ['2025-01-15','Shopee','Fabric','Red 1m',10,250.00,'In Stock']
+        ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price','Stock Status','Stock Qty'],
+        ['2025-01-15','Shopee','Fabric','Red 1m',10,250.00,'In Stock',10]
       ]);
+      ws['!cols'] = [{wch:12},{wch:14},{wch:20},{wch:14},{wch:10},{wch:12},{wch:12},{wch:10}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Material');
       XLSX.writeFile(wb, 'material_template.xlsx');
@@ -3243,9 +3244,10 @@
         shop:      headers.findIndex(h => h.includes('shop')),
         name:      headers.findIndex(h => h.includes('product') || (h.includes('name') && !h.includes('shop'))),
         variation: headers.findIndex(h => h.includes('variation')),
-        qty:       headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
+        qty:       headers.findIndex(h => (h.includes('qty') || h.includes('quantity')) && !h.includes('stock')),
         price:     headers.findIndex(h => (h.includes('price') || h.includes('total')) && !h.includes('stock')),
-        stock:     headers.findIndex(h => h.includes('stock'))
+        stock:     headers.findIndex(h => h.includes('stockstatus') || (h.includes('stock') && !h.includes('qty'))),
+        stockQty:  headers.findIndex(h => h.includes('stockqty'))
       };
 
       let added = 0, skipped = 0, dupes = 0;
@@ -3262,6 +3264,8 @@
         const price = parseFloat(idx.price >= 0 ? cols[idx.price] : '') || 0;
         const stock = idx.stock >= 0 && cols[idx.stock] ? cols[idx.stock].toString().trim() : 'In Stock';
         const pricePerQty = qty > 0 ? price / qty : 0;
+        const stockQtyRaw = idx.stockQty >= 0 && cols[idx.stockQty] !== undefined && cols[idx.stockQty] !== '' ? parseFloat(cols[idx.stockQty]) : qty;
+        const stockQty = isNaN(stockQtyRaw) ? qty : stockQtyRaw;
 
         const isDupe = materials.some(m =>
           m.date === date &&
@@ -3273,7 +3277,7 @@
         );
         if (isDupe) { dupes++; continue; }
 
-        materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock });
+        materials.push({ date, shop, name, variation, qty, price, pricePerQty, stock, stockQty });
         added++;
       }
 
