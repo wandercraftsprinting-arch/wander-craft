@@ -2192,9 +2192,11 @@
         const markup   = parseFloat(p.markup) || 0;
         const discount = parseFloat(p.discount) || 0;
         const tax      = parseFloat(p.tax) || 0;
-        const selling             = parseFloat(p.finalSelling) || (parseFloat(p.selling) || 0);
-        const profit              = selling - cost;
-        const margin              = selling > 0 ? (profit / selling * 100) : 0;
+        const priceBeforeTax = parseFloat(p.priceBeforeTax) || 0;
+        const taxAmt         = parseFloat(p.taxAmt) || 0;
+        const selling        = parseFloat(p.finalSelling) || (parseFloat(p.selling) || 0);
+        const profit         = selling - cost;
+        const margin         = selling > 0 ? (profit / selling * 100) : 0;
         return `
         <tr>
           <td style="text-align:center;">${idx + 1}</td>
