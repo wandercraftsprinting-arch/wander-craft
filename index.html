@@ -3424,7 +3424,7 @@
         price:    headers.findIndex(h => h.includes('unitprice') || h.includes('price')),
         expense:  headers.findIndex(h => h.includes('expense')),
         payment:  headers.findIndex(h => h.includes('payment')),
-        status:   headers.findIndex(h => h.includes('status') || h.includes('order')),
+        status:   headers.findIndex(h => h.includes('orderstatus') || (h.includes('status') && !h.includes('payment'))),
         notes:    headers.findIndex(h => h.includes('note'))
       };
 
