@@ -1939,9 +1939,6 @@
 
     function editProduct(i) {
       const p = products[i];
-      const cost = parseFloat(p.cost) || 0;
-
-      // Build a simple modal overlay
       const existing = document.getElementById('prodEditModal');
       if (existing) existing.remove();
 
@@ -1949,35 +1946,83 @@
       modal.id = 'prodEditModal';
       modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center;';
       modal.innerHTML = `
-        <div style="background:white;border-radius:12px;padding:28px;width:420px;box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+        <div style="background:white;border-radius:12px;padding:28px;width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);">
           <h3 style="color:#2e7d32;margin-bottom:18px;">✏️ Edit Product</h3>
           <div class="form-group"><label>Product Name</label>
             <input type="text" id="peditName" value="${p.name}" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
           </div>
-          <div class="form-group"><label>Cost Price (₱) — fixed</label>
-            <input type="number" id="peditCost" value="${cost.toFixed(2)}" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;background:#f5f0e8;" readonly>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label>Markup (%)</label>
+              <input type="number" id="peditMarkup" value="${parseFloat(p.markup)||0}" step="0.1" oninput="recalcProductEdit()" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+            </div>
+            <div class="form-group"><label>Discount (%)</label>
+              <input type="number" id="peditDiscount" value="${parseFloat(p.discount)||0}" step="0.1" oninput="recalcProductEdit()" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+            </div>
+            <div class="form-group"><label>Tax / VAT (%)</label>
+              <input type="number" id="peditTax" value="${parseFloat(p.tax)||0}" step="0.1" oninput="recalcProductEdit()" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+            </div>
           </div>
-          <div class="form-group"><label>Markup (%)</label>
-            <input type="number" id="peditMarkup" value="${parseFloat(p.markup)||0}" step="0.1" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
-          </div>
-          <div class="form-group"><label>Discount (%)</label>
-            <input type="number" id="peditDiscount" value="${parseFloat(p.discount)||0}" step="0.1" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
-          </div>
-          <div class="form-group"><label>Tax / VAT (%)</label>
-            <input type="number" id="peditTax" value="${parseFloat(p.tax)||0}" step="0.1" style="width:100%;padding:8px;border:1px solid #d9cfc0;border-radius:5px;">
+          <!-- Live Summary -->
+          <div style="background:#f5f0e8;border-radius:8px;padding:14px 18px;margin-top:8px;">
+            <p style="font-size:12px;color:#7a6248;font-weight:600;text-transform:uppercase;margin-bottom:10px;">Summary</p>
+            <table style="width:100%;margin:0;box-shadow:none;background:transparent;">
+              <tbody>
+                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Total Cost Price</td><td id="peditRCost" style="text-align:right;font-weight:600;color:#2e7d32;font-size:13px;">₱${(parseFloat(p.cost)||0).toFixed(2)}</td></tr>
+                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Markup Amount</td><td id="peditRMarkupAmt" style="text-align:right;font-size:13px;">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Discount Amount</td><td id="peditRDiscountAmt" style="text-align:right;font-size:13px;color:#c0392b;">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Price Before Tax</td><td id="peditRBeforeTax" style="text-align:right;font-size:13px;">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Tax Amount</td><td id="peditRTaxAmt" style="text-align:right;font-size:13px;">₱0.00</td></tr>
+                <tr style="border-top:2px solid #d9cfc0;">
+                  <td style="color:#7c3aed;font-weight:700;font-size:15px;padding-top:6px;">Selling Price</td>
+                  <td id="peditRSelling" style="text-align:right;color:#7c3aed;font-weight:700;font-size:15px;padding-top:6px;">₱0.00</td>
+                </tr>
+                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Profit</td><td id="peditRProfit" style="text-align:right;font-size:13px;color:#2e7d32;font-weight:600;">₱0.00</td></tr>
+                <tr><td style="color:#7a6248;font-size:13px;padding:3px 0;">Profit Margin</td><td id="peditRMargin" style="text-align:right;font-size:13px;">0.00%</td></tr>
+              </tbody>
+            </table>
           </div>
           <div style="display:flex;gap:10px;margin-top:16px;">
-            <button onclick="saveProductEdit(${i})" style="background:#2e7d32;">💾 Save Changes</button>
-            <button onclick="document.getElementById('prodEditModal').remove()" style="background:#757575;">Cancel</button>
+            <button onclick="saveProductEdit(${i})" style="background:#2e7d32;margin:0;">💾 Save Changes</button>
+            <button onclick="document.getElementById('prodEditModal').remove()" style="background:#757575;margin:0;">Cancel</button>
           </div>
         </div>
       `;
       document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+      recalcProductEdit();
+    }
+
+    function recalcProductEdit() {
+      // Read cost from the product being edited (stored in saveProductEdit closure via index)
+      // We store it in a hidden span to avoid re-querying
+      const costEl = document.getElementById('peditRCost');
+      const cost = parseFloat((costEl.textContent || '0').replace(/[₱,]/g,'')) || 0;
+      const markup   = parseFloat(document.getElementById('peditMarkup').value) || 0;
+      const discount = parseFloat(document.getElementById('peditDiscount').value) || 0;
+      const tax      = parseFloat(document.getElementById('peditTax').value) || 0;
+
+      const markupAmt           = cost * (markup / 100);
+      const priceBeforeDiscount = cost + markupAmt;
+      const discountAmt         = priceBeforeDiscount * (discount / 100);
+      const priceBeforeTax      = priceBeforeDiscount - discountAmt;
+      const taxAmt              = priceBeforeTax * (tax / 100);
+      const selling             = priceBeforeTax + taxAmt;
+      const profit              = selling - cost;
+      const margin              = selling > 0 ? (profit / selling * 100) : 0;
+
+      const f = v => '₱' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      document.getElementById('peditRMarkupAmt').textContent  = f(markupAmt);
+      document.getElementById('peditRDiscountAmt').textContent = f(discountAmt);
+      document.getElementById('peditRBeforeTax').textContent  = f(priceBeforeTax);
+      document.getElementById('peditRTaxAmt').textContent     = f(taxAmt);
+      document.getElementById('peditRSelling').textContent    = f(selling);
+      document.getElementById('peditRProfit').textContent     = f(profit);
+      document.getElementById('peditRMargin').textContent     = margin.toFixed(2) + '%';
     }
 
     async function saveProductEdit(i) {
       const name     = document.getElementById('peditName').value.trim();
-      const cost     = parseFloat(document.getElementById('peditCost').value) || 0;
+      const cost     = parseFloat((document.getElementById('peditRCost').textContent||'0').replace(/[₱,]/g,'')) || 0;
       const markup   = parseFloat(document.getElementById('peditMarkup').value) || 0;
       const discount = parseFloat(document.getElementById('peditDiscount').value) || 0;
       const tax      = parseFloat(document.getElementById('peditTax').value) || 0;
@@ -1993,10 +2038,19 @@
       const profit              = selling - cost;
       const margin              = selling > 0 ? (profit / selling * 100) : 0;
 
-      products[i] = { name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
+      products[i] = { ...products[i], name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin };
       await syncTable('products', products);
       renderProducts();
       document.getElementById('prodEditModal').remove();
+    }
+
+    async function copyProduct(i) {
+      const p = { ...products[i] };
+      p.name = p.name + ' (Copy)';
+      p.dateCreated = new Date().toISOString().substring(0, 10);
+      products.push(p);
+      await syncTable('products', products);
+      renderProducts();
     }
 
     async function updateProductFromCalculator(i) {
@@ -2071,6 +2125,7 @@
           <td style="text-align:center;">
             ${p.recipe ? `<button class="btn-delete" style="background:#ea580c; color:white; border:1px solid #ea580c; margin-right:5px; font-weight:600;" onclick="viewRecipe(${p._i})">📋 Recipe</button>` : ''}
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${p._i})">✏️ Edit</button>
+            <button class="btn-delete" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; margin-right:5px;" onclick="copyProduct(${p._i})">⧉ Copy</button>
             <button class="btn-delete" onclick="deleteProduct(${p._i})">✕ Delete</button>
           </td>
         </tr>
