@@ -779,6 +779,26 @@
             </div>
           </div>
 
+          <!-- Packaging Cost in Calculator -->
+          <div class="form-group">
+            <label>Packaging Cost</label>
+            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
+              <table style="margin:0; box-shadow:none; background:transparent;" id="calcPackagingTable">
+                <thead>
+                  <tr>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Material</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="calcPackagingBody"></tbody>
+              </table>
+              <button onclick="addCalcPackagingRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
+              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Packaging Cost: <span id="calcPackagingTotal" style="color:#2e7d32;">₱0.00</span></p>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Electricity Cost</label>
             <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
@@ -815,26 +835,6 @@
               </table>
               <button onclick="addCalcLaborRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
               <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Labor Cost: <span id="calcLaborTotal" style="color:#2e7d32;">₱0.00</span></p>
-            </div>
-          </div>
-
-          <!-- Packaging Cost in Calculator -->
-          <div class="form-group">
-            <label>Packaging Cost</label>
-            <div style="background:white; border:1px solid #d9cfc0; border-radius:8px; padding:12px;">
-              <table style="margin:0; box-shadow:none; background:transparent;" id="calcPackagingTable">
-                <thead>
-                  <tr>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Material</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Qty</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
-                  </tr>
-                </thead>
-                <tbody id="calcPackagingBody"></tbody>
-              </table>
-              <button onclick="addCalcPackagingRow()" style="margin-top:8px; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-size:13px; padding:6px 12px;">+ Add Row</button>
-              <p style="margin-top:10px; font-size:13px; font-weight:600; color:#3d2e1e;">Total Packaging Cost: <span id="calcPackagingTotal" style="color:#2e7d32;">₱0.00</span></p>
             </div>
           </div>
           <div class="form-group">
@@ -2067,7 +2067,7 @@
           <td class="price-col">${fmt(profit)}</td>
           <td style="text-align:center;">${margin.toFixed(2)}%</td>
           <td style="text-align:center;">
-            ${p.recipe ? `<button class="btn-delete" style="background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; margin-right:5px;" onclick="viewRecipe(${p._i})">📋 Recipe</button>` : ''}
+            ${p.recipe ? `<button class="btn-delete" style="background:#fff7ed; color:#ea580c; border:1px solid #fed7aa; margin-right:5px; font-weight:600;" onclick="viewRecipe(${p._i})">📋 Recipe</button>` : ''}
             <button class="btn-delete" style="background:#fff8e1; color:#ff9800; border:1px solid #ffe082; margin-right:5px;" onclick="editProduct(${p._i})">✏️ Edit</button>
             <button class="btn-delete" onclick="deleteProduct(${p._i})">✕ Delete</button>
           </td>
@@ -2477,8 +2477,7 @@
       const sel = tr.querySelector('select');
       const qtyInput = tr.querySelector('input');
       const costCell = tr.querySelector('.row-cost');
-      const parts = sel.value.split('|');
-      const pricePerQty = parseFloat(parts[2]) || 0;
+      const pricePerQty = parseFloat(sel.value) || 0;
       const qty = parseFloat(qtyInput.value) || 0;
       costCell.textContent = fmt(pricePerQty * qty);
       updateCalcPackagingTotal();
@@ -2495,8 +2494,7 @@
         const sel = tr.querySelector('select');
         const qtyInput = tr.querySelector('input');
         if (!sel || !sel.value) return;
-        const parts = sel.value.split('|');
-        const pricePerQty = parseFloat(parts[2]) || 0;
+        const pricePerQty = parseFloat(sel.value) || 0;
         const qty = parseFloat(qtyInput.value) || 0;
         total += pricePerQty * qty;
       });
@@ -2510,8 +2508,7 @@
         const sel = tr.querySelector('select');
         const qtyInput = tr.querySelector('input');
         if (!sel || !sel.value) return;
-        const parts = sel.value.split('|');
-        const pricePerQty = parseFloat(parts[2]) || 0;
+        const pricePerQty = parseFloat(sel.value) || 0;
         const qty = parseFloat(qtyInput.value) || 0;
         total += pricePerQty * qty;
       });
@@ -2584,7 +2581,7 @@
       // Deduplicate by name + variation — keep highest pricePerQty, exclude Out of Stock
       const seen = {};
       materials.filter(m => m.stock !== 'Out of Stock').forEach(m => {
-        const key = m.name + '|' + (m.variation || '');
+        const key = m.name + '||' + (m.variation || '');
         const price = parseFloat(m.pricePerQty) || 0;
         if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) {
           seen[key] = m;
@@ -2596,8 +2593,9 @@
       unique.forEach(m => {
         const price = parseFloat(m.pricePerQty) || 0;
         const label = `${m.name}${m.variation ? ' – ' + m.variation : ''} (₱${price.toFixed(2)}/qty)`;
-        const sel = selectedName === m.name + '|' + (m.variation || '') ? 'selected' : '';
-        opts += `<option value="${m.name}|${m.variation || ''}|${price}" ${sel}>${label}</option>`;
+        const key = m.name + '||' + (m.variation || '');
+        const sel = selectedName === key ? 'selected' : '';
+        opts += `<option value="${price}" data-key="${key}" ${sel}>${label}</option>`;
       });
       return opts;
     }
@@ -2622,8 +2620,7 @@
       const select = tr.querySelector('select');
       const qtyInput = tr.querySelector('input');
       const costCell = tr.querySelector('.row-cost');
-      const parts = select.value.split('|');
-      const pricePerQty = parseFloat(parts[2]) || 0;
+      const pricePerQty = parseFloat(select.value) || 0;
       const qty = parseFloat(qtyInput.value) || 0;
       costCell.textContent = fmt(pricePerQty * qty);
       updateCalcSuppliesTotal();
@@ -2640,8 +2637,7 @@
         const select = tr.querySelector('select');
         const qtyInput = tr.querySelector('input');
         if (!select || !select.value) return;
-        const parts = select.value.split('|');
-        const pricePerQty = parseFloat(parts[2]) || 0;
+        const pricePerQty = parseFloat(select.value) || 0;
         const qty = parseFloat(qtyInput.value) || 0;
         total += pricePerQty * qty;
       });
@@ -2655,8 +2651,7 @@
         const select = tr.querySelector('select');
         const qtyInput = tr.querySelector('input');
         if (!select || !select.value) return;
-        const parts = select.value.split('|');
-        const pricePerQty = parseFloat(parts[2]) || 0;
+        const pricePerQty = parseFloat(select.value) || 0;
         const qty = parseFloat(qtyInput.value) || 0;
         total += pricePerQty * qty;
       });
@@ -2914,8 +2909,8 @@
         const sel = tr.querySelector('select');
         const qty = parseFloat(tr.querySelector('input')?.value) || 0;
         if (!sel || !sel.value) return;
-        const parts = sel.value.split('|');
-        recipe.materials.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty: parseFloat(parts[2])||0, cost: qty*(parseFloat(parts[2])||0) });
+        const pricePerQty = parseFloat(sel.value) || 0;
+        recipe.materials.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
       });
       document.querySelectorAll('#calcElecBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
@@ -2935,8 +2930,8 @@
         const sel = tr.querySelector('select');
         const qty = parseFloat(tr.querySelector('input')?.value) || 0;
         if (!sel || !sel.value) return;
-        const parts = sel.value.split('|');
-        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty: parseFloat(parts[2])||0, cost: qty*(parseFloat(parts[2])||0) });
+        const pricePerQty = parseFloat(sel.value) || 0;
+        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
       });
 
       products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin, recipe: JSON.stringify(recipe) });
