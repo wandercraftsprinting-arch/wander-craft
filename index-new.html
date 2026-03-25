@@ -3046,7 +3046,6 @@
       const packagingCost  = getCalcPackagingTotal();
       const inkCost        = getCalcInkTotal();
       const cost           = suppliesCost + overheadCost + laborCost + packagingCost + inkCost;
-      if (cost <= 0) { alert('Please add materials, electricity, labor, packaging or ink before saving.'); return; }
 
       const markup         = parseFloat(document.getElementById('calcMarkup').value) || 0;
       const discount       = parseFloat(document.getElementById('calcDiscount').value) || 0;
@@ -3102,9 +3101,14 @@
 
       const dateCreated = new Date().toISOString().substring(0, 10);
       products.push({ dateCreated, name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, finalSelling, profit, margin, recipe: JSON.stringify(recipe) });
-      await syncTable('products', products);
-      renderProducts();
-      alert(`✅ "${name}" saved to Products!`);
+      try {
+        await syncTable('products', products);
+        renderProducts();
+        alert(`✅ "${name}" saved to Products!`);
+      } catch(e) {
+        products.pop(); // rollback local push
+        alert('❌ Save failed: ' + e.message);
+      }
     }
 
     function buildYearOptions() {
