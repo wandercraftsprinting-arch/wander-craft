@@ -29,10 +29,12 @@ create table if not exists products (
   selling         numeric,
   profit          numeric,
   margin          numeric,
-  recipe          text
+  recipe          text,
+  "dateCreated"   text
 );
 
 alter table products add column if not exists recipe text;
+alter table products add column if not exists "dateCreated" text;
 
 -- 3. EQUIPMENT
 create table if not exists equipment (

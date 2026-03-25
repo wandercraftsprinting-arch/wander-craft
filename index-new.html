@@ -231,6 +231,7 @@
         <thead>
           <tr>
             <th style="text-align:center;">No.</th>
+            <th class="sortable" onclick="sortTable('productsTable','dateCreated','str')">Date Created</th>
             <th class="sortable" onclick="sortTable('productsTable','name','str')">Product</th>
             <th class="sortable" onclick="sortTable('productsTable','cost','num')" style="text-align:right; padding-right:16px;">Cost Price</th>
             <th class="sortable" onclick="sortTable('productsTable','markup','num')" style="text-align:center;">Markup</th>
@@ -245,7 +246,7 @@
           </tr>
         </thead>
         <tbody id="productsBody">
-          <tr><td colspan="12" style="text-align:center; color:#999;">No products saved yet</td></tr>
+          <tr><td colspan="13" style="text-align:center; color:#999;">No products saved yet</td></tr>
         </tbody>
       </table>
     </div>
@@ -1157,7 +1158,7 @@
       const ink  = await window.supabase.loadData('inkcalculator');
 
       if (mat)  materials   = mat.map(m => ({ ...m, qty: +m.qty||0, price: +m.price||0, pricePerQty: +m.pricePerQty||0, stockQty: m.stockQty != null ? +m.stockQty : +m.qty||0 }));
-      if (prod) products    = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0, recipe: p.recipe||null }));
+      if (prod) products    = prod.map(p => ({ ...p, cost: +p.cost||0, markup: +p.markup||0, discount: +p.discount||0, tax: +p.tax||0, priceBeforeTax: +p.priceBeforeTax||0, taxAmt: +p.taxAmt||0, selling: +p.selling||0, profit: +p.profit||0, margin: +p.margin||0, recipe: p.recipe||null, dateCreated: p.dateCreated||null }));
       if (eq)   equipment   = eq.map(e => ({ ...e, qty: +e.qty||0, price: +e.price||0 }));
       if (oh)   overhead    = oh.map(o => ({ ...o, rate: +o.rate||0, qty: +o.qty||0, amount: (+o.rate||0) * (+o.qty||0) }));
       if (lc)   laborCosts  = lc.map(l => ({ ...l, rate: +l.rate||0, hours: +l.hours||0, total: +l.total||0 }));
@@ -2036,7 +2037,7 @@
     function renderProducts() {
       const tbody = document.getElementById('productsBody');
       if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:#999;">No products saved yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; color:#999;">No products saved yet</td></tr>';
         return;
       }
       const sorted = [...products].map((p, i) => ({ ...p, _i: i })).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -2056,6 +2057,7 @@
         return `
         <tr>
           <td style="text-align:center;">${idx + 1}</td>
+          <td style="text-align:center;">${p.dateCreated || '—'}</td>
           <td>${p.name}</td>
           <td class="price-col">${fmt(cost)}</td>
           <td style="text-align:center;">${markup.toFixed(2)}%</td>
@@ -2934,7 +2936,8 @@
         recipe.packaging.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
       });
 
-      products.push({ name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin, recipe: JSON.stringify(recipe) });
+      const dateCreated = new Date().toISOString().substring(0, 10);
+      products.push({ dateCreated, name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, profit, margin, recipe: JSON.stringify(recipe) });
       await syncTable('products', products);
       renderProducts();
       alert(`✅ "${name}" saved to Products!`);
