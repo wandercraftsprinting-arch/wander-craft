@@ -27,7 +27,15 @@ async function sbLoad(table) {
 // fails the delete is rolled back — no data loss, no duplicates.
 async function sbSave(table, data) {
   // Strip local-only fields before sending to Supabase
-  const clean = data.map(({ id, _i, ...rest }) => rest);
+  const stripped = data.map(({ id, _i, ...rest }) => rest);
+
+  // Normalize: all rows must have the same keys (Supabase PGRST102 requirement)
+  const allKeys = [...new Set(stripped.flatMap(r => Object.keys(r)))];
+  const clean = stripped.map(r => {
+    const normalized = {};
+    allKeys.forEach(k => { normalized[k] = r[k] !== undefined ? r[k] : null; });
+    return normalized;
+  });
 
   try {
     // Use Supabase RPC to run both operations atomically
