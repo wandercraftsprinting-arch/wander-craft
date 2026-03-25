@@ -2088,8 +2088,13 @@
       let opts = `<option value="">— Select supply —</option>`;
       Object.values(seen).forEach(m => {
         const price = parseFloat(m.pricePerQty) || 0;
-        const label = `${m.name}${m.variation ? ' – ' + m.variation : ''} (₱${price.toFixed(2)}/qty)`;
-        const isSelected = m.name === name && Math.abs(price - (parseFloat(pricePerQty)||0)) < 0.01;
+        const fullName = `${m.name}${m.variation ? ' – ' + m.variation : ''}`;
+        const label = `${fullName} (₱${price.toFixed(2)}/qty)`;
+        // Match by full label name OR base name, and price within 1 cent
+        const nameMatch = fullName === name || m.name === name ||
+                          name.startsWith(m.name) || fullName.startsWith(name);
+        const priceMatch = Math.abs(price - (parseFloat(pricePerQty)||0)) < 0.01;
+        const isSelected = nameMatch && priceMatch;
         opts += `<option value="${price}" data-key="${m.name}||${m.variation||''}" ${isSelected ? 'selected' : ''}>${label}</option>`;
       });
       return opts;
