@@ -2809,8 +2809,9 @@
       const overheadCost   = getCalcOverheadTotal();
       const laborCost      = getCalcLaborTotal();
       const packagingCost  = getCalcPackagingTotal();
-      const cost           = suppliesCost + overheadCost + laborCost + packagingCost;
-      if (cost <= 0) { alert('Please add materials, electricity, labor or packaging before saving.'); return; }
+      const inkCost        = getCalcInkTotal();
+      const cost           = suppliesCost + overheadCost + laborCost + packagingCost + inkCost;
+      if (cost <= 0) { alert('Please add materials, electricity, labor, packaging or ink before saving.'); return; }
 
       const markup         = parseFloat(document.getElementById('calcMarkup').value) || 0;
       const discount       = parseFloat(document.getElementById('calcDiscount').value) || 0;
