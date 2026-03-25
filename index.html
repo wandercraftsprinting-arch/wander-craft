@@ -3439,10 +3439,13 @@
 
         const isDupe = orders.some(o =>
           o.date === date &&
-          (o.customer||'').toLowerCase() === customer.toLowerCase() &&
-          (o.product||'').toLowerCase()  === product.toLowerCase() &&
+          (o.customer||'').toLowerCase()  === customer.toLowerCase() &&
+          (o.product||'').toLowerCase()   === product.toLowerCase() &&
+          (o.variation||'').toLowerCase() === variation.toLowerCase() &&
           parseFloat(o.qty)   === qty &&
-          parseFloat(o.price) === price
+          parseFloat(o.price) === price &&
+          (o.payment||'') === payment &&
+          (o.status||'')  === status
         );
         if (isDupe) { dupes++; continue; }
 
