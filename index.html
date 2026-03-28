@@ -227,6 +227,10 @@
     <div id="products" class="tab-content active">
       <h2>Product</h2>
       <p style="font-size:13px; color:#7a6248; margin-bottom:15px;">Products are saved here from the 🧮 Pricing Calculator tab.</p>
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button onclick="exportProductsExcel()" style="background:#1d6f42; font-size:13px; padding:8px 14px; margin:0;">📥 Export Excel</button>
+        <button onclick="exportProductsPDF()" style="background:#c0392b; font-size:13px; padding:8px 14px; margin:0;">🖨 Export PDF</button>
+      </div>
       <table id="productsTable">
         <thead>
           <tr>
@@ -240,6 +244,7 @@
             <th class="sortable" onclick="sortTable('productsTable','priceBeforeTax','num')" style="text-align:right; padding-right:16px;">Price Before Tax</th>
             <th class="sortable" onclick="sortTable('productsTable','taxAmt','num')" style="text-align:right; padding-right:16px;">Tax Amt</th>
             <th class="sortable" onclick="sortTable('productsTable','selling','num')" style="text-align:right; padding-right:16px;">Selling Price</th>
+            <th class="sortable" onclick="sortTable('productsTable','finalSelling','num')" style="text-align:right; padding-right:16px;">Final Selling Price</th>
             <th class="sortable" onclick="sortTable('productsTable','profit','num')" style="text-align:right; padding-right:16px;">Profit</th>
             <th class="sortable" onclick="sortTable('productsTable','margin','num')" style="text-align:center;">Margin</th>
             <th style="text-align:center;">Action</th>
@@ -912,6 +917,7 @@
             <option value="">-- Select Printer --</option>
             <option value="Brother T930DW">Brother T930DW</option>
             <option value="Canon IX6770">Canon IX6770</option>
+            <option value="Epson L121">Epson L121</option>
             <option value="Other Printer">Other Printer</option>
           </select>
         </div>
@@ -1809,13 +1815,16 @@
         if (!rows || rows.length === 0) return '';
         const headers = cols.map(c => `<th style="background:#dbeafe;color:#1d4ed8;padding:6px 10px;border:1px solid #ddd;font-size:12px;">${c}</th>`).join('');
         const body = rows.map(row => `<tr>${Object.values(row).map(v => `<td style="padding:6px 10px;border:1px solid #ddd;font-size:12px;">${typeof v === 'number' ? (v % 1 === 0 ? v : v.toFixed(2)) : v}</td>`).join('')}</tr>`).join('');
-        return `<h4 style="color:#2e7d32;margin:16px 0 6px;">${title}</h4><table style="width:100%;border-collapse:collapse;""><thead><tr>${headers}</tr></thead><tbody>${body}</tbody></table>`;
+        const total = rows.reduce((s, row) => s + (parseFloat(row.cost) || 0), 0);
+        const totalRow = `<tr style="background:#f0fdf4;font-weight:700;"><td colspan="${cols.length - 1}" style="padding:6px 10px;border:1px solid #ddd;font-size:12px;text-align:right;color:#2e7d32;">Total:</td><td style="padding:6px 10px;border:1px solid #ddd;font-size:12px;color:#2e7d32;">₱${total.toFixed(2)}</td></tr>`;
+        return `<h4 style="color:#2e7d32;margin:16px 0 6px;">${title}</h4><table style="width:100%;border-collapse:collapse;""><thead><tr>${headers}</tr></thead><tbody>${body}${totalRow}</tbody></table>`;
       };
 
       const cost = parseFloat(p.cost)||0;
       const selling = parseFloat(p.selling)||0;
-      const profit = parseFloat(p.profit)||0;
-      const margin = parseFloat(p.margin)||0;
+      const finalSelling = parseFloat(p.finalSelling) || selling;
+      const profit = finalSelling - cost;
+      const margin = finalSelling > 0 ? (profit / finalSelling * 100) : 0;
 
       const content = `
         <div style="font-family:'Segoe UI',sans-serif;padding:24px;max-width:700px;margin:0 auto;">
@@ -1837,6 +1846,7 @@
               <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Discount</td><td style="text-align:right;">${parseFloat(p.discount)||0}%</td></tr>
               <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Tax</td><td style="text-align:right;">${parseFloat(p.tax)||0}%</td></tr>
               <tr style="border-top:2px solid #d9cfc0;"><td style="padding:8px 0;color:#7c3aed;font-weight:700;font-size:15px;">Selling Price</td><td style="text-align:right;color:#7c3aed;font-weight:700;font-size:15px;">₱${selling.toFixed(2)}</td></tr>
+              <tr><td style="padding:4px 0;color:#7c3aed;font-weight:700;font-size:14px;">Final Selling Price</td><td style="text-align:right;color:#7c3aed;font-weight:700;font-size:14px;">₱${finalSelling.toFixed(2)}</td></tr>
               <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Profit</td><td style="text-align:right;color:#2e7d32;font-weight:600;">₱${profit.toFixed(2)}</td></tr>
               <tr><td style="padding:4px 0;color:#7a6248;font-size:13px;">Profit Margin</td><td style="text-align:right;">${margin.toFixed(2)}%</td></tr>
             </table>
@@ -2086,7 +2096,7 @@
         if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) seen[key] = m;
       });
       let opts = `<option value="">— Select supply —</option>`;
-      Object.values(seen).forEach(m => {
+      Object.values(seen).sort((a, b) => (a.name||'').localeCompare(b.name||'')).forEach(m => {
         const price = parseFloat(m.pricePerQty) || 0;
         const fullName = `${m.name}${m.variation ? ' – ' + m.variation : ''}`;
         const label = `${fullName} (₱${price.toFixed(2)}/qty)`;
@@ -2098,6 +2108,58 @@
         opts += `<option value="${price}" data-key="${m.name}||${m.variation||''}" ${isSelected ? 'selected' : ''}>${label}</option>`;
       });
       return opts;
+    }
+
+    function exportProductsExcel() {
+      if (!products.length) { alert('No products to export.'); return; }
+      const headers = ['No.','Date Created','Product','Cost Price','Markup %','Discount %','Tax %','Price Before Tax','Tax Amt','Selling Price','Final Selling Price','Profit','Margin %'];
+      const rows = products.map((p, i) => {
+        const cost = parseFloat(p.cost)||0;
+        const selling = parseFloat(p.selling)||0;
+        const finalSelling = parseFloat(p.finalSelling)||selling;
+        const profit = finalSelling - cost;
+        const margin = finalSelling > 0 ? (profit / finalSelling * 100) : 0;
+        return [i+1, p.dateCreated||'', p.name, cost, parseFloat(p.markup)||0, parseFloat(p.discount)||0, parseFloat(p.tax)||0, parseFloat(p.priceBeforeTax)||0, parseFloat(p.taxAmt)||0, selling, finalSelling, profit, margin];
+      });
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Products');
+      XLSX.writeFile(wb, 'products.xlsx');
+    }
+
+    function exportProductsPDF() {
+      if (!products.length) { alert('No products to export.'); return; }
+      const rows = products.map((p, i) => {
+        const cost = parseFloat(p.cost)||0;
+        const selling = parseFloat(p.selling)||0;
+        const finalSelling = parseFloat(p.finalSelling)||selling;
+        const profit = finalSelling - cost;
+        const margin = finalSelling > 0 ? (profit / finalSelling * 100) : 0;
+        return `<tr>
+          <td>${i+1}</td><td>${p.dateCreated||'—'}</td><td>${p.name}</td>
+          <td>₱${cost.toFixed(2)}</td><td>${(parseFloat(p.markup)||0).toFixed(2)}%</td>
+          <td>${(parseFloat(p.discount)||0).toFixed(2)}%</td><td>${(parseFloat(p.tax)||0).toFixed(2)}%</td>
+          <td>₱${(parseFloat(p.priceBeforeTax)||0).toFixed(2)}</td><td>₱${(parseFloat(p.taxAmt)||0).toFixed(2)}</td>
+          <td>₱${selling.toFixed(2)}</td><td style="font-weight:700;color:#7c3aed;">₱${finalSelling.toFixed(2)}</td>
+          <td>₱${profit.toFixed(2)}</td><td>${margin.toFixed(2)}%</td>
+        </tr>`;
+      }).join('');
+      const win = window.open('', '_blank');
+      win.document.write(`<html><head><title>Products</title><style>
+        body{font-family:'Segoe UI',sans-serif;padding:20px;}
+        table{width:100%;border-collapse:collapse;font-size:11px;}
+        th{background:#dbeafe;color:#1d4ed8;padding:6px;border:1px solid #ddd;}
+        td{padding:5px 6px;border:1px solid #ddd;}
+        @media print{button{display:none!important;}}
+      </style></head><body>
+        <h2 style="color:#2e7d32;">Products</h2>
+        <button onclick="window.print()" style="margin-bottom:12px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:5px;cursor:pointer;">🖨 Print / Save PDF</button>
+        <table><thead><tr>
+          <th>No.</th><th>Date</th><th>Product</th><th>Cost</th><th>Markup</th><th>Discount</th><th>Tax</th>
+          <th>Price Before Tax</th><th>Tax Amt</th><th>Selling Price</th><th>Final Selling Price</th><th>Profit</th><th>Margin</th>
+        </tr></thead><tbody>${rows}</tbody></table>
+      </body></html>`);
+      win.document.close();
     }
 
     async function copyProduct(i) {
@@ -2183,12 +2245,19 @@
       }
       resetCalculator();
       alert(`✅ "${name}" updated!`);
+
+      // Go back to Products tab
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('products').classList.add('active');
+      document.querySelectorAll('.tab').forEach(t => { if (t.textContent.includes('Product') && !t.textContent.includes('Pricing')) t.classList.add('active'); });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function renderProducts() {
       const tbody = document.getElementById('productsBody');
       if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; color:#999;">No products saved yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#999;">No products saved yet</td></tr>';
         return;
       }
       const sorted = [...products].map((p, i) => ({ ...p, _i: i })).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -2214,6 +2283,7 @@
           <td class="price-col">${fmt(priceBeforeTax)}</td>
           <td class="price-col">${fmt(taxAmt)}</td>
           <td class="sell-col">${fmt(selling)}</td>
+          <td class="sell-col">${fmt(parseFloat(p.finalSelling) || selling)}</td>
           <td class="price-col">${fmt(profit)}</td>
           <td style="text-align:center;">${margin.toFixed(2)}%</td>
           <td style="text-align:center;">
@@ -2462,10 +2532,11 @@
 
     function buildElecOptions(selectedVal) {
       let opts = `<option value="">— Select equipment —</option>`;
-      overhead.forEach((o, i) => {
+      const sorted = overhead.map((o, i) => ({ ...o, _i: i })).sort((a, b) => (a.desc||'').localeCompare(b.desc||''));
+      sorted.forEach(o => {
         const rate   = parseFloat(o.rate) || 0;
         const label  = `${o.desc} (₱${rate.toFixed(2)}/kWh)`;
-        const val    = `${i}|${rate}`;
+        const val    = `${o._i}|${rate}`;
         const sel    = selectedVal === val ? 'selected' : '';
         opts += `<option value="${val}" ${sel}>${label}</option>`;
       });
@@ -2536,10 +2607,11 @@
     // ── LABOR COST ROWS (Calculator) ─────────────────────────
     function buildLaborOptions(selectedVal) {
       let opts = `<option value="">— Select labor —</option>`;
-      laborCosts.forEach((l, i) => {
+      const sorted = laborCosts.map((l, i) => ({ ...l, _i: i })).sort((a, b) => (a.desc||'').localeCompare(b.desc||''));
+      sorted.forEach(l => {
         const rate  = parseFloat(l.rate) || 0;
         const label = `${l.desc} (₱${rate.toFixed(2)}/hr)`;
-        const val   = `${i}|${rate}`;
+        const val   = `${l._i}|${rate}`;
         const sel   = selectedVal === val ? 'selected' : '';
         opts += `<option value="${val}" ${sel}>${label}</option>`;
       });
@@ -2671,8 +2743,9 @@
       const rowId = 'ink_' + Date.now();
       const tr = document.createElement('tr');
       tr.id = rowId;
+      const sorted = [...inkEntries].sort((a, b) => (a.printer + a.type).localeCompare(b.printer + b.type));
       const opts = '<option value="">-- Select --</option>' +
-        inkEntries.map((e, i) =>
+        sorted.map(e =>
           `<option value="${e.costPerPage.toFixed(2)}">${e.printer} — ${e.type}</option>`
         ).join('');
       tr.innerHTML = `
@@ -2738,7 +2811,7 @@
           seen[key] = m;
         }
       });
-      const unique = Object.values(seen);
+      const unique = Object.values(seen).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
       let opts = `<option value="">— Select supply —</option>`;
       unique.forEach(m => {
@@ -2894,6 +2967,7 @@
       // Filter keyword based on printer selection
       const keyword = printer === 'Brother T930DW' ? 'brother ink'
                     : printer === 'Canon IX6770'   ? 'canon ink'
+                    : printer === 'Epson L121'     ? 'epson ink'
                     : 'ink';
       // Dedup by name+variation keeping highest pricePerQty, exclude Out of Stock
       const seen = {};
@@ -2918,7 +2992,8 @@
 
     const INK_YIELDS = {
       'Canon IX6770':  { black: 1645, pigBlack: 300, magenta: 327, cyan: 333, yellow: 334 },
-      'Brother T930DW':{ black: 6500, pigBlack: null, magenta: 5000, cyan: 5000, yellow: 5000 }
+      'Brother T930DW':{ black: 6500, pigBlack: null, magenta: 5000, cyan: 5000, yellow: 5000 },
+      'Epson L121':    { black: 4500, pigBlack: null, magenta: 7500, cyan: 7500, yellow: 7500 }
     };
 
     function onInkPrinterChange() {
@@ -3033,8 +3108,9 @@
 
     function buildCalcInkOptions() {
       // Rebuild the Select Print dropdown in every calc ink row from inkEntries
+      const sorted = [...inkEntries].sort((a, b) => (a.printer + a.type).localeCompare(b.printer + b.type));
       const opts = '<option value="">-- Select --</option>' +
-        inkEntries.map((e, i) =>
+        sorted.map(e =>
           `<option value="${e.costPerPage.toFixed(2)}">${e.printer} — ${e.type}</option>`
         ).join('');
       document.querySelectorAll('#calcInkBody tr').forEach(tr => {
