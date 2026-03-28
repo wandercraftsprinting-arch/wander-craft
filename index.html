@@ -2112,14 +2112,28 @@
 
     function exportProductsExcel() {
       if (!products.length) { alert('No products to export.'); return; }
-      const headers = ['No.','Date Created','Product','Cost Price','Markup %','Discount %','Tax %','Price Before Tax','Tax Amt','Selling Price','Final Selling Price','Profit','Margin %'];
+      const headers = ['No.','Date Created','Product','Cost Price','Markup %','Discount %','Tax %','Price Before Tax','Tax Amt','Selling Price (per unit)','Final Selling Price','Profit','Margin %'];
       const rows = products.map((p, i) => {
         const cost = parseFloat(p.cost)||0;
         const selling = parseFloat(p.selling)||0;
         const finalSelling = parseFloat(p.finalSelling)||selling;
         const profit = finalSelling - cost;
         const margin = finalSelling > 0 ? (profit / finalSelling * 100) : 0;
-        return [i+1, p.dateCreated||'', p.name, cost, parseFloat(p.markup)||0, parseFloat(p.discount)||0, parseFloat(p.tax)||0, parseFloat(p.priceBeforeTax)||0, parseFloat(p.taxAmt)||0, selling, finalSelling, profit, margin];
+        return [
+          i+1,
+          p.dateCreated||'',
+          p.name,
+          '₱' + cost.toFixed(2),
+          (parseFloat(p.markup)||0).toFixed(2) + '%',
+          (parseFloat(p.discount)||0).toFixed(2) + '%',
+          (parseFloat(p.tax)||0).toFixed(2) + '%',
+          '₱' + (parseFloat(p.priceBeforeTax)||0).toFixed(2),
+          '₱' + (parseFloat(p.taxAmt)||0).toFixed(2),
+          '₱' + selling.toFixed(2),
+          '₱' + finalSelling.toFixed(2),
+          '₱' + profit.toFixed(2),
+          margin.toFixed(2) + '%'
+        ];
       });
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
       const wb = XLSX.utils.book_new();
@@ -2268,9 +2282,10 @@
         const tax      = parseFloat(p.tax) || 0;
         const priceBeforeTax = parseFloat(p.priceBeforeTax) || 0;
         const taxAmt         = parseFloat(p.taxAmt) || 0;
-        const selling        = parseFloat(p.finalSelling) || (parseFloat(p.selling) || 0);
-        const profit         = selling - cost;
-        const margin         = selling > 0 ? (profit / selling * 100) : 0;
+        const selling        = parseFloat(p.selling) || 0;
+        const finalSelling   = parseFloat(p.finalSelling) || selling;
+        const profit         = finalSelling - cost;
+        const margin         = finalSelling > 0 ? (profit / finalSelling * 100) : 0;
         return `
         <tr>
           <td style="text-align:center;">${idx + 1}</td>
@@ -2283,7 +2298,7 @@
           <td class="price-col">${fmt(priceBeforeTax)}</td>
           <td class="price-col">${fmt(taxAmt)}</td>
           <td class="sell-col">${fmt(selling)}</td>
-          <td class="sell-col">${fmt(parseFloat(p.finalSelling) || selling)}</td>
+          <td class="sell-col">${fmt(finalSelling)}</td>
           <td class="price-col">${fmt(profit)}</td>
           <td style="text-align:center;">${margin.toFixed(2)}%</td>
           <td style="text-align:center;">
