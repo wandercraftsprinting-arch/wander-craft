@@ -3314,8 +3314,18 @@
     function exportExpensePDF() {
       const win = window.open('', '_blank');
       const rows = [...document.querySelectorAll('#evBody tr')].map(tr => `<tr>${[...tr.querySelectorAll('td')].map(td => `<td style="padding:6px 10px;border:1px solid #ddd;">${td.innerHTML}</td>`).join('')}</tr>`).join('');
-      win.document.write(`<html><head><title>Expense Overview</title><style>body{font-family:sans-serif;font-size:13px;}table{border-collapse:collapse;width:100%;}th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}</style></head><body><h2>Expense Overview</h2><p>Total: ${document.getElementById('evTotalBottom').textContent}</p><table><thead><tr><th>No.</th><th>Type</th><th>Date</th><th>Shop</th><th>Product</th><th>Variation</th><th>Qty</th><th>Total Price</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
-      win.document.close(); win.print();
+      win.document.write(`<html><head><title>Expense Overview</title><style>
+        body{font-family:sans-serif;font-size:13px;padding:20px;}
+        table{border-collapse:collapse;width:100%;}
+        th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}
+        @media print{button{display:none!important;}}
+      </style></head><body>
+        <h2 style="color:#2e7d32;">Expense Overview</h2>
+        <button onclick="window.print()" style="margin-bottom:12px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:5px;cursor:pointer;">🖨 Print / Save PDF</button>
+        <p>Total: ${document.getElementById('evTotalBottom').textContent}</p>
+        <table><thead><tr><th>No.</th><th>Type</th><th>Date</th><th>Shop</th><th>Product</th><th>Variation</th><th>Qty</th><th>Total Price</th></tr></thead><tbody>${rows}</tbody></table>
+      </body></html>`);
+      win.document.close();
     }
 
     function buildSalesYearOptions() {
@@ -3466,11 +3476,13 @@
       ).join('');
       const total = document.getElementById('totalRevenue').textContent;
       win.document.write(`<html><head><title>Orders</title><style>
-        body{font-family:sans-serif;font-size:12px;}
+        body{font-family:sans-serif;font-size:12px;padding:20px;}
         table{border-collapse:collapse;width:100%;}
         th{background:#dbeafe;padding:7px 8px;border:1px solid #ddd;font-size:12px;}
+        @media print{button{display:none!important;}}
       </style></head><body>
-        <h2>Orders</h2>
+        <h2 style="color:#2e7d32;">Orders</h2>
+        <button onclick="window.print()" style="margin-bottom:12px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:5px;cursor:pointer;">🖨 Print / Save PDF</button>
         <p style="margin-bottom:10px;">Total Revenue: <strong>${total}</strong></p>
         <table><thead><tr>
           <th>Order Date</th><th>Customer Name</th><th>Contact No.</th><th>Email</th>
@@ -3478,7 +3490,7 @@
           <th>Unit Price</th><th>Total Amount</th><th>Unit Expense</th><th>Total Expense</th><th>Net Profit</th><th>Payment</th><th>Status</th><th>Notes</th>
         </tr></thead><tbody>${rows}</tbody></table>
       </body></html>`);
-      win.document.close(); win.print();
+      win.document.close();
     }
 
     function exportSalesExcel() {
@@ -3546,15 +3558,21 @@
         `<tr>${[...tr.querySelectorAll('td')].map(td => `<td style="padding:6px 10px;border:1px solid #ddd;">${td.innerText}</td>`).join('')}</tr>`).join('');
       const top = [...document.querySelectorAll('#soProductsBody tr')].map(tr =>
         `<tr>${[...tr.querySelectorAll('td')].map(td => `<td style="padding:6px 10px;border:1px solid #ddd;">${td.innerText}</td>`).join('')}</tr>`).join('');
-      win.document.write(`<html><head><title>Sales Overview</title><style>body{font-family:sans-serif;font-size:13px;}table{border-collapse:collapse;width:100%;margin-bottom:20px;}th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}</style></head><body>
-        <h2>Sales Overview</h2>
+      win.document.write(`<html><head><title>Sales Overview</title><style>
+        body{font-family:sans-serif;font-size:13px;padding:20px;}
+        table{border-collapse:collapse;width:100%;margin-bottom:20px;}
+        th{background:#dbeafe;padding:8px 10px;border:1px solid #ddd;}
+        @media print{button{display:none!important;}}
+      </style></head><body>
+        <h2 style="color:#2e7d32;">Sales Overview</h2>
+        <button onclick="window.print()" style="margin-bottom:12px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:5px;cursor:pointer;">🖨 Print / Save PDF</button>
         <p>Total Revenue: ${document.getElementById('soTotalRev').textContent} | Orders: ${document.getElementById('soTotalOrders').textContent}</p>
         <h3>Monthly Breakdown</h3>
         <table><thead><tr><th>Year</th><th>Month</th><th>Orders</th><th>Pending</th><th>Delivered</th><th>Cancelled</th><th>Paid</th><th>Revenue</th><th>Total Expense</th><th>Net Profit</th></tr></thead><tbody>${monthly}</tbody></table>
         <h3>Top Products</h3>
         <table><thead><tr><th>Product</th><th>Variation</th><th>Orders</th><th>Qty</th><th>Revenue</th><th>Expense Cost</th><th>Net Profit</th></tr></thead><tbody>${top}</tbody></table>
       </body></html>`);
-      win.document.close(); win.print();
+      win.document.close();
     }
 
     // ── BULK UPLOAD: MATERIAL ────────────────────────────────
