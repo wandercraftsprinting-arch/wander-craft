@@ -783,7 +783,8 @@
                 <thead>
                   <tr>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Material</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Price/Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:70px;">Qty</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
                   </tr>
@@ -803,7 +804,8 @@
                 <thead>
                   <tr>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px;">Select Material</th>
-                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:80px;">Price/Qty</th>
+                    <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:70px;">Qty</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:90px;">Cost</th>
                     <th style="background:#f5f0e8; color:#7a6248; font-size:12px; width:36px;"></th>
                   </tr>
@@ -2029,7 +2031,8 @@
             tr.id = rowId;
             tr.innerHTML = `
               <td><select onchange="updateCalcSupplyRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptionsWithSelected(item.name, item.pricePerQty)}</select></td>
-              <td><input type="number" value="${item.qty||1}" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcSupplyRow('${rowId}')"></td>
+              <td><input type="number" value="${(item.pricePerQty||0).toFixed(2)}" min="0" step="0.01" style="width:75px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly class="price-qty-input"></td>
+              <td><input type="number" value="${item.qty||1}" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcSupplyRow('${rowId}')"></td>
               <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">${fmt(item.cost||0)}</td>
               <td><button onclick="removeCalcSupplyRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>`;
             tbody.appendChild(tr);
@@ -2043,7 +2046,8 @@
             tr.id = rowId;
             tr.innerHTML = `
               <td><select onchange="updateCalcPackagingRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptionsWithSelected(item.name, item.pricePerQty)}</select></td>
-              <td><input type="number" value="${item.qty||1}" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcPackagingRow('${rowId}')"></td>
+              <td><input type="number" value="${(item.pricePerQty||0).toFixed(2)}" min="0" step="0.01" style="width:75px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly class="price-qty-input"></td>
+              <td><input type="number" value="${item.qty||1}" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcPackagingRow('${rowId}')"></td>
               <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">${fmt(item.cost||0)}</td>
               <td><button onclick="removeCalcPackagingRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>`;
             tbody.appendChild(tr);
@@ -2114,14 +2118,18 @@
       Object.values(seen).sort((a, b) => (a.name||'').localeCompare(b.name||'')).forEach(m => {
         const price = parseFloat(m.pricePerQty) || 0;
         const fullName = `${m.name}${m.variation ? ' – ' + m.variation : ''}`;
-        const label = `${fullName} (₱${price.toFixed(2)}/qty)`;
-        // Match by full label name OR base name, and price within 1 cent
+        const label = fullName;
         const nameMatch = fullName === name || m.name === name ||
                           name.startsWith(m.name) || fullName.startsWith(name);
         const priceMatch = Math.abs(price - (parseFloat(pricePerQty)||0)) < 0.01;
         const isSelected = nameMatch && priceMatch;
         opts += `<option value="${price}" data-key="${m.name}||${m.variation||''}" ${isSelected ? 'selected' : ''}>${label}</option>`;
       });
+      // If nothing matched (item now Out of Stock), add a placeholder option with saved price
+      const hasSelected = opts.includes('selected');
+      if (!hasSelected && name) {
+        opts += `<option value="${parseFloat(pricePerQty)||0}" selected>${name} ⚠️ (Out of Stock)</option>`;
+      }
       return opts;
     }
 
@@ -2234,10 +2242,11 @@
       });
       document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
-        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        const inputs = tr.querySelectorAll('input');
+        const qty = parseFloat(inputs[1]?.value) || 0;
         if (!sel || !sel.value) return;
         const pricePerQty = parseFloat(sel.value) || 0;
-        recipe.materials.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
+        recipe.materials.push({ name: sel.options[sel.selectedIndex].text, qty, pricePerQty, cost: qty * pricePerQty });
       });
       document.querySelectorAll('#calcElecBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
@@ -2255,10 +2264,11 @@
       });
       document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
-        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        const inputs = tr.querySelectorAll('input');
+        const qty = parseFloat(inputs[1]?.value) || 0;
         if (!sel || !sel.value) return;
         const pricePerQty = parseFloat(sel.value) || 0;
-        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
+        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text, qty, pricePerQty, cost: qty * pricePerQty });
       });
 
       products[i] = { ...products[i], name, cost, markup, discount, tax, priceBeforeTax, taxAmt, selling, finalSelling, profit, margin, recipe: JSON.stringify(recipe) };
@@ -2717,7 +2727,8 @@
       tr.id = rowId;
       tr.innerHTML = `
         <td><select onchange="updateCalcPackagingRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptions('')}</select></td>
-        <td><input type="number" value="1" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcPackagingRow('${rowId}')"></td>
+        <td><input type="number" value="0" min="0" step="0.01" style="width:75px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly class="price-qty-input"></td>
+        <td><input type="number" value="1" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcPackagingRow('${rowId}')"></td>
         <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
         <td><button onclick="removeCalcPackagingRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
       `;
@@ -2728,10 +2739,12 @@
     function updateCalcPackagingRow(rowId) {
       const tr = document.getElementById(rowId);
       const sel = tr.querySelector('select');
-      const qtyInput = tr.querySelector('input');
+      const priceQtyInput = tr.querySelector('.price-qty-input');
+      const qtyInput = tr.querySelectorAll('input')[1];
       const costCell = tr.querySelector('.row-cost');
       const pricePerQty = parseFloat(sel.value) || 0;
-      const qty = parseFloat(qtyInput.value) || 0;
+      if (priceQtyInput) priceQtyInput.value = pricePerQty.toFixed(2);
+      const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
       costCell.textContent = fmt(pricePerQty * qty);
       updateCalcPackagingTotal();
     }
@@ -2745,10 +2758,10 @@
       let total = 0;
       document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
-        const qtyInput = tr.querySelector('input');
+        const qtyInput = tr.querySelectorAll('input')[1];
         if (!sel || !sel.value) return;
         const pricePerQty = parseFloat(sel.value) || 0;
-        const qty = parseFloat(qtyInput.value) || 0;
+        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
         total += pricePerQty * qty;
       });
       document.getElementById('calcPackagingTotal').textContent = fmt(total);
@@ -2759,10 +2772,10 @@
       let total = 0;
       document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
-        const qtyInput = tr.querySelector('input');
+        const qtyInput = tr.querySelectorAll('input')[1];
         if (!sel || !sel.value) return;
         const pricePerQty = parseFloat(sel.value) || 0;
-        const qty = parseFloat(qtyInput.value) || 0;
+        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
         total += pricePerQty * qty;
       });
       return total;
@@ -2832,21 +2845,17 @@
     }
 
     function buildSupplyOptions(selectedName) {
-      // Deduplicate by name + variation — keep highest pricePerQty, exclude Out of Stock
       const seen = {};
       materials.filter(m => m.stock !== 'Out of Stock').forEach(m => {
         const key = m.name + '||' + (m.variation || '');
         const price = parseFloat(m.pricePerQty) || 0;
-        if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) {
-          seen[key] = m;
-        }
+        if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) seen[key] = m;
       });
       const unique = Object.values(seen).sort((a, b) => (a.name||'').localeCompare(b.name||''));
-
       let opts = `<option value="">— Select supply —</option>`;
       unique.forEach(m => {
         const price = parseFloat(m.pricePerQty) || 0;
-        const label = `${m.name}${m.variation ? ' – ' + m.variation : ''} (₱${price.toFixed(2)}/qty)`;
+        const label = `${m.name}${m.variation ? ' – ' + m.variation : ''}`;
         const key = m.name + '||' + (m.variation || '');
         const sel = selectedName === key ? 'selected' : '';
         opts += `<option value="${price}" data-key="${key}" ${sel}>${label}</option>`;
@@ -2861,7 +2870,8 @@
       tr.id = rowId;
       tr.innerHTML = `
         <td><select onchange="updateCalcSupplyRow('${rowId}')" style="width:100%; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;">${buildSupplyOptions('')}</select></td>
-        <td><input type="number" value="1" min="1" style="width:70px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcSupplyRow('${rowId}')"></td>
+        <td><input type="number" value="0" min="0" step="0.01" style="width:75px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px; background:#f5f0e8; cursor:not-allowed;" readonly class="price-qty-input"></td>
+        <td><input type="number" value="1" min="1" style="width:60px; font-size:13px; padding:6px; border:1px solid #d9cfc0; border-radius:4px;" oninput="updateCalcSupplyRow('${rowId}')"></td>
         <td style="color:#2e7d32; font-weight:700; font-size:13px;" class="row-cost">₱0.00</td>
         <td><button onclick="removeCalcSupplyRow('${rowId}')" style="background:#fdecea; color:#c0392b; border:1px solid #f5c6c2; padding:4px 8px; font-size:13px; margin:0;">✕</button></td>
       `;
@@ -2872,9 +2882,11 @@
     function updateCalcSupplyRow(rowId) {
       const tr = document.getElementById(rowId);
       const select = tr.querySelector('select');
-      const qtyInput = tr.querySelector('input');
+      const priceQtyInput = tr.querySelector('.price-qty-input');
+      const qtyInput = tr.querySelectorAll('input')[1];
       const costCell = tr.querySelector('.row-cost');
       const pricePerQty = parseFloat(select.value) || 0;
+      if (priceQtyInput) priceQtyInput.value = pricePerQty.toFixed(2);
       const qty = parseFloat(qtyInput.value) || 0;
       costCell.textContent = fmt(pricePerQty * qty);
       updateCalcSuppliesTotal();
@@ -2889,10 +2901,10 @@
       let total = 0;
       document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
         const select = tr.querySelector('select');
-        const qtyInput = tr.querySelector('input');
+        const qtyInput = tr.querySelectorAll('input')[1];
         if (!select || !select.value) return;
         const pricePerQty = parseFloat(select.value) || 0;
-        const qty = parseFloat(qtyInput.value) || 0;
+        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
         total += pricePerQty * qty;
       });
       document.getElementById('calcSuppliesTotal').textContent = fmt(total);
@@ -2903,10 +2915,10 @@
       let total = 0;
       document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
         const select = tr.querySelector('select');
-        const qtyInput = tr.querySelector('input');
+        const qtyInput = tr.querySelectorAll('input')[1];
         if (!select || !select.value) return;
         const pricePerQty = parseFloat(select.value) || 0;
-        const qty = parseFloat(qtyInput.value) || 0;
+        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
         total += pricePerQty * qty;
       });
       return total;
@@ -3185,10 +3197,11 @@
       });
       document.querySelectorAll('#calcSuppliesBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
-        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        const inputs = tr.querySelectorAll('input');
+        const qty = parseFloat(inputs[1]?.value) || 0;
         if (!sel || !sel.value) return;
         const pricePerQty = parseFloat(sel.value) || 0;
-        recipe.materials.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
+        recipe.materials.push({ name: sel.options[sel.selectedIndex].text, qty, pricePerQty, cost: qty * pricePerQty });
       });
       document.querySelectorAll('#calcElecBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
@@ -3206,10 +3219,11 @@
       });
       document.querySelectorAll('#calcPackagingBody tr').forEach(tr => {
         const sel = tr.querySelector('select');
-        const qty = parseFloat(tr.querySelector('input')?.value) || 0;
+        const inputs = tr.querySelectorAll('input');
+        const qty = parseFloat(inputs[1]?.value) || 0;
         if (!sel || !sel.value) return;
         const pricePerQty = parseFloat(sel.value) || 0;
-        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text.split(' (')[0], qty, pricePerQty, cost: qty * pricePerQty });
+        recipe.packaging.push({ name: sel.options[sel.selectedIndex].text, qty, pricePerQty, cost: qty * pricePerQty });
       });
 
       const dateCreated = new Date().toISOString().substring(0, 10);
