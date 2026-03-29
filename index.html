@@ -3625,12 +3625,19 @@
       return cols;
     }
     function downloadMatTemplate() {
+      const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet([
         ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price','Stock Status','Stock Qty'],
-        ['2025-01-15','Shopee','Fabric','Red 1m',10,250.00,'In Stock',10]
+        ['2026-01-02','Shopee','Fabric','Red 1m',10,250.00,'In Stock',10]
       ]);
-      ws['!cols'] = [{wch:12},{wch:14},{wch:20},{wch:14},{wch:10},{wch:12},{wch:12},{wch:10}];
-      const wb = XLSX.utils.book_new();
+      // Force date column (A) to text format so Excel doesn't reformat it
+      ['A1','A2'].forEach(cell => {
+        if (ws[cell]) { ws[cell].t = 's'; ws[cell].z = '@'; }
+      });
+      ws['!cols'] = [{wch:14},{wch:14},{wch:20},{wch:14},{wch:10},{wch:12},{wch:12},{wch:10}];
+      // Set column A format to text
+      if (!ws['!cols'][0]) ws['!cols'][0] = {};
+      ws['!cols'][0].numFmt = '@';
       XLSX.utils.book_append_sheet(wb, ws, 'Material');
       XLSX.writeFile(wb, 'material_template.xlsx');
     }
@@ -3778,6 +3785,16 @@
       // MM/DD/YY (2-digit year — assume 2000s)
       const mdy2 = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
       if (mdy2) return `20${mdy2[3]}-${mdy2[1].padStart(2,'0')}-${mdy2[2].padStart(2,'0')}`;
+      // D-Mon or D-Mon-YY or D-Mon-YYYY (e.g. "2-Jan", "2-Jan-26", "2-Jan-2026")
+      const monNames = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' };
+      const dmon = raw.match(/^(\d{1,2})-([A-Za-z]{3})(?:-(\d{2,4}))?$/);
+      if (dmon) {
+        const mon = monNames[dmon[2].toLowerCase()];
+        if (mon) {
+          let yr = dmon[3] ? (dmon[3].length === 2 ? '20' + dmon[3] : dmon[3]) : new Date().getFullYear().toString();
+          return `${yr}-${mon}-${dmon[1].padStart(2,'0')}`;
+        }
+      }
       // Excel serial number (days since 1899-12-30)
       const serial = parseFloat(raw);
       if (!isNaN(serial) && serial > 1000) {
