@@ -3627,14 +3627,10 @@
     function downloadMatTemplate() {
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet([
-        ['NOTE: Enter Order Date in YYYY-MM-DD format (e.g. 2026-01-02). Format column A as TEXT first to prevent Excel auto-conversion.','','','','','','',''],
         ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price','Stock Status','Stock Qty'],
         ['2026-01-02','Shopee','Fabric','Red 1m',10,250.00,'In Stock',10]
       ]);
-      ws['!cols'] = [
-        { wch: 20 }, { wch: 14 }, { wch: 20 }, { wch: 14 },
-        { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }
-      ];
+      ws['!cols'] = [{wch:14},{wch:14},{wch:20},{wch:14},{wch:10},{wch:12},{wch:12},{wch:10}];
       XLSX.utils.book_append_sheet(wb, ws, 'Material');
       XLSX.writeFile(wb, 'material_template.xlsx');
     }
@@ -3711,8 +3707,9 @@
     function downloadEqTemplate() {
       const ws = XLSX.utils.aoa_to_sheet([
         ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price'],
-        ['2025-01-15','Lazada','Sewing Machine','White',1,3500.00]
+        ['2026-01-15','Lazada','Sewing Machine','White',1,3500.00]
       ]);
+      ws['!cols'] = [{wch:14},{wch:14},{wch:20},{wch:14},{wch:10},{wch:12}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Equipment');
       XLSX.writeFile(wb, 'equipment_template.xlsx');
@@ -3729,19 +3726,23 @@
       } catch(e) { alert('Could not read file: ' + e.message); return; }
       if (rows.length < 2) { alert('File is empty or has no data rows.'); return; }
 
-      const headers = rows[0].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
+      // Skip note row if present
+      const headerRowIdx = rows.findIndex(r => (r[0]||'').toString().toLowerCase().startsWith('order'));
+      if (headerRowIdx < 0) { alert('Could not find header row in file.'); return; }
+      const dataRows = rows.slice(headerRowIdx + 1);
+      const hdrs = rows[headerRowIdx].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
       const idx = {
-        date:      headers.findIndex(h => h.includes('date')),
-        shop:      headers.findIndex(h => h.includes('shop')),
-        name:      headers.findIndex(h => h.includes('product') || (h.includes('name') && !h.includes('shop'))),
-        variation: headers.findIndex(h => h.includes('variation')),
-        qty:       headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
-        price:     headers.findIndex(h => (h.includes('price') || h.includes('total')) && !h.includes('stock'))
+        date:      hdrs.findIndex(h => h.includes('date')),
+        shop:      hdrs.findIndex(h => h.includes('shop')),
+        name:      hdrs.findIndex(h => h.includes('product') || (h.includes('name') && !h.includes('shop'))),
+        variation: hdrs.findIndex(h => h.includes('variation')),
+        qty:       hdrs.findIndex(h => h.includes('qty') || h.includes('quantity')),
+        price:     hdrs.findIndex(h => (h.includes('price') || h.includes('total')) && !h.includes('stock'))
       };
 
       let added = 0, skipped = 0, dupes = 0;
-      for (let i = 1; i < rows.length; i++) {
-        const cols = rows[i];
+      for (let i = 0; i < dataRows.length; i++) {
+        const cols = dataRows[i];
         const name = idx.name >= 0 ? (cols[idx.name]||'').toString().trim() : '';
         if (!name) { skipped++; continue; }
 
@@ -3848,9 +3849,9 @@
     function downloadOrdTemplate() {
       const ws = XLSX.utils.aoa_to_sheet([
         ['Order Date','Customer Name','Contact No.','Email','Product','Variation','Qty','Unit Price','Unit Expense Cost','Payment Status','Order Status','Notes'],
-        ['2025-01-15','Maria Santos','09178024092','maria@email.com','Bookmark','Red',10,50.00,20.00,'Paid','Delivered','']
+        ['2026-01-15','Maria Santos','09178024092','maria@email.com','Bookmark','Red',10,50.00,20.00,'Paid','Delivered','']
       ]);
-      ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:24},{wch:20},{wch:14},{wch:6},{wch:12},{wch:18},{wch:14},{wch:14},{wch:20}];
+      ws['!cols'] = [{wch:14},{wch:18},{wch:14},{wch:24},{wch:20},{wch:14},{wch:6},{wch:12},{wch:18},{wch:14},{wch:14},{wch:20}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Orders');
       XLSX.writeFile(wb, 'orders_template.xlsx');
@@ -3866,25 +3867,29 @@
       catch(e) { alert('Could not read file: ' + e.message); return; }
       if (rows.length < 2) { alert('File is empty or has no data rows.'); return; }
 
-      const headers = rows[0].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
+      // Skip note row if present
+      const headerRowIdx = rows.findIndex(r => (r[0]||'').toString().toLowerCase().startsWith('order'));
+      if (headerRowIdx < 0) { alert('Could not find header row in file.'); return; }
+      const dataRows = rows.slice(headerRowIdx + 1);
+      const hdrs = rows[headerRowIdx].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
       const idx = {
-        date:     headers.findIndex(h => h.includes('date')),
-        customer: headers.findIndex(h => h.includes('customer')),
-        contact:  headers.findIndex(h => h.includes('contact')),
-        email:    headers.findIndex(h => h.includes('email')),
-        product:  headers.findIndex(h => h.includes('product')),
-        variation:headers.findIndex(h => h.includes('variation')),
-        qty:      headers.findIndex(h => h.includes('qty') || h.includes('quantity')),
-        price:    headers.findIndex(h => h.includes('unitprice') || h.includes('price')),
-        expense:  headers.findIndex(h => h.includes('expense')),
-        payment:  headers.findIndex(h => h.includes('payment')),
-        status:   headers.findIndex(h => h.includes('orderstatus') || (h.includes('status') && !h.includes('payment'))),
-        notes:    headers.findIndex(h => h.includes('note'))
+        date:     hdrs.findIndex(h => h.includes('date')),
+        customer: hdrs.findIndex(h => h.includes('customer')),
+        contact:  hdrs.findIndex(h => h.includes('contact')),
+        email:    hdrs.findIndex(h => h.includes('email')),
+        product:  hdrs.findIndex(h => h.includes('product')),
+        variation:hdrs.findIndex(h => h.includes('variation')),
+        qty:      hdrs.findIndex(h => h.includes('qty') || h.includes('quantity')),
+        price:    hdrs.findIndex(h => h.includes('unitprice') || h.includes('price')),
+        expense:  hdrs.findIndex(h => h.includes('expense')),
+        payment:  hdrs.findIndex(h => h.includes('payment')),
+        status:   hdrs.findIndex(h => h.includes('orderstatus') || (h.includes('status') && !h.includes('payment'))),
+        notes:    hdrs.findIndex(h => h.includes('note'))
       };
 
       let added = 0, skipped = 0, dupes = 0;
-      for (let i = 1; i < rows.length; i++) {
-        const cols = rows[i];
+      for (let i = 0; i < dataRows.length; i++) {
+        const cols = dataRows[i];
         const customer = idx.customer >= 0 ? (cols[idx.customer]||'').toString().trim() : '';
         const product  = idx.product  >= 0 ? (cols[idx.product] ||'').toString().trim() : '';
         if (!customer || !product) { skipped++; continue; }
