@@ -200,6 +200,16 @@
           </label>
         </div>
       </div>
+
+      <!-- Stock Status Filter -->
+      <div style="background:white; border-radius:10px; padding:12px 16px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-top:16px; display:flex; gap:12px; align-items:center;">
+        <label style="font-size:13px; color:#7a6248; font-weight:600; text-transform:uppercase; margin:0;">Stock Status</label>
+        <select id="matFilterStock" onchange="renderMaterials()" style="padding:7px 10px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:auto;">
+          <option value="In Stock">In Stock</option>
+          <option value="Out of Stock">Out of Stock</option>
+          <option value="">All</option>
+        </select>
+      </div>
       
       <table id="materialsTable">
         <thead>
@@ -1363,11 +1373,16 @@
 
     function renderMaterials() {
       const tbody = document.getElementById('materialsBody');
-      if (materials.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:#999;">No material added yet</td></tr>';
+      const filterStock = (document.getElementById('matFilterStock') || {}).value;
+      const filtered = materials.map((m, i) => ({ ...m, _i: i })).filter(m => {
+        if (filterStock === '') return true;
+        return (m.stock || 'In Stock') === filterStock;
+      });
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#999;">${materials.length === 0 ? 'No material added yet' : 'No materials match the selected filter'}</td></tr>`;
         return;
       }
-      const sorted = [...materials].map((m, i) => ({ ...m, _i: i })).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      const sorted = filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       tbody.innerHTML = sorted.map((m, idx) => {
         const qty = parseFloat(m.qty) || 0;
         const price = parseFloat(m.price) || 0;
