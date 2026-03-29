@@ -206,8 +206,8 @@
         <label style="font-size:13px; color:#7a6248; font-weight:600; text-transform:uppercase; margin:0;">Stock Status</label>
         <select id="matFilterStock" onchange="renderMaterials()" style="padding:7px 10px; border:1px solid #d9cfc0; border-radius:5px; font-size:13px; width:auto;">
           <option value="In Stock">In Stock</option>
+          <option value="All">All</option>
           <option value="Out of Stock">Out of Stock</option>
-          <option value="">All</option>
         </select>
       </div>
       
@@ -3009,7 +3009,7 @@
           if (!seen[key] || price > parseFloat(seen[key].pricePerQty)) seen[key] = m;
         });
       const opts = '<option value="0">-- Select --</option>' +
-        Object.values(seen).map(m => {
+        Object.values(seen).sort((a, b) => (a.name||'').localeCompare(b.name||'')).map(m => {
           const label = m.name + (m.variation ? ' (' + m.variation + ')' : '');
           const price = parseFloat(m.pricePerQty) || 0;
           return `<option value="${price}">${label} — ₱${price.toFixed(2)}</option>`;
