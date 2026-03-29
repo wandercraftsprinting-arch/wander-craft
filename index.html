@@ -3627,17 +3627,14 @@
     function downloadMatTemplate() {
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet([
+        ['NOTE: Enter Order Date in YYYY-MM-DD format (e.g. 2026-01-02). Format column A as TEXT first to prevent Excel auto-conversion.','','','','','','',''],
         ['Order Date','Shop Name','Product Name','Variation','Quantity','Total Price','Stock Status','Stock Qty'],
         ['2026-01-02','Shopee','Fabric','Red 1m',10,250.00,'In Stock',10]
       ]);
-      // Force date column (A) to text format so Excel doesn't reformat it
-      ['A1','A2'].forEach(cell => {
-        if (ws[cell]) { ws[cell].t = 's'; ws[cell].z = '@'; }
-      });
-      ws['!cols'] = [{wch:14},{wch:14},{wch:20},{wch:14},{wch:10},{wch:12},{wch:12},{wch:10}];
-      // Set column A format to text
-      if (!ws['!cols'][0]) ws['!cols'][0] = {};
-      ws['!cols'][0].numFmt = '@';
+      ws['!cols'] = [
+        { wch: 20 }, { wch: 14 }, { wch: 20 }, { wch: 14 },
+        { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }
+      ];
       XLSX.utils.book_append_sheet(wb, ws, 'Material');
       XLSX.writeFile(wb, 'material_template.xlsx');
     }
@@ -3654,15 +3651,20 @@
       if (rows.length < 2) { alert('File is empty or has no data rows.'); return; }
 
       const headers = rows[0].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
+      // Skip note row if present (first row starts with 'note')
+      const headerRowIdx = rows.findIndex(r => (r[0]||'').toString().toLowerCase().startsWith('order'));
+      if (headerRowIdx < 0) { alert('Could not find header row in file.'); return; }
+      const dataRows = rows.slice(headerRowIdx + 1);
+      const hdrs = rows[headerRowIdx].map(h => (h||'').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
       const idx = {
-        date:      headers.findIndex(h => h.includes('date')),
-        shop:      headers.findIndex(h => h.includes('shop')),
-        name:      headers.findIndex(h => h.includes('product') || (h.includes('name') && !h.includes('shop'))),
-        variation: headers.findIndex(h => h.includes('variation')),
-        qty:       headers.findIndex(h => (h.includes('qty') || h.includes('quantity')) && !h.includes('stock')),
-        price:     headers.findIndex(h => (h.includes('price') || h.includes('total')) && !h.includes('stock')),
-        stock:     headers.findIndex(h => h.includes('stockstatus') || (h.includes('stock') && !h.includes('qty'))),
-        stockQty:  headers.findIndex(h => h.includes('stockqty'))
+        date:      hdrs.findIndex(h => h.includes('date')),
+        shop:      hdrs.findIndex(h => h.includes('shop')),
+        name:      hdrs.findIndex(h => h.includes('product') || (h.includes('name') && !h.includes('shop'))),
+        variation: hdrs.findIndex(h => h.includes('variation')),
+        qty:       hdrs.findIndex(h => (h.includes('qty') || h.includes('quantity')) && !h.includes('stock')),
+        price:     hdrs.findIndex(h => (h.includes('price') || h.includes('total')) && !h.includes('stock')),
+        stock:     hdrs.findIndex(h => h.includes('stockstatus') || (h.includes('stock') && !h.includes('qty'))),
+        stockQty:  hdrs.findIndex(h => h.includes('stockqty'))
       };
 
       let added = 0, skipped = 0, dupes = 0;
@@ -3777,30 +3779,68 @@
     function parseUploadDate(raw) {
       if (!raw) return '';
       raw = raw.toString().trim();
+      const monNames = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' };
+      const curYear = new Date().getFullYear().toString();
+
       // Already YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.substring(0, 10);
-      // MM/DD/YYYY
+
+      // MM/DD/YYYY or M/D/YYYY
       const mdy4 = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
       if (mdy4) return `${mdy4[3]}-${mdy4[1].padStart(2,'0')}-${mdy4[2].padStart(2,'0')}`;
-      // MM/DD/YY (2-digit year — assume 2000s)
+
+      // MM/DD/YY
       const mdy2 = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
       if (mdy2) return `20${mdy2[3]}-${mdy2[1].padStart(2,'0')}-${mdy2[2].padStart(2,'0')}`;
+
+      // M/D (Excel short date like "1/2" — assume current year)
+      const md = raw.match(/^(\d{1,2})\/(\d{1,2})$/);
+      if (md) return `${curYear}-${md[1].padStart(2,'0')}-${md[2].padStart(2,'0')}`;
+
       // D-Mon or D-Mon-YY or D-Mon-YYYY (e.g. "2-Jan", "2-Jan-26", "2-Jan-2026")
-      const monNames = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' };
       const dmon = raw.match(/^(\d{1,2})-([A-Za-z]{3})(?:-(\d{2,4}))?$/);
       if (dmon) {
         const mon = monNames[dmon[2].toLowerCase()];
         if (mon) {
-          let yr = dmon[3] ? (dmon[3].length === 2 ? '20' + dmon[3] : dmon[3]) : new Date().getFullYear().toString();
+          const yr = dmon[3] ? (dmon[3].length === 2 ? '20' + dmon[3] : dmon[3]) : curYear;
           return `${yr}-${mon}-${dmon[1].padStart(2,'0')}`;
         }
       }
+
+      // Mon-D or Mon-D-YYYY (e.g. "Jan-2", "Jan-2-2026")
+      const monD = raw.match(/^([A-Za-z]{3})-(\d{1,2})(?:-(\d{2,4}))?$/);
+      if (monD) {
+        const mon = monNames[monD[1].toLowerCase()];
+        if (mon) {
+          const yr = monD[3] ? (monD[3].length === 2 ? '20' + monD[3] : monD[3]) : curYear;
+          return `${yr}-${mon}-${monD[2].padStart(2,'0')}`;
+        }
+      }
+
+      // Mon D, YYYY (e.g. "January 2, 2026" or "Jan 2, 2026")
+      const monLong = raw.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})?$/);
+      if (monLong) {
+        const mon = monNames[monLong[1].toLowerCase().substring(0,3)];
+        if (mon) {
+          const yr = monLong[3] || curYear;
+          return `${yr}-${mon}-${monLong[2].padStart(2,'0')}`;
+        }
+      }
+
+      // D Mon YYYY (e.g. "2 Jan 2026")
+      const dMonLong = raw.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/);
+      if (dMonLong) {
+        const mon = monNames[dMonLong[2].toLowerCase().substring(0,3)];
+        if (mon) return `${dMonLong[3]}-${mon}-${dMonLong[1].padStart(2,'0')}`;
+      }
+
       // Excel serial number (days since 1899-12-30)
       const serial = parseFloat(raw);
       if (!isNaN(serial) && serial > 1000) {
         const d = new Date(Math.round((serial - 25569) * 86400 * 1000));
         return d.toISOString().substring(0, 10);
       }
+
       return raw;
     }
 
